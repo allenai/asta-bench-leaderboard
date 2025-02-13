@@ -6,14 +6,19 @@ class Task:
     benchmark: str
     metric: str
     col_name: str
+    is_cost: bool = False
 
 
 # Select your tasks here
 # ---------------------------------------------------
 class Tasks(Enum):
     # task_key in the json file, metric_key in the json file, name to display in the leaderboard 
-    task0 = Task("anli_r1", "acc", "ANLI")
-    task1 = Task("logiqa", "acc_norm", "LogiQA")
+    # task0 = Task("anli_r1", "acc", "ANLI")
+    # task1 = Task("logiqa", "acc_norm", "LogiQA")
+    task0 = Task("arithmetic_demo", "check_arithmetic/accuracy", "Arithmetic Demo")
+    task0_cost = Task("arithmetic_demo", "", "Arithmetic Demo Cost", True)
+    task1 = Task("litqa2", "is_correct/accuracy", "LitQA2")
+    task1_cost = Task("litqa2", "", "LitaQA2 Cost", True)
 
 NUM_FEWSHOT = 0 # Change with your few shot
 # ---------------------------------------------------
@@ -21,11 +26,13 @@ NUM_FEWSHOT = 0 # Change with your few shot
 
 
 # Your leaderboard name
-TITLE = """<h1 align="center" id="space-title">Demo leaderboard</h1>"""
+TITLE = """<h1 align="center" id="space-title">NoraBench leaderboard</h1>"""
 
 # What does your leaderboard evaluate?
 INTRODUCTION_TEXT = """
 Intro text
+
+Costs shown are the average cost for running 1k samples.
 """
 
 # Which evaluations are you running? how can people reproduce what you have?

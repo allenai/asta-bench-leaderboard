@@ -14,3 +14,6 @@ tqdm
 transformers
 tokenizers>=0.15.0
 sentencepiece
+litellm==1.60.8
+inspect_ai==0.3.63
+pydantic==2.10.6

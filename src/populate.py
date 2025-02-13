@@ -18,7 +18,7 @@ def get_leaderboard_df(results_path: str, requests_path: str, cols: list, benchm
     df = df[cols].round(decimals=2)
 
     # filter out if any of the benchmarks have not been produced
-    df = df[has_no_nan_values(df, benchmark_cols)]
+    # df = df[has_no_nan_values(df, benchmark_cols)]
     return df
 
 

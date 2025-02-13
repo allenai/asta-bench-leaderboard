@@ -6,12 +6,13 @@ from huggingface_hub import HfApi
 # ----------------------------------
 TOKEN = os.environ.get("HF_TOKEN") # A read/write token for your org
 
-OWNER = "demo-leaderboard-backend" # Change to your org - don't forget to create a results and request dataset, with the correct format!
+OWNER = "allenai"
+PROJECT_NAME = "nora-bench"
 # ----------------------------------
 
-REPO_ID = f"{OWNER}/leaderboard"
-QUEUE_REPO = f"{OWNER}/requests"
-RESULTS_REPO = f"{OWNER}/results"
+REPO_ID = os.environ.get("REPO_ID", f"{OWNER}/{PROJECT_NAME}-leaderboard")
+QUEUE_REPO = f"{OWNER}/{PROJECT_NAME}-requests"
+RESULTS_REPO = os.environ.get("RESULTS_REPO", f"{OWNER}/{PROJECT_NAME}-results")
 
 # If you setup a cache later, just change HF_HOME
 CACHE_PATH=os.getenv("HF_HOME", ".")
