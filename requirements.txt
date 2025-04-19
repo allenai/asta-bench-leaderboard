@@ -1,0 +1,6 @@
+datasets
+gradio[oauth]
+huggingface-hub
+APScheduler
+# tmp branch 
+agent-eval @ git+https://github.com/allenai/agent-eval@jbragg/enhanced#egg=agent-eval
