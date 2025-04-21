@@ -36,8 +36,6 @@ from content import (
     hyperlink,
 )
 
-print("🚀 starting app…", flush=True)
-
 # Should be False on spaces and True outside
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
 
@@ -59,25 +57,6 @@ if LOCAL_DEBUG:
 else:
     DATA_DIR = "/home/user/data/" + CONFIG_NAME
 EXTRACTED_DATA_DIR = os.path.join(DATA_DIR, "extracted")
-
-# Workflow for internal
-# Command to run "val" version
-# Command to run "test" version (less frequent)
-
-# Public submission process: Create archive of log dir; upload with HF file upload; unarchive here
-# TODO: Do we require full logs for all submissions, or allow uploading of solutions only?
-# Require uploading logs
-
-# TODO: What's the leaderboard for internal use?
-# LEADERBOARD_PATH_INTERNAL = "{OWNER}/{PROJECT_NAME}-leaderboard-internal"
-# Requirements:
-# This is for dev splits; we don't want hill climbing on test splits; test splits via UI like everyone else
-# 1. Can use huggingface API to post directly to SUBMISSION_DATASET
-# 2. Private RESULTS_DATASET that isn't shown on the public leaderboard
-
-
-# Results dataset - dynamicaly compute costs from tokens, don't save
-
 
 api = HfApi()
 
@@ -248,29 +227,11 @@ def load_and_format_dataframes():
         verification_mode=VerificationMode.NO_CHECKS,
         trust_remote_code=True,
     )
-    # debug: report loaded splits and counts
-    print(
-        f"DEBUG: loaded eval_results splits={list(eval_results.keys())}, "
-        f"validation_count={len(eval_results.get('validation', []))}, "
-        f"test_count={len(eval_results.get('test', []))}",
-        flush=True,
-    )
     eval_dataframe_val = get_dataframe_from_results(
         eval_results=eval_results, split="validation"
     )
     eval_dataframe_test = get_dataframe_from_results(
         eval_results=eval_results, split="test"
-    )
-    # debug: report dataframe shapes and columns
-    print(
-        f"DEBUG: eval_dataframe_val shape={eval_dataframe_val.shape}, "
-        f"columns={list(eval_dataframe_val.columns)}",
-        flush=True,
-    )
-    print(
-        f"DEBUG: eval_dataframe_test shape={eval_dataframe_test.shape}, "
-        f"columns={list(eval_dataframe_test.columns)}",
-        flush=True,
     )
     return eval_results, eval_dataframe_val, eval_dataframe_test
 
@@ -293,39 +254,25 @@ def add_new_eval(
     mail: str,
     profile: gr.OAuthProfile,
 ):
-    # DEBUG: entry
-    print("DEBUG: Entered add_new_eval", flush=True)
-    print(
-        f"DEBUG: val_or_test={val_or_test!r}, agent_name={agent_name!r}, "
-        f"username={username!r}, mail={mail!r}, profile={profile!r}",
-        flush=True,
-    )
-
     # default username if none provided
     if not username or username.strip() == "":
         username = profile.username
-        print(f"DEBUG: defaulted username to HF profile: {username}", flush=True)
 
     if not agent_name:
-        print("DEBUG: missing agent_name", flush=True)
         return format_warning("Please provide an agent name.")
 
     submission_time = datetime.now(timezone.utc)
-    print(f"DEBUG: submission_time={submission_time}", flush=True)
 
     # Was the profile created less than 2 month ago?
     user_data = requests.get(
         f"https://huggingface.co/api/users/{profile.username}/overview"
     )
-    print(f"DEBUG: fetched user_data status={user_data.status_code}", flush=True)
     creation_date = json.loads(user_data.content)["createdAt"]
-    print(f"DEBUG: creation_date raw={creation_date}", flush=True)
 
     created_at = datetime.strptime(creation_date, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
         tzinfo=timezone.utc
     )
     if submission_time - created_at < timedelta(days=60):
-        print("DEBUG: account too new", flush=True)
         return format_error("This account is not authorized to submit here.")
 
     contact_infos = try_load_dataset(
@@ -348,18 +295,11 @@ def add_new_eval(
         )
 
     is_validation = val_or_test == "validation"
-    # print(f"DEBUG: is_validation={is_validation}", flush=True)
 
     # Very basic email parsing
-    print(f"DEBUG: about to parse email: {mail!r}", flush=True)
     _, parsed_mail = parseaddr(mail)
-    print(f"DEBUG: parsed_mail={parsed_mail!r}", flush=True)
     if "@" not in parsed_mail:
-        print("DEBUG: invalid email (no '@')", flush=True)
         return format_warning("Please provide a valid email adress.")
-    print("DEBUG: email contains '@'", flush=True)
-
-    print("DEBUG: passed email checks, continuing submission flow", flush=True)
 
     # Check duplicate submissions by inspecting the nested "submission" dicts
     if val_or_test in eval_results and len(eval_results[val_or_test]) > 0:
@@ -454,22 +394,8 @@ def add_new_eval(
     else:
         contact_infos.push_to_hub(CONTACT_DATASET, config_name=CONFIG_NAME)
 
-    # SCORE SUBMISSION
-    # try:
-    #     with open(
-    #         f"{EXTRACTED_DATA_DIR}/{username}_{agent_name}/agenteval.json",
-    #         "r",
-    #         encoding="utf-8",
-    #     ) as f:
-    #         eval_result_json = f.read()
-    #     eval_result = EvalResult.model_validate_json(eval_result_json)
-    # except Exception as e:
-    #     return format_error(
-    #         f"Error while reading the eval result: {e}. Be sure you ran 'astabench score' before uploading,"
-    #         "which generates the 'agenteval.json' file."
-    #     )
     try:
-        print("Trusting the uploaded config.", flush=True)
+        # NOTE: Trusting uploaded results. This just aggregates the scores.
         eval_result = score_directory(
             log_dir=extracted_dir,
         )
@@ -526,7 +452,7 @@ def add_new_eval(
     if LOCAL_DEBUG:
         print("mock uploaded results to lb")
     else:
-        summary_url, _ = upload_summary_to_hf(
+        upload_summary_to_hf(
             api=api,
             eval_result=eval_result,
             repo_id=RESULTS_DATASET,
@@ -534,9 +460,7 @@ def add_new_eval(
             split=val_or_test,
             submission_name=f"{submission_name}_scored",
         )
-        # eval_result.submission.summary_url = summary_url
 
-    print("DEBUG: submission completed, returning success message", flush=True)
     return format_log(
         f"Agent {agent_name} submitted by {username} successfully.\nPlease wait a few hours and refresh the leaderboard to see your score displayed."
     )
