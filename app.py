@@ -1,3 +1,9 @@
+"""app.py: Gradio app for the AstaBench leaderboard.
+
+Modeled after the GAIA huggingface leaderboard app.
+
+"""
+
 import json
 import os
 import shutil
@@ -187,23 +193,26 @@ def get_dataframe_from_results(eval_results: DatasetDict, split: str):
     base = ["agent_name", "agent_description", "username"]
     overall = ["overall/score", "overall/cost"]
     cats = sorted({c.split("/")[1] for c in all_cols if c.startswith("category/")})
-    cat_scores = [f"category/{cat}/score" for cat in cats]
-    cat_costs = [f"category/{cat}/cost" for cat in cats]
     tasks = sorted({c.split("/")[1] for c in all_cols if c.startswith("task/")})
-    task_scores = [f"task/{t}/score" for t in tasks]
-    task_score_err = [f"task/{t}/score_stderr" for t in tasks]
-    task_costs = [f"task/{t}/cost" for t in tasks]
-    task_cost_err = [f"task/{t}/cost_stderr" for t in tasks]
     rest = ["submit_time", "logs_url"]
     column_order = (
         base
         + overall
-        + cat_scores
-        + cat_costs
-        + task_scores
-        + task_score_err
-        + task_costs
-        + task_cost_err
+        + [
+            col
+            for cat in cats
+            for col in (f"category/{cat}/score", f"category/{cat}/cost")
+        ]
+        + [
+            col
+            for t in tasks
+            for col in (
+                f"task/{t}/score",
+                f"task/{t}/score_stderr",
+                f"task/{t}/cost",
+                f"task/{t}/cost_stderr",
+            )
+        ]
         + rest
     )
     df = df.reindex(columns=[c for c in column_order if c in all_cols])
