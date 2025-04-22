@@ -292,15 +292,15 @@ def add_new_eval(
         trust_remote_code=True,
     )
     user_submission_dates = sorted(
-        row["submit_time"]
+        datetime.fromisoformat(row["submit_time"])
         for row in contact_infos.get(val_or_test, [])
         if row["username_auth"] == profile.username
     )
-    if len(user_submission_dates) > 0 and user_submission_dates[
-        -1
-    ] == submission_time.strftime("%Y-%m-%d"):
+    if len(user_submission_dates) > 0 and abs(
+        submission_time - user_submission_dates[-1]
+    ) < timedelta(seconds=24 * 60 * 60):
         return format_error(
-            "You already submitted once today, please try again tomorrow."
+            "You already submitted once in the last 24h; please try again later."
         )
 
     is_validation = val_or_test == "validation"
@@ -391,7 +391,7 @@ def add_new_eval(
         "username": username,
         "username_auth": profile.username,
         "mail": mail,
-        "submit_time": submission_time.strftime("%Y-%m-%d"),
+        "submit_time": submission_time.isoformat(),
     }
     # add or init contact dataset for this split
     if val_or_test in contact_infos:
