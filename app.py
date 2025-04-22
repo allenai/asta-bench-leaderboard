@@ -343,37 +343,27 @@ def add_new_eval(
             # 1) remove old extraction if present
             if os.path.exists(extracted_dir):
                 shutil.rmtree(extracted_dir)
-            # ensure directory exists
             os.makedirs(extracted_dir, exist_ok=True)
 
-            # 2) extract all members
+            # 2) securely extract only regular files, flatten structure
             with tarfile.open(path_to_file.name, "r:gz") as tar:
-                tar.extractall(extracted_dir)
+                for member in tar.getmembers():
+                    if not member.isreg():
+                        continue
+                    fname = os.path.basename(member.name)
+                    # skip empty or hidden
+                    if not fname or fname.startswith("."):
+                        continue
+                    fobj = tar.extractfile(member)
+                    if not fobj:
+                        continue
+                    target = os.path.join(extracted_dir, fname)
+                    with open(target, "wb") as out:
+                        out.write(fobj.read())
 
-            # 3) flatten nested directories
-            for root, _, files in os.walk(extracted_dir):
-                for file in files:
-                    src = os.path.join(root, file)
-                    dst = os.path.join(extracted_dir, file)
-                    if src != dst:
-                        os.replace(src, dst)
-
-            # 4) remove hidden files/dirs, then empty dirs
-            for root, dirs, files in os.walk(extracted_dir, topdown=False):
-                # delete all hidden files
-                for name in files:
-                    if name.startswith("."):
-                        os.remove(os.path.join(root, name))
-                # delete hidden dirs (and contents), then try to remove empty dirs
-                for name in dirs:
-                    full_path = os.path.join(root, name)
-                    if name.startswith("."):
-                        shutil.rmtree(full_path)
-                    else:
-                        try:
-                            os.rmdir(full_path)
-                        except OSError:
-                            pass
+            # 3) ensure something was extracted
+            if not os.listdir(extracted_dir):
+                return format_error("Submission tarball is empty or invalid.")
 
         except Exception as e:
             return format_error(
