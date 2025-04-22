@@ -6,6 +6,7 @@ Modeled after the GAIA huggingface leaderboard app.
 
 import json
 import os
+import re
 import shutil
 import tarfile
 import tempfile
@@ -253,6 +254,11 @@ def restart_space():
     api.restart_space(repo_id=LEADERBOARD_PATH)
 
 
+def sanitize_name(name: str) -> str:
+    """Sanitize a string to be safe for filenames."""
+    return re.sub(r"[^A-Za-z0-9_-]", "_", name)
+
+
 def add_new_eval(
     val_or_test: str,
     agent_name: str | None,
@@ -322,7 +328,13 @@ def add_new_eval(
     if path_to_file is None:
         return format_warning("Please attach a file.")
 
-    extracted_dir = os.path.join(EXTRACTED_DATA_DIR, f"{username}_{agent_name}")
+    # sanitize username and agent_name for filesystem
+    safe_username = sanitize_name(username)
+    safe_agent_name = sanitize_name(agent_name)
+
+    extracted_dir = os.path.join(
+        EXTRACTED_DATA_DIR, f"{safe_username}_{safe_agent_name}"
+    )
 
     if LOCAL_DEBUG:
         print("mock extracted file", flush=True)
@@ -368,7 +380,9 @@ def add_new_eval(
                 f"Error while extracting the file: {e}. Be sure to upload a valid .tar.gz file."
             )
 
-    submission_name = f"{username}_{agent_name}_{submission_time.strftime('%Y-%m-%d')}"
+    submission_name = (
+        f"{safe_username}_{safe_agent_name}_{submission_time.strftime('%Y-%m-%d')}"
+    )
 
     # SAVE UNSCORED SUBMISSION
     if LOCAL_DEBUG:
