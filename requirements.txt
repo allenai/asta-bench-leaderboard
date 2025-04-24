@@ -2,4 +2,4 @@ datasets
 gradio[oauth]
 huggingface-hub
 APScheduler
-agent-eval @ git+https://github.com/allenai/agent-eval.git@111b75385eba825c68df4d002737497d02f41957#egg=agent-eval&subdirectory=.
+agent-eval @ git+https://github.com/allenai/agent-eval.git@466782ba1221ed410bba7e3a90e6eab4d41ef464#egg=agent-eval&subdirectory=.

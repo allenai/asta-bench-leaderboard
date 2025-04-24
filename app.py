@@ -6,12 +6,12 @@ Modeled after the GAIA huggingface leaderboard app.
 
 import json
 import os
-import re
 import shutil
 import tarfile
 import tempfile
 from datetime import datetime, timedelta, timezone
 from email.utils import parseaddr
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import gradio as gr
@@ -20,7 +20,7 @@ import pandas as pd
 import requests
 from agenteval import (
     compute_summary_statistics,
-    score_directory,
+    process_eval_logs,
     upload_folder_to_hf,
     upload_summary_to_hf,
 )
@@ -70,6 +70,8 @@ api = HfApi()
 
 # max upload size of 100MB
 MAX_UPLOAD_BYTES = 100 * 1024**2
+
+AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 
 
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
@@ -440,21 +442,25 @@ def add_new_eval(
         contact_infos.push_to_hub(CONTACT_DATASET, config_name=CONFIG_NAME)
 
     try:
-        # NOTE: Trusting uploaded results. This just aggregates the scores.
-        eval_result = score_directory(
-            log_dir=extracted_dir,
-        )
+        json_path = Path(extracted_dir) / AGENTEVAL_MANIFEST_NAME
+        if not json_path.exists():
+            return format_error(f"Missing manifest {AGENTEVAL_MANIFEST_NAME}")
+        raw = json_path.read_text(encoding="utf-8")
+        eval_result = EvalResult.model_validate_json(raw)
         if eval_result.suite_config.version != CONFIG_NAME:
             return format_error(
-                f"Error: the version of the uploaded submission ({eval_result.suite_config.version}) does not match the current version ({CONFIG_NAME})."
+                f"Error: submitted suite version {eval_result.suite_config.version} "
+                f"does not match currently accepted version {CONFIG_NAME}"
             )
         if eval_result.split != val_or_test:
             return format_error(
-                f"Error: the split of the uploaded submission ({eval_result.split}) does not match the selected split ({val_or_test})."
+                f"Error: uploaded split {eval_result.split} does not match selected split {val_or_test}"
             )
-        eval_result.save_json(
-            os.path.join(extracted_dir, "agenteval.json"),
-        )
+
+        # NOTE: Trusting user-computed scores, but re-computing the derived results based on the log files
+        eval_result.results = process_eval_logs(extracted_dir)[0]
+        eval_result.save_json(str(json_path))
+
     except Exception as e:
         return format_error(
             f"Error while scoring the submission: {e}. Be sure to upload a valid submission."
