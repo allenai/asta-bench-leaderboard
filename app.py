@@ -108,7 +108,7 @@ def pretty_column_name(col: str) -> str:
     # overall score
     elif col == "overall/score":
         return "Overall"
-    # any other score → its category/task name
+    # any other score → its tag/task name
     elif col.endswith("/score"):
         return col.split("/")[1]
     # fallback to unchanged
@@ -146,10 +146,10 @@ def get_dataframe_from_results(eval_results: DatasetDict, split: str):
             if key == "overall":
                 values["overall/score"] = summary_stats[key].score
                 values["overall/cost"] = summary_stats[key].cost
-            elif key.startswith("category/"):
-                category = key.split("/")[1]
-                values[f"category/{category}/score"] = summary_stats[key].score
-                values[f"category/{category}/cost"] = summary_stats[key].cost
+            elif key.startswith("tag/"):
+                tag = key.split("/")[1]
+                values[f"tag/{tag}/score"] = summary_stats[key].score
+                values[f"tag/{tag}/cost"] = summary_stats[key].cost
             elif key.startswith("task/"):
                 task = key.split("/")[1]
                 values[f"task/{task}/score"] = summary_stats[key].score
@@ -199,17 +199,13 @@ def get_dataframe_from_results(eval_results: DatasetDict, split: str):
     all_cols = df.columns.tolist()
     base = ["agent_name", "agent_description", "username"]
     overall = ["overall/score", "overall/cost"]
-    cats = sorted({c.split("/")[1] for c in all_cols if c.startswith("category/")})
+    tags = sorted({c.split("/")[1] for c in all_cols if c.startswith("tag/")})
     tasks = sorted({c.split("/")[1] for c in all_cols if c.startswith("task/")})
     rest = ["submit_time", "logs_url"]
     column_order = (
         base
         + overall
-        + [
-            col
-            for cat in cats
-            for col in (f"category/{cat}/score", f"category/{cat}/cost")
-        ]
+        + [col for tag in tags for col in (f"tag/{tag}/score", f"tag/{tag}/cost")]
         + [
             col
             for t in tasks
