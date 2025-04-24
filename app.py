@@ -346,6 +346,8 @@ def add_new_eval(
             os.makedirs(extracted_dir, exist_ok=True)
 
             # 2) securely extract only regular files, flatten structure
+            # Flatten structure to aid finding the manifest agenteval.json file
+            # and because hierarchical structure is not needed
             with tarfile.open(path_to_file.name, "r:gz") as tar:
                 for member in tar.getmembers():
                     if not member.isreg():
