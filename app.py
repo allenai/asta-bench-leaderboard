@@ -25,6 +25,7 @@ from agenteval import (
     upload_summary_to_hf,
 )
 from agenteval.models import EvalResult
+from agenteval.upload import sanitize_path_component
 from apscheduler.schedulers.background import BackgroundScheduler
 from datasets import Dataset, DatasetDict, VerificationMode, load_dataset
 from datasets.data_files import EmptyDatasetError
@@ -257,11 +258,6 @@ def restart_space():
     api.restart_space(repo_id=LEADERBOARD_PATH)
 
 
-def sanitize_name(name: str) -> str:
-    """Sanitize a string to be safe for filenames."""
-    return re.sub(r"[^A-Za-z0-9_-]", "_", name)
-
-
 def checked_upload_folder(
     api,
     folder_path: str,
@@ -279,6 +275,7 @@ def checked_upload_folder(
                 raise ValueError(
                     f"Upload too large: exceeds {MAX_UPLOAD_BYTES // (1024**2)} MB limit."
                 )
+    # NOTE: This function raises ValueError if unsafe characters are found in the path.
     return upload_folder_to_hf(
         api=api,
         folder_path=folder_path,
@@ -359,8 +356,8 @@ def add_new_eval(
         return format_warning("Please attach a file.")
 
     # sanitize username and agent_name for filesystem
-    safe_username = sanitize_name(username)
-    safe_agent_name = sanitize_name(agent_name)
+    safe_username = sanitize_path_component(username)
+    safe_agent_name = sanitize_path_component(agent_name)
 
     extracted_dir = os.path.join(
         EXTRACTED_DATA_DIR, f"{safe_username}_{safe_agent_name}"
