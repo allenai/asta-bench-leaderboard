@@ -67,6 +67,9 @@ EXTRACTED_DATA_DIR = os.path.join(DATA_DIR, "extracted")
 
 api = HfApi()
 
+# max upload size of 100MB
+MAX_UPLOAD_BYTES = 100 * 1024**2
+
 
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 
@@ -259,6 +262,33 @@ def sanitize_name(name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_-]", "_", name)
 
 
+def checked_upload_folder(
+    api,
+    folder_path: str,
+    repo_id: str,
+    config_name: str,
+    split: str,
+    submission_name: str,
+) -> str:
+    """Upload with inline size check; raises ValueError if too large."""
+    total = 0
+    for root, _, files in os.walk(folder_path):
+        for f in files:
+            total += os.path.getsize(os.path.join(root, f))
+            if total > MAX_UPLOAD_BYTES:
+                raise ValueError(
+                    f"Upload too large: exceeds {MAX_UPLOAD_BYTES // (1024**2)} MB limit."
+                )
+    return upload_folder_to_hf(
+        api=api,
+        folder_path=folder_path,
+        repo_id=repo_id,
+        config_name=config_name,
+        split=split,
+        submission_name=submission_name,
+    )
+
+
 def add_new_eval(
     val_or_test: str,
     agent_name: str | None,
@@ -380,14 +410,17 @@ def add_new_eval(
     if LOCAL_DEBUG:
         print("mock uploaded submission", flush=True)
     else:
-        upload_folder_to_hf(
-            api=api,
-            folder_path=extracted_dir,
-            repo_id=SUBMISSION_DATASET,
-            config_name=CONFIG_NAME,
-            split=val_or_test,
-            submission_name=submission_name,
-        )
+        try:
+            checked_upload_folder(
+                api=api,
+                folder_path=extracted_dir,
+                repo_id=SUBMISSION_DATASET,
+                config_name=CONFIG_NAME,
+                split=val_or_test,
+                submission_name=submission_name,
+            )
+        except ValueError as e:
+            return format_error(str(e))
 
     # SAVE CONTACT
     contact_info = {
@@ -434,25 +467,31 @@ def add_new_eval(
     if LOCAL_DEBUG:
         print("mock uploaded scored submission")
     else:
-        logs_url_private, _ = upload_folder_to_hf(
-            api=api,
-            folder_path=extracted_dir,
-            repo_id=SUBMISSION_DATASET,
-            config_name=CONFIG_NAME,
-            split=val_or_test,
-            submission_name=f"{submission_name}_scored",
-        )
-
-        # Validation submissions are public for public leaderboard
-        if is_validation and not IS_INTERNAL:
-            logs_url_public, _ = upload_folder_to_hf(
+        try:
+            logs_url_private = checked_upload_folder(
                 api=api,
                 folder_path=extracted_dir,
-                repo_id=SUBMISSION_DATASET_PUBLIC,
+                repo_id=SUBMISSION_DATASET,
                 config_name=CONFIG_NAME,
                 split=val_or_test,
                 submission_name=f"{submission_name}_scored",
             )
+        except ValueError as e:
+            return format_error(str(e))
+
+        # Validation submissions are public for public leaderboard
+        if is_validation and not IS_INTERNAL:
+            try:
+                logs_url_public = checked_upload_folder(
+                    api=api,
+                    folder_path=extracted_dir,
+                    repo_id=SUBMISSION_DATASET_PUBLIC,
+                    config_name=CONFIG_NAME,
+                    split=val_or_test,
+                    submission_name=f"{submission_name}_scored",
+                )
+            except ValueError as e:
+                return format_error(str(e))
         else:
             logs_url_public = None
 
