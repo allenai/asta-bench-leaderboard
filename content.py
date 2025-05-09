@@ -1,4 +1,4 @@
-TITLE = """<h1 align="center" id="space-title">AstaBench Leaderboard</h1>"""
+TITLE = """<h1 align="center" id="space-title" style="color: white;">AstaBench Leaderboard</h1>"""
 
 INTRODUCTION_TEXT = """
 ## Introduction
@@ -53,3 +53,11 @@ def hf_uri_to_web_url(uri: str) -> str:
 
     namespace, repo, path = parts
     return f"https://huggingface.co/datasets/{namespace}/{repo}/tree/main/{path}"
+
+
+css = """
+#tab-text {
+    font-size: 50px;
+    font-weight: bold;}
+"""
+

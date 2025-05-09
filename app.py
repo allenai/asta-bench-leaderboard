@@ -13,10 +13,12 @@ from datetime import datetime, timedelta, timezone
 from email.utils import parseaddr
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from dotenv import load_dotenv
 
 import gradio as gr
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import requests
 from agenteval import (
     compute_summary_statistics,
@@ -31,6 +33,7 @@ from datasets import Dataset, DatasetDict, VerificationMode, load_dataset
 from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
+import content
 from content import (
     CITATION_BUTTON_LABEL,
     CITATION_BUTTON_TEXT,
@@ -42,8 +45,9 @@ from content import (
     format_warning,
     hf_uri_to_web_url,
     hyperlink,
+    css,
 )
-
+load_dotenv()
 # Should be False on spaces and True outside
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
 
@@ -125,6 +129,7 @@ def get_dataframe_from_results(eval_results: DatasetDict, split: str):
             "username",
             "submit_time",
         ]
+        print(default_raw_cols)
         pretty_cols = [pretty_column_name(c) for c in default_raw_cols]
         return pd.DataFrame({col: ["No data"] for col in pretty_cols})
 
@@ -542,97 +547,140 @@ def compute_column_types(df):
 test_col_types = compute_column_types(eval_dataframe_test)
 val_col_types = compute_column_types(eval_dataframe_val)
 
-demo = gr.Blocks()
-with demo:
+def create_scatter_plot(df, tag_type):
+    """Generate a scatter plot for cost vs. score for the selected tag type."""
+    score_col = f"tag/{tag_type}/score"
+    cost_col = f"tag/{tag_type}/cost"
+    if score_col in df.columns and cost_col in df.columns:
+        fig = px.scatter(
+            df,
+            x=cost_col,  # Cost column
+            y=score_col,  # Score column
+            title=f"Cost vs. Score ({tag_type.capitalize()})",
+            labels={cost_col: "Cost", score_col: "Score"},
+        )
+        return fig
+    return None
+
+
+theme = gr.themes.Soft(
+    primary_hue="pink",
+    secondary_hue="teal",
+    spacing_size="lg",
+).set(
+    background_fill_primary='*secondary_800',
+    background_fill_primary_dark='*neutral_100'
+)
+
+
+
+with gr.Blocks(theme=theme, css=content.css) as demo:
     gr.HTML(TITLE)
-    gr.Markdown(INTRODUCTION_TEXT, elem_classes="markdown-text")
+    gr.Markdown(INTRODUCTION_TEXT, elem_id="markdown-text")
 
-    with gr.Row():
-        with gr.Accordion("📙 Citation", open=False):
-            citation_button = gr.Textbox(
-                value=CITATION_BUTTON_TEXT,
-                label=CITATION_BUTTON_LABEL,
-                elem_id="citation-button",
-            )  # .style(show_copy_button=True)
+    with gr.Group(elem_classes="unified-container"):
+        # Tabs
+        with gr.Tabs(elem_classes="tab-buttons"):
+            # Leaderboard Tab
+            with gr.TabItem("🏅 Leaderboard", elem_id="tab-text"):
+                gr.Markdown("### Leaderboard Results")
 
-    leaderboard_table_test = gr.Dataframe(
-        value=eval_dataframe_test,
-        headers=list(eval_dataframe_test.columns),
-        datatype=test_col_types,
-        interactive=False,
-        column_widths=["20%"],
-        render=False,
-    )
+                with gr.Row():
+                    leaderboard_table_test = gr.Dataframe(
+                        value=eval_dataframe_test,
+                        headers=list(eval_dataframe_test.columns),
+                        datatype=test_col_types,
+                        interactive=False,
+                        column_widths=["20%"],
+                        render=False,
+                    )
 
-    leaderboard_table_val = gr.Dataframe(
-        value=eval_dataframe_val,
-        headers=list(eval_dataframe_val.columns),
-        datatype=val_col_types,
-        interactive=False,
-        column_widths=["20%"],
-        render=False,
-    )
+                    leaderboard_table_val = gr.Dataframe(
+                        value=eval_dataframe_val,
+                        headers=list(eval_dataframe_val.columns),
+                        datatype=val_col_types,
+                        interactive=False,
+                        column_widths=["20%"],
+                        render=False,
+                    )
 
-    # Build tab layout list based on desired order
-    tabs = [
-        ("Results: Test", leaderboard_table_test),
-        ("Results: Validation", leaderboard_table_val),
-    ]
+            # Submit Your Results Tab
+            with gr.TabItem("🚀 Submit Your Results", elem_classes="tab-text" ):
+                gr.Markdown("### Submit a New Agent for Evaluation")
 
-    if IS_INTERNAL:
-        tabs = [tabs[1], tabs[0]]  # Validation first for internal users
+                with gr.Row():
+                    with gr.Column():
+                        level_of_test = gr.Radio(
+                            ["validation", "test"], value="validation", label="Split"
+                        )
+                        agent_name_textbox = gr.Textbox(label="Agent name")
+                        agent_description_textbox = gr.Textbox(label="Agent description")
+                        agent_url_textbox = gr.Textbox(label="URL to agent information")
 
-    # Render the tabs in desired order
-    for label, component in tabs:
-        with gr.Tab(label):
-            component.render()
+                    with gr.Column():
+                        username = gr.Textbox(
+                            label="Organization or user name (defaults to your HF username)",
+                            placeholder="Leave blank to use your HF username",
+                        )
+                        mail = gr.Textbox(
+                            label="Contact email (will be stored privately, & used if there is an issue with your submission)"
+                        )
+                        file_output = gr.File()
 
-    refresh_button = gr.Button("Refresh")
-    refresh_button.click(
-        refresh,
-        inputs=[],
-        outputs=[
-            leaderboard_table_val,
-            leaderboard_table_test,
-        ],
-    )
-    with gr.Accordion("Submit a new agent for evaluation"):
-        with gr.Row():
-            gr.Markdown(SUBMISSION_TEXT, elem_classes="markdown-text")
-        with gr.Row():
-            with gr.Column():
-                level_of_test = gr.Radio(
-                    ["validation", "test"], value="validation", label="Split"
+                with gr.Row():
+                    gr.LoginButton()
+                    submit_button = gr.Button("Submit Eval")
+
+                submission_result = gr.Markdown()
+
+                submit_button.click(
+                    add_new_eval,
+                    [
+                        level_of_test,
+                        agent_name_textbox,
+                        agent_description_textbox,
+                        agent_url_textbox,
+                        file_output,
+                        username,
+                        mail,
+                    ],
+                    submission_result,
                 )
-                agent_name_textbox = gr.Textbox(label="Agent name")
-                agent_description_textbox = gr.Textbox(label="Agent description")
-                agent_url_textbox = gr.Textbox(label="Url to agent information")
-            with gr.Column():
-                username = gr.Textbox(
-                    label="Organization or user name (defaults to your HF username)",
-                    placeholder="Leave blank to use your HF username",
-                )
-                mail = gr.Textbox(
-                    label="Contact email (will be stored privately, & used if there is an issue with your submission)"
-                )
-                file_output = gr.File()
 
+
+    with gr.Group():
+        gr.Markdown("### 📈 Quality vs Cost Analysis")
+
+        # Tag Type Selector
+        tag_type_selector = gr.Radio(
+            choices=["code", "lit"],
+            value="code",
+            label="Select Tag Type",
+        )
+
+        # Scatter Plots
         with gr.Row():
-            gr.LoginButton()
-            submit_button = gr.Button("Submit Eval")
-        submission_result = gr.Markdown()
-        submit_button.click(
-            add_new_eval,
-            [
-                level_of_test,
-                agent_name_textbox,
-                agent_description_textbox,
-                agent_url_textbox,
-                file_output,
-                username,
-                mail,
-            ],
-            submission_result,
+            scatter_plot_val_component = gr.Plot(label="Cost vs. Score (Validation)")
+            scatter_plot_test_component = gr.Plot(label="Cost vs. Score (Test)")
+
+        # Update scatter plots based on tag type
+        def update_scatter_plot(tag_type):
+            return (
+                create_scatter_plot(eval_dataframe_val, tag_type),
+                create_scatter_plot(eval_dataframe_test, tag_type),
+            )
+
+        tag_type_selector.change(
+            fn=update_scatter_plot,
+            inputs=[tag_type_selector],
+            outputs=[scatter_plot_val_component, scatter_plot_test_component],
+        )
+
+    with gr.Accordion("📙 Citation", open=False):
+        citation_button = gr.Textbox(
+            value=CITATION_BUTTON_TEXT,
+            label=CITATION_BUTTON_LABEL,
+            elem_id="citation-button",
         )
 
 scheduler = BackgroundScheduler()
