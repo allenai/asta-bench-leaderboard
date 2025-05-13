@@ -1,12 +1,13 @@
-TITLE = """<h1 align="center" id="space-title" style="color: white;">AstaBench Leaderboard</h1>"""
+TITLE = """<h1 align="center" id="space-title">AstaBench Leaderboard</h1>"""
 
 INTRODUCTION_TEXT = """
-## Introduction
+<h1>Introduction</h1>
 """
 
 SUBMISSION_TEXT = """
 ## Submissions
 """
+INTRO_PARAGRAPH = "Hello welcome to the AstaBench Leaderboard. We made this leaderboard for you, do you like it? Please say yes, or we will cry. You don't want to make us cry do you? That's what I thought."
 
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"
 CITATION_BUTTON_TEXT = r"""@article{asta-bench,
@@ -56,8 +57,39 @@ def hf_uri_to_web_url(uri: str) -> str:
 
 
 css = """
-#tab-text {
-    font-size: 50px;
-    font-weight: bold;}
+.tab-buttons button {
+    font-size: 15pt !important;
+}
+
+.tab-container {
+    overflow: visible !important;  
+    padding: 25px 10px 10px 10px;          
+    height: auto;                  
+}
+
+.markdown-text{font-size: 20pt}
+.markdown-text-tiny{font-size: 12pt}
+.markdown-text-small{font-size: 16pt}
+.markdown-text-large{font-size: 30pt}
+
+#citation-button {
+    background-color: #f0f0f0;
+}
+
+.label-wrap{
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+
+.table-component{
+    height: auto !important;
+    max-height: none !important;
+}
+
+.table-wrap {
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
+}
 """
 

@@ -34,19 +34,7 @@ from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
 import content
-from content import (
-    CITATION_BUTTON_LABEL,
-    CITATION_BUTTON_TEXT,
-    INTRODUCTION_TEXT,
-    SUBMISSION_TEXT,
-    TITLE,
-    format_error,
-    format_log,
-    format_warning,
-    hf_uri_to_web_url,
-    hyperlink,
-    css,
-)
+from content import *
 load_dotenv()
 # Should be False on spaces and True outside
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
@@ -523,12 +511,6 @@ def add_new_eval(
         f"Agent {agent_name} submitted by {username} successfully.\nPlease wait a few hours and refresh the leaderboard to see your score displayed."
     )
 
-
-def refresh():
-    _, eval_dataframe_val, eval_dataframe_test = load_and_format_dataframes()
-    return eval_dataframe_val, eval_dataframe_test
-
-
 # Determine column types dynamically based on dataframe columns
 def compute_column_types(df):
     col_types = []
@@ -542,6 +524,72 @@ def compute_column_types(df):
         else:
             col_types.append("number")
     return col_types
+
+def refresh():
+    # Mock data for validation and test dataframes
+    mock_data_val = {
+        "Agent": ["Agent A", "Agent B"],
+        "Agent description": ["Description A", "Description B"],
+        "User/organization": ["User A", "User B"],
+        "Submission date": ["2025-01-01", "2025-01-02"],
+        "Logs": ["Log A", "Log B"],
+        "Score": [85, 90],
+        "Cost": [100, 120],
+        "tag/code/score": [0.85, 0.90],  # Add mock tag data
+        "tag/code/cost": [10, 15],
+        "tag/lit/score": [0.75, 0.80],
+        "tag/lit/cost": [12, 18],
+    }
+
+    mock_data_test = {
+        "Agent": ["Agent X", "Agent Y"],
+        "Agent description": ["Description X", "Description Y"],
+        "User/organization": ["User X", "User Y"],
+        "Submission date": ["2025-01-03", "2025-01-04"],
+        "Logs": ["Log X", "Log Y"],
+        "Score": [75, 80],
+        "Cost": [110, 130],
+        "tag/code/score": [0.65, 0.70],  # Add mock tag data
+        "tag/code/cost": [20, 25],
+        "tag/lit/score": [0.60, 0.65],
+        "tag/lit/cost": [22, 28],
+    }
+
+    # Convert to pandas DataFrames
+    eval_dataframe_val = pd.DataFrame(mock_data_val)
+    eval_dataframe_test = pd.DataFrame(mock_data_test)
+
+    # Update column types dynamically
+    val_col_types = compute_column_types(eval_dataframe_val)
+    test_col_types = compute_column_types(eval_dataframe_test)
+
+    return eval_dataframe_val, eval_dataframe_test
+
+# Call refresh() to get mock data
+eval_dataframe_val, eval_dataframe_test = refresh()
+
+# Update the Dataframe components with the mock data
+leaderboard_table_test = gr.Dataframe(
+    value=eval_dataframe_test,
+    headers=list(eval_dataframe_test.columns),
+    datatype=compute_column_types(eval_dataframe_test),
+    interactive=False,
+    column_widths=["20%"],
+    render=True,
+    visible=True,
+    elem_classes="table-component",
+)
+
+leaderboard_table_val = gr.Dataframe(
+    value=eval_dataframe_val,
+    headers=list(eval_dataframe_val.columns),
+    datatype=compute_column_types(eval_dataframe_val),
+    interactive=True,
+    column_widths=["20%"],
+    render=True,
+    visible=False,
+elem_classes="table-component",
+)
 
 
 test_col_types = compute_column_types(eval_dataframe_test)
@@ -568,44 +616,88 @@ theme = gr.themes.Soft(
     secondary_hue="teal",
     spacing_size="lg",
 ).set(
-    background_fill_primary='*secondary_800',
+    # background_fill_primary='*secondary_800',
     background_fill_primary_dark='*neutral_100'
 )
 
+icon_path = "Ai2_icon_pink_RGB.png"
 
+# Define scatter plot components globally
+scatter_plot_test_component = gr.Plot(
+    value=None,  # Placeholder value
+    label="Cost vs. Score (Test)"
+)
+
+scatter_plot_val_component = gr.Plot(
+    value=None,  # Placeholder value
+    label="Cost vs. Score (Validation)"
+)
 
 with gr.Blocks(theme=theme, css=content.css) as demo:
     gr.HTML(TITLE)
+    gr.Image(icon_path, elem_id="app-icon", show_label=False, interactive=False, width=100)
     gr.Markdown(INTRODUCTION_TEXT, elem_id="markdown-text")
+    gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
 
     with gr.Group(elem_classes="unified-container"):
-        # Tabs
         with gr.Tabs(elem_classes="tab-buttons"):
             # Leaderboard Tab
-            with gr.TabItem("🏅 Leaderboard", elem_id="tab-text"):
+            with gr.TabItem("🏅 Leaderboard", elem_classes="tab-text"):
                 gr.Markdown("### Leaderboard Results")
 
-                with gr.Row():
-                    leaderboard_table_test = gr.Dataframe(
-                        value=eval_dataframe_test,
-                        headers=list(eval_dataframe_test.columns),
-                        datatype=test_col_types,
-                        interactive=False,
-                        column_widths=["20%"],
-                        render=False,
-                    )
 
-                    leaderboard_table_val = gr.Dataframe(
-                        value=eval_dataframe_val,
-                        headers=list(eval_dataframe_val.columns),
-                        datatype=val_col_types,
-                        interactive=False,
-                        column_widths=["20%"],
-                        render=False,
-                    )
+                # Radio Selector for Results: Test and Results: Validation
+                table_selector = gr.Radio(
+                    choices=["Results: Test", "Results: Validation"],
+                    value="Results: Test",
+                    label="Select Table to View",
+                    elem_classes="nested-radio-buttons"
+                )
+                # Define Dataframe components
+                leaderboard_table_test = gr.Dataframe(
+                    value=eval_dataframe_test,
+                    headers=list(eval_dataframe_test.columns),
+                    datatype=test_col_types,
+                    interactive=False,
+                    column_widths=["20%"],
+                    render=True,
+                    visible=True,
+                    elem_classes="table-component"
+                )
+
+                leaderboard_table_val = gr.Dataframe(
+                    value=eval_dataframe_val,
+                    headers=list(eval_dataframe_val.columns),
+                    datatype=val_col_types,
+                    interactive=False,
+                    column_widths=["20%"],
+                    render=True,
+                    visible=False,
+                    elem_classes="table-component"
+                )
+
+                # Function to update table visibility
+                def update_table(selected_table):
+                    if selected_table == "Results: Test":
+                        return {
+                            leaderboard_table_test: gr.update(visible=True),
+                            leaderboard_table_val: gr.update(visible=False),
+                        }
+                    else:
+                        return {
+                            leaderboard_table_test: gr.update(visible=False),
+                            leaderboard_table_val: gr.update(visible=True),
+                        }
+
+                # Update visibility based on selection
+                table_selector.change(
+                    fn=update_table,
+                    inputs=[table_selector],
+                    outputs=[leaderboard_table_test, leaderboard_table_val],
+                )
 
             # Submit Your Results Tab
-            with gr.TabItem("🚀 Submit Your Results", elem_classes="tab-text" ):
+            with gr.TabItem("🚀 Submit Your Results", elem_classes="tab-text"):
                 gr.Markdown("### Submit a New Agent for Evaluation")
 
                 with gr.Row():
@@ -649,7 +741,7 @@ with gr.Blocks(theme=theme, css=content.css) as demo:
 
 
     with gr.Group():
-        gr.Markdown("### 📈 Quality vs Cost Analysis")
+        gr.Markdown("## 📈 Quality vs Cost Analysis", elem_classes="markdown-text")
 
         # Tag Type Selector
         tag_type_selector = gr.Radio(
@@ -658,29 +750,35 @@ with gr.Blocks(theme=theme, css=content.css) as demo:
             label="Select Tag Type",
         )
 
-        # Scatter Plots
+        # Initialize scatter plots with initial values
         with gr.Row():
-            scatter_plot_val_component = gr.Plot(label="Cost vs. Score (Validation)")
-            scatter_plot_test_component = gr.Plot(label="Cost vs. Score (Test)")
+            scatter_plot_val_component = gr.Plot(value=create_scatter_plot(eval_dataframe_val, "code"), visible=False)
+            scatter_plot_test_component = gr.Plot(value=create_scatter_plot(eval_dataframe_test, "code"), visible=True)
 
-        # Update scatter plots based on tag type
-        def update_scatter_plot(tag_type):
-            return (
-                create_scatter_plot(eval_dataframe_val, tag_type),
-                create_scatter_plot(eval_dataframe_test, tag_type),
-            )
+        # Update scatter plots dynamically based on tag type
+        def update_scatter_plot(tag_type, selected_table):
+            is_test_selected = selected_table == "Results: Test"
 
+            # Select appropriate data
+            plot_data = eval_dataframe_test if is_test_selected else eval_dataframe_val
+
+            # Update visibility and plot data
+            return {
+                scatter_plot_test_component: gr.update(visible=is_test_selected, value=create_scatter_plot(plot_data, tag_type)),
+                scatter_plot_val_component: gr.update(visible=not is_test_selected, value=create_scatter_plot(plot_data, tag_type)),
+            }
+
+        # Trigger scatter plot update when either tag type or table selection changes
         tag_type_selector.change(
             fn=update_scatter_plot,
-            inputs=[tag_type_selector],
-            outputs=[scatter_plot_val_component, scatter_plot_test_component],
+            inputs=[tag_type_selector, table_selector],
+            outputs=[scatter_plot_test_component, scatter_plot_val_component],
         )
 
-    with gr.Accordion("📙 Citation", open=False):
-        citation_button = gr.Textbox(
-            value=CITATION_BUTTON_TEXT,
-            label=CITATION_BUTTON_LABEL,
-            elem_id="citation-button",
+        table_selector.change(
+            fn=update_scatter_plot,
+            inputs=[tag_type_selector, table_selector],
+            outputs=[scatter_plot_test_component, scatter_plot_val_component],
         )
 
 scheduler = BackgroundScheduler()
