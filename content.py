@@ -91,5 +91,10 @@ css = """
     height: auto !important;
     overflow-y: visible !important;
 }
+
+.unified-container {
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
 """
 

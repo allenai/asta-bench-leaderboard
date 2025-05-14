@@ -19,6 +19,7 @@ import gradio as gr
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import requests
 from agenteval import (
     compute_summary_statistics,
@@ -595,17 +596,50 @@ elem_classes="table-component",
 test_col_types = compute_column_types(eval_dataframe_test)
 val_col_types = compute_column_types(eval_dataframe_val)
 
+def calculate_frontier(df, cost_col, score_col):
+    """Calculate the frontier points based on lowest cost and highest score."""
+    # Sort by cost (ascending), then by score (descending) to find the best points
+    sorted_df = df.sort_values(by=[cost_col, score_col], ascending=[True, False])
+
+    # Initialize the frontier
+    frontier_points = []
+    max_score = -float('inf')
+
+    # Iterate through sorted points to find the frontier
+    for _, row in sorted_df.iterrows():
+        cost, score = row[cost_col], row[score_col]
+        # If the score is higher than the previous max, it's a frontier point
+        if score > max_score:
+            frontier_points.append((cost, score))
+            max_score = score
+
+    return pd.DataFrame(frontier_points, columns=[cost_col, score_col])
+
+
 def create_scatter_plot(df, tag_type):
     """Generate a scatter plot for cost vs. score for the selected tag type."""
     score_col = f"tag/{tag_type}/score"
     cost_col = f"tag/{tag_type}/cost"
     if score_col in df.columns and cost_col in df.columns:
+        # Calculate the frontier
+        frontier_df = calculate_frontier(df, cost_col, score_col)
         fig = px.scatter(
             df,
             x=cost_col,  # Cost column
             y=score_col,  # Score column
             title=f"Cost vs. Score ({tag_type.capitalize()})",
-            labels={cost_col: "Cost", score_col: "Score"},
+            labels={cost_col: "Cost (USD)", score_col: "Score"},
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=frontier_df[cost_col],
+                y=frontier_df[score_col],
+                mode="lines+markers",
+                line=dict(color="black", dash="dash"),
+                marker=dict(color="black", size=10),
+                name="Frontier",
+            )
         )
         return fig
     return None
@@ -635,7 +669,7 @@ scatter_plot_val_component = gr.Plot(
 
 with gr.Blocks(theme=theme, css=content.css) as demo:
     gr.HTML(TITLE)
-    gr.Image(icon_path, elem_id="app-icon", show_label=False, interactive=False, width=100)
+    gr.Image(icon_path, elem_id="app-icon", show_label=False, interactive=False, width=100, show_download_button=False, show_fullscreen_button=False)
     gr.Markdown(INTRODUCTION_TEXT, elem_id="markdown-text")
     gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
 
@@ -740,7 +774,7 @@ with gr.Blocks(theme=theme, css=content.css) as demo:
                 )
 
 
-    with gr.Group():
+    with gr.Group(elem_classes="unified-container"):
         gr.Markdown("## 📈 Quality vs Cost Analysis", elem_classes="markdown-text")
 
         # Tag Type Selector
