@@ -46,7 +46,6 @@ from content import (
     CITATION_BUTTON_TEXT,
     INTRODUCTION_TEXT,
     SUBMISSION_TEXT,
-    TITLE,
     INTRO_PARAGRAPH,
     format_error,
     format_log,

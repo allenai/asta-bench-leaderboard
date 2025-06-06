@@ -1,54 +1,12 @@
 # app.py
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import numpy as np # For mock data generation
-
-import json
-import os
-import shutil
-import tarfile
-import tempfile
-from datetime import datetime, timedelta, timezone
-from email.utils import parseaddr
-from pathlib import Path
-# from zoneinfo import ZoneInfo # LeaderboardViewer uses this, ensure it's available
-
 import gradio as gr
-# import numpy as np # May not be needed directly here if LeaderboardViewer handles it
-import pandas as pd
-import requests
-from agenteval import (
-    # compute_summary_statistics, # This will now be used by LeaderboardViewer
-    process_eval_logs,
-    upload_folder_to_hf,
-    upload_summary_to_hf,
-)
-from agenteval.models import EvalResult # Used by submission and LeaderboardViewer (implicitly)
-from agenteval.upload import sanitize_path_component
+import os
+
 from apscheduler.schedulers.background import BackgroundScheduler
-from datasets import Dataset, DatasetDict, VerificationMode, load_dataset # load_dataset used by LV
-from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
-import literature_understanding, main_page
+import literature_understanding, main_page, c_and_e, data_analysis, e2e
 
-from leaderboard_viewer import LeaderboardViewer
-
-from content import (
-    CITATION_BUTTON_LABEL,
-    CITATION_BUTTON_TEXT,
-    INTRODUCTION_TEXT,
-    SUBMISSION_TEXT,
-    TITLE,
-    INTRO_PARAGRAPH,
-    format_error,
-    format_log,
-    format_warning,
-    hf_uri_to_web_url, # LeaderboardViewer might need this or similar for log links
-    hyperlink, # LeaderboardViewer might need this or similar for log links
-)
+from content import TITLE
 
 # --- Constants and Configuration  ---
 USE_MOCK_DATA = True
@@ -90,8 +48,14 @@ demo = gr.Blocks(theme=theme)
 with demo:
     gr.HTML(TITLE)
     main_page.demo.render()
-with demo.route("Literature_Understanding"):
+with demo.route("Literature Understanding"):
     literature_understanding.demo.render()
+with demo.route("Code & Execution"):
+    c_and_e.demo.render()
+with demo.route("Data Analysis"):
+    data_analysis.demo.render()
+with demo.route("End to End"):
+    e2e.demo.render()
 
 # --- Scheduler and Launch
 def restart_space_job():
