@@ -3,6 +3,7 @@ TITLE = """<h1 align="center" id="space-title">AstaBench Leaderboard</h1>"""
 INTRODUCTION_TEXT = """
 ## Introduction
 """
+INTRO_PARAGRAPH = "Hello welcome to the AstaBench Leaderboard. We made this leaderboard for you, do you like it? Please say yes, or we will cry. You don't want to make us cry do you? That's what I thought."
 
 SUBMISSION_TEXT = """
 ## Submissions
