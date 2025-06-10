@@ -271,7 +271,7 @@ def _pretty_column_name(col: str) -> str:
 def _plot_scatter(
         data: pd.DataFrame,
         x: str,  # Cost column name (e.g., "Overall cost")
-        y: str,  # Score column name (e.g., "Overall")
+        y: str,  # Score column name (e.g., "Overall score")
         agent_col: str,
 ) -> plt.Figure:
     """Scatter plot of agent results, showing score vs cost with Pareto frontier."""

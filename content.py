@@ -54,3 +54,15 @@ def hf_uri_to_web_url(uri: str) -> str:
 
     namespace, repo, path = parts
     return f"https://huggingface.co/datasets/{namespace}/{repo}/tree/main/{path}"
+
+css = """
+.submission-accordion {
+    border-style: solid;
+    border-width: 3px !important;
+    border-color: #ec4899;
+}
+.submission-accordion span.svelte-1w6vloh { 
+    font-weight: bold !important;
+    font-size: 1.2em !important;
+}
+"""

@@ -6,32 +6,15 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
 import literature_understanding, main_page, c_and_e, data_analysis, e2e
 
-from content import TITLE
+from content import TITLE, css
 
 # --- Constants and Configuration  ---
-USE_MOCK_DATA = True
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
-CONFIG_NAME = "1.0.0-dev1" # This corresponds to 'config' in LeaderboardViewer
 IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
-
 OWNER = "allenai"
 PROJECT_NAME = "asta-bench" + ("-internal" if IS_INTERNAL else "")
-SUBMISSION_DATASET = f"{OWNER}/{PROJECT_NAME}-submissions"
-SUBMISSION_DATASET_PUBLIC = f"{OWNER}/{PROJECT_NAME}-submissions-public"
-CONTACT_DATASET = f"{OWNER}/{PROJECT_NAME}-contact-info"
-RESULTS_DATASET = f"{OWNER}/{PROJECT_NAME}-results" # This is the repo_id for LeaderboardViewer
 LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
-
-if LOCAL_DEBUG:
-    DATA_DIR = os.path.join(os.path.dirname(__file__), "data", CONFIG_NAME)
-else:
-    DATA_DIR = "/home/user/data/" + CONFIG_NAME
-EXTRACTED_DATA_DIR = os.path.join(DATA_DIR, "extracted")
-
 api = HfApi()
-MAX_UPLOAD_BYTES = 100 * 1024**2
-AGENTEVAL_MANIFEST_NAME = "agenteval.json"
-os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 
 
 
@@ -44,7 +27,7 @@ theme = gr.themes.Soft(
     background_fill_primary_dark='*neutral_100'
 )
 # --- Gradio App Definition ---
-demo = gr.Blocks(theme=theme)
+demo = gr.Blocks(theme=theme, css=css)
 with demo:
     gr.HTML(TITLE)
     main_page.demo.render()

@@ -16,8 +16,6 @@ from pathlib import Path
 # from zoneinfo import ZoneInfo # LeaderboardViewer uses this, ensure it's available
 
 import gradio as gr
-# import numpy as np # May not be needed directly here if LeaderboardViewer handles it
-import pandas as pd
 import requests
 from agenteval import (
     # compute_summary_statistics, # This will now be used by LeaderboardViewer
@@ -27,11 +25,9 @@ from agenteval import (
 )
 from agenteval.models import EvalResult # Used by submission and LeaderboardViewer (implicitly)
 from agenteval.upload import sanitize_path_component
-from apscheduler.schedulers.background import BackgroundScheduler
 from datasets import Dataset, DatasetDict, VerificationMode, load_dataset # load_dataset used by LV
 from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
-import literature_understanding, main_page
 
 # Assuming leaderboard_viewer.py is in the same directory or installed
 try:
@@ -111,6 +107,9 @@ def generate_mock_dataframe(split_name: str, tag: str | None):
 
 
     df = pd.DataFrame(data)
+    # Round numeric columns to 2 decimal points
+    numeric_cols = df.select_dtypes(include=["float", "int"]).columns
+    df[numeric_cols] = df[numeric_cols].round(2)
     # Sort by primary metric
     if primary_metric in df.columns:
         df = df.sort_values(by=primary_metric, ascending=False).reset_index(drop=True)
@@ -139,12 +138,13 @@ def generate_mock_scatter_plot(df: pd.DataFrame, score_col: str, cost_col: str):
             ax.plot(pareto_df_mock[cost_col], pareto_df_mock[score_col], marker='o', linestyle='-', color='red', alpha=0.7, linewidth=2, markersize=5, label='Pareto Frontier')
 
     if score_col in df.columns and cost_col in df.columns:
-        sns.scatterplot(data=df, x=cost_col, y=score_col, hue="Agent", ax=ax, s=80, legend="auto") # legend="auto" will pick up "Agent"
+        scatter = sns.scatterplot(data=df, x=cost_col, y=score_col, hue="Agent", ax=ax, s=80, legend="auto") # legend="auto" will pick up "Agent"
         ax.set_title(f"Mock: {score_col} vs. {cost_col}")
         ax.set_xlabel(f"{cost_col} (USD)")
-        ax.set_ylabel(f"{score_col}")
+        ax.set_ylabel(f"{score_col} Score")
         ax.set_xlim(left=0)
         ax.set_ylim(bottom=0)
+
 
         # Legend handling
         handles, labels = ax.get_legend_handles_labels()
@@ -170,7 +170,7 @@ def get_mock_tag_map(split_name: str):
     return {
         "Overall": [], # Overall usually doesn't list tasks under it in this way
         "Literature Understanding": [f"mock_task_A_under_MockTag1", f"mock_task_B_under_MockTag1"],
-        f"SpecificTag_{split_name}": [f"task_X_under_SpecificTag_{split_name}", f"task_Y_under_SpecificTag_{split_name}"]
+        f"E2E_{split_name}": [f"task_X_under_SpecificTag_{split_name}", f"task_Y_under_SpecificTag_{split_name}"]
     }
 
 # --- Global State for Viewers (simple caching) ---
@@ -480,7 +480,7 @@ def add_new_eval(
     if not LOCAL_DEBUG:
         try:
             contact_infos.push_to_hub(CONTACT_DATASET, config_name=CONFIG_NAME)
-        except Exception as e: return format_warning(f"Submission recorded, but contact info failed to save: {e}") # Non-fatal
+        except Exception as e: return format_warning(f"Submission recorded, but contact info failed to save: {e}")
     else: print("mock uploaded contact info", flush=True)
 
 
@@ -546,42 +546,13 @@ def add_new_eval(
         "Please refresh the leaderboard in a few moments. It may take some time for changes to propagate."
     )
 
-# --- Helper to get initial tags for the global dropdown ---
-def get_initial_global_tag_choices():
-    """
-    Determines the initial set of tags for the global dropdown based on
-    the likely first visible tab.
-    """
-    # Determine which split's tags to load initially for the global dropdown
-    # This assumes LeaderboardViewer can be initialized here without full Gradio context for this one call.
-    initial_split_for_tags = "validation" if IS_INTERNAL else "test"
-    try:
-        # We need the tag_map from the viewer instance.
-        # get_leaderboard_viewer_instance returns (viewer_or_data, tag_map_for_split)
-        _, tag_map_for_initial_split = get_leaderboard_viewer_instance(initial_split_for_tags)
-
-        # Ensure tag_map_for_initial_split is a dictionary as expected
-        if isinstance(tag_map_for_initial_split, dict):
-            # Sort keys, ensuring "Overall" is first if present, or add it.
-            choices = sorted([k for k in tag_map_for_initial_split.keys() if k != "Overall"])
-            choices.insert(0, "Overall") # Ensure "Overall" is at the beginning
-            # Remove duplicates if "Overall" was already in tag_map_for_initial_split
-            return list(dict.fromkeys(choices)) # Efficient way to unique while preserving order for "Overall"
-        else:
-            print(f"Warning: Tag map for initial split '{initial_split_for_tags}' was not a dict, got: {type(tag_map_for_initial_split)}. Defaulting tags.")
-            return ["Overall"] # Fallback
-    except Exception as e:
-        print(f"Error getting initial global tag choices for split '{initial_split_for_tags}': {e}. Defaulting tags.")
-        return ["Overall"] # Fallback if viewer init fails
-
-
 with gr.Blocks() as demo:
     gr.Markdown(INTRODUCTION_TEXT, elem_classes="markdown-text")
     gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
 
     # --- Submission Accordion ---
-    with gr.Accordion("Submit a new agent for evaluation", open=False):
-        gr.Markdown(SUBMISSION_TEXT, elem_classes="markdown-text")
+    with gr.Accordion("🚀 Submit a new agent for evaluation", open=False, elem_classes="submission-accordion"):
+        gr.Markdown(SUBMISSION_TEXT, elem_id="markdown-text")
         with gr.Row():
             with gr.Column():
                 level_of_test_radio = gr.Radio(["validation", "test"], value="validation", label="Split")
@@ -638,21 +609,14 @@ with gr.Blocks() as demo:
         val_df_output = gr.DataFrame(interactive=False, wrap=True, label="Validation Leaderboard")
         val_scatter_plot_output = gr.Plot(label="Score vs. Cost (Validation)")
 
-        # Assuming load_display_data_for_split is defined elsewhere
-        # For this example, we'll use placeholder values or a dummy function
-        def dummy_load_display_data(split, tag_value): # Dummy function
-            dummy_df = pd.DataFrame({'Agent': ['A', 'B'], 'Score': [0.8, 0.7], f"{tag_value} Cost": [10,12]})
-            fig, ax = plt.subplots(); ax.scatter([10,12],[0.8,0.7]); plt.close(fig) # Dummy plot
-            return dummy_df, fig, gr.update(choices=["Overall", "MockTag1"], value=tag_value)
-
-        initial_val_df, initial_val_scatter, _ = dummy_load_display_data(
+        initial_val_df, initial_val_scatter, _ = load_display_data_for_split(
             "validation", global_tag_dropdown.value
         )
         val_df_output.value = initial_val_df
         val_scatter_plot_output.value = initial_val_scatter
 
         val_refresh_button.click(
-            fn=dummy_load_display_data, # Use dummy or real function
+            fn=load_display_data_for_split,
             inputs=[val_split_name, global_tag_dropdown],
             outputs=[val_df_output, val_scatter_plot_output, global_tag_dropdown]
         )
@@ -662,19 +626,18 @@ with gr.Blocks() as demo:
         with gr.Row():
             test_refresh_button = gr.Button("Refresh Test Tab")
         test_df_output = gr.DataFrame(interactive=False, wrap=True, label="Test Leaderboard")
-        # The original code had test_scatter_plot_output inside a gr.Row()
-        # which is fine, or it can be directly under the tab like val_scatter_plot_output
+
         test_scatter_plot_output = gr.Plot(label="Score vs. Cost (Test)")
 
 
-        initial_test_df, initial_test_scatter, _ = dummy_load_display_data( # Using dummy
+        initial_test_df, initial_test_scatter, _ = load_display_data_for_split(
             "test", global_tag_dropdown.value
         )
         test_df_output.value = initial_test_df
         test_scatter_plot_output.value = initial_test_scatter
 
         test_refresh_button.click(
-            fn=dummy_load_display_data, # Use dummy or real function
+            fn=load_display_data_for_split,
             inputs=[test_split_name, global_tag_dropdown],
             outputs=[test_df_output, test_scatter_plot_output, global_tag_dropdown]
         )
