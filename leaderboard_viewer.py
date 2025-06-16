@@ -205,7 +205,7 @@ def _pretty_column_name(col: str) -> str:
         "username": "User/organization",
         "logs_url": "Logs",
         "overall/score": "Score",
-        "overall/cost": "Overall Cost (USD)",
+        "overall/cost": "Cost (USD)",
     }
     if col in mapping:
         return mapping[col]
@@ -224,48 +224,6 @@ def _pretty_column_name(col: str) -> str:
     # fallback to last segment
     return parts[-1]
 
-
-# def _plot_hbar(
-#         data: pd.DataFrame,
-#         agent_col: str,
-#         metrics: list[str],
-# ) -> plt.Figure:
-#     """Horizontal bar chart of metrics, one row per agent."""
-#     n = len(metrics)
-#     # color each metric pair the same
-#     group_count = (n + 1) // 2
-#     palette = sns.color_palette(n_colors=group_count)
-#
-#     # Set minimum width per subplot for readable x-axis labels, let height auto-size
-#     min_width_per_subplot = 4
-#     fig_width = n * min_width_per_subplot
-#     fig, axes = plt.subplots(
-#         ncols=n, sharey=True, figsize=(fig_width, plt.rcParams["figure.figsize"][1])
-#     )
-#
-#     if n == 1:
-#         axes = [axes]
-#
-#     for idx, (ax, metric) in enumerate(zip(axes, metrics)):
-#         color = palette[idx // 2]
-#
-#         sns.barplot(data=data, y=agent_col, x=metric, ax=ax, color=color)
-#         ci = data.get(f"{metric} 95% CI")
-#         if ci is not None:
-#             y_positions = range(len(data))
-#             ax.errorbar(
-#                 x=data[metric],
-#                 y=y_positions,
-#                 xerr=ci,
-#                 fmt="none",
-#                 ecolor="gray",
-#                 capsize=3,
-#             )
-#         ax.set_xlabel(metric)
-#         ax.set_xlim(left=0)
-#
-#     plt.tight_layout()
-#     return fig
 
 
 def _plot_scatter(

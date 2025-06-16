@@ -1,9 +1,10 @@
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 import pandas as pd
 import numpy as np # For mock data generation
+import plotly.express as px
+import plotly.graph_objects as go
 
 import json
 import os
@@ -29,13 +30,8 @@ from datasets import Dataset, DatasetDict, VerificationMode, load_dataset # load
 from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
-# Assuming leaderboard_viewer.py is in the same directory or installed
-try:
-    from leaderboard_viewer import LeaderboardViewer
-except ImportError:
-    print("ERROR: leaderboard_viewer.py not found. Please ensure it's in the same directory or installed.")
-    # Fallback or raise an error if critical
-    LeaderboardViewer = None # Or a mock class for UI development
+from leaderboard_viewer import LeaderboardViewer
+from json_leaderboard import LeaderboardViewer2
 
 from content import (
     CITATION_BUTTON_LABEL,
@@ -51,7 +47,7 @@ from content import (
 )
 
 # --- Constants and Configuration  ---
-USE_MOCK_DATA = True
+USE_MOCK_DATA = False
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
 CONFIG_NAME = "1.0.0-dev1" # This corresponds to 'config' in LeaderboardViewer
 IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
@@ -76,109 +72,203 @@ AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 
 # --- Mock Data Generation Functions (if USE_MOCK_DATA is True) ---
+# def generate_mock_dataframe(split_name: str, tag: str | None):
+#     num_rows = 5
+#     agents = [f"MockAgent-{split_name}-{i}" for i in range(1, num_rows + 1)]
+#     data = {
+#         "Agent": agents,
+#         "User/organization": [f"Org{i % 2 + 1}" for i in range(num_rows)],
+#         "Submission date": [f"2023-10-{10 + i}" for i in range(num_rows)],
+#         "Logs": [f"[Logs](http://example.com/logs/{agent})" for agent in agents], # Mock links
+#     }
+#
+#     primary_metric = tag if tag and tag != "Overall" else "Overall"
+#
+#     data[primary_metric] = np.random.rand(num_rows) * 80 + 10 # Scores between 10 and 90
+#     data[f"{primary_metric} cost"] = np.random.rand(num_rows) * 50 + 5
+#     if np.random.rand() > 0.3: # Sometimes include CIs
+#         data[f"{primary_metric} 95% CI"] = np.random.rand(num_rows) * 5
+#
+#     if tag and tag != "Overall":
+#         # Add some mock task scores under the tag
+#         data[f"task_A_under_{tag}"] = np.random.rand(num_rows) * 70 + 15
+#         data[f"task_A_under_{tag} cost"] = np.random.rand(num_rows) * 20 + 2
+#         data[f"task_B_under_{tag}"] = np.random.rand(num_rows) * 60 + 25
+#         data[f"task_B_under_{tag} cost"] = np.random.rand(num_rows) * 30 + 3
+#     elif tag is None or tag == "Overall": # Add some general mock task/tag scores
+#         data["Literature Understanding"] = np.random.rand(num_rows) * 75 + 10
+#         data["MockTag1 cost"] = np.random.rand(num_rows) * 40 + 5
+#         data["mock_task_X"] = np.random.rand(num_rows) * 65 + 20
+#         data["mock_task_X cost"] = np.random.rand(num_rows) * 35 + 4
+#
+#
+#     df = pd.DataFrame(data)
+#     # Round numeric columns to 2 decimal points
+#     numeric_cols = df.select_dtypes(include=["float", "int"]).columns
+#     df[numeric_cols] = df[numeric_cols].round(2)
+#     # Sort by primary metric
+#     if primary_metric in df.columns:
+#         df = df.sort_values(by=primary_metric, ascending=False).reset_index(drop=True)
+#     return df
 def generate_mock_dataframe(split_name: str, tag: str | None):
-    num_rows = 5
-    agents = [f"MockAgent-{split_name}-{i}" for i in range(1, num_rows + 1)]
-    data = {
-        "Agent": agents,
-        "User/organization": [f"Org{i % 2 + 1}" for i in range(num_rows)],
-        "Submission date": [f"2023-10-{10 + i}" for i in range(num_rows)],
-        "Logs": [f"[Logs](http://example.com/logs/{agent})" for agent in agents], # Mock links
-    }
+    """
+    Generate a DataFrame from the agenteval.json file.
+    """
+    json_path = os.path.join(DATA_DIR, AGENTEVAL_MANIFEST_NAME)  # Path to agenteval.json
 
-    primary_metric = tag if tag and tag != "Overall" else "Overall"
+    try:
+        # Load JSON data
+        with open(json_path, 'r') as f:
+            data = json.load(f)
 
-    data[primary_metric] = np.random.rand(num_rows) * 80 + 10 # Scores between 10 and 90
-    data[f"{primary_metric} cost"] = np.random.rand(num_rows) * 50 + 5
-    if np.random.rand() > 0.3: # Sometimes include CIs
-        data[f"{primary_metric} 95% CI"] = np.random.rand(num_rows) * 5
+        # Validate the structure of the JSON data
+        if not isinstance(data, dict):
+            raise ValueError("Invalid JSON structure: Expected a dictionary at the root.")
 
-    if tag and tag != "Overall":
-        # Add some mock task scores under the tag
-        data[f"task_A_under_{tag}"] = np.random.rand(num_rows) * 70 + 15
-        data[f"task_A_under_{tag} cost"] = np.random.rand(num_rows) * 20 + 2
-        data[f"task_B_under_{tag}"] = np.random.rand(num_rows) * 60 + 25
-        data[f"task_B_under_{tag} cost"] = np.random.rand(num_rows) * 30 + 3
-    elif tag is None or tag == "Overall": # Add some general mock task/tag scores
-        data["Literature Understanding"] = np.random.rand(num_rows) * 75 + 10
-        data["MockTag1 cost"] = np.random.rand(num_rows) * 40 + 5
-        data["mock_task_X"] = np.random.rand(num_rows) * 65 + 20
-        data["mock_task_X cost"] = np.random.rand(num_rows) * 35 + 4
+        # Extract relevant fields
+        rows = []
+        # print(f"OOOGA BOOOGA{data.get('results')}")
+        for entry in data.get("results", []):  # Ensure "results" is a key in the JSON
+            # if not isinstance(entry, list):
+            #     raise ValueError("Invalid JSON structure: Expected 'results' to contain a list.")
+            for model_data in entry:
+                if not isinstance(model_data, dict):
+                    raise ValueError("Invalid JSON structure: Expected model data to be a dictionary.")
+                model = model_data.get("model", "Unknown Model")
+                usage = model_data.get("usage", {})
+                rows.append({
+                    "Model": model,
+                    "Input Tokens": usage.get("input_tokens", 0),
+                    "Output Tokens": usage.get("output_tokens", 0),
+                    "Total Tokens": usage.get("total_tokens", 0),
+                    "Cache Read Tokens": usage.get("input_tokens_cache_read", 0),
+                    "Cache Write Tokens": usage.get("input_tokens_cache_write", 0),
+                    "Reasoning Tokens": usage.get("reasoning_tokens", 0),
+                })
 
+        # Create DataFrame
+        df = pd.DataFrame(rows)
 
-    df = pd.DataFrame(data)
-    # Round numeric columns to 2 decimal points
-    numeric_cols = df.select_dtypes(include=["float", "int"]).columns
-    df[numeric_cols] = df[numeric_cols].round(2)
-    # Sort by primary metric
-    if primary_metric in df.columns:
-        df = df.sort_values(by=primary_metric, ascending=False).reset_index(drop=True)
-    return df
+        # Add split and tag columns for context
+        df["splits"] = split_name
+        df["Tags"] = tag if tag else "Overall"
 
-def generate_mock_scatter_plot(df: pd.DataFrame, score_col: str, cost_col: str):
-    fig, ax = plt.subplots(figsize=(20, 7))
+        # Round numeric columns to 2 decimal points
+        numeric_cols = df.select_dtypes(include=["float", "int"]).columns
+        df[numeric_cols] = df[numeric_cols].round(2)
 
-    plot_data = df.copy()
-    plot_data[score_col] = pd.to_numeric(plot_data[score_col], errors='coerce')
-    plot_data[cost_col] = pd.to_numeric(plot_data[cost_col], errors='coerce')
-    frontier_data = plot_data.dropna(subset=[score_col, cost_col])
+        # Sort by a primary metric (e.g., Total Tokens)
+        if "Total Tokens" in df.columns:
+            df = df.sort_values(by="Total Tokens", ascending=False).reset_index(drop=True)
 
-    pareto_points_mock = [] # Initialize here
-    if not frontier_data.empty:
-        frontier_data = frontier_data.sort_values(by=[cost_col, score_col], ascending=[True, False])
+        return df
 
-        max_score_at_cost_mock = -np.inf
-        for index, row in frontier_data.iterrows():
-            if row[score_col] > max_score_at_cost_mock:
-                pareto_points_mock.append(row)
-                max_score_at_cost_mock = row[score_col]
+    except Exception as e:
+        print(f"Error generating DataFrame from JSON: {e}")
+        return pd.DataFrame()  # Return an empty DataFrame on error
 
-        if pareto_points_mock:
-            pareto_df_mock = pd.DataFrame(pareto_points_mock).sort_values(by=cost_col)
-            ax.plot(pareto_df_mock[cost_col], pareto_df_mock[score_col], marker='o', linestyle='-', color='red', alpha=0.7, linewidth=2, markersize=5, label='Pareto Frontier')
-
-    if score_col in df.columns and cost_col in df.columns:
-        scatter = sns.scatterplot(data=df, x=cost_col, y=score_col, hue="Agent", ax=ax, s=80, legend="auto") # legend="auto" will pick up "Agent"
-        ax.set_title(f"Mock: {score_col} vs. {cost_col}")
-        ax.set_xlabel(f"{cost_col} (USD)")
-        ax.set_ylabel(f"{score_col} Score")
-        ax.set_xlim(left=0)
-        ax.set_ylim(bottom=0)
-
-
-        # Legend handling
-        handles, labels = ax.get_legend_handles_labels()
-        # Ensure "Pareto Frontier" is added if plotted (handles cases where scatterplot might overwrite label)
-        if pareto_points_mock and "Pareto Frontier" not in labels:
-            frontier_line = next((line for line in ax.get_lines() if line.get_label() == 'Pareto Frontier'), None)
-            if frontier_line:
-                handles.append(frontier_line)
-                labels.append('Pareto Frontier')
-
-        ax.legend(handles=handles, labels=labels, title="Agent / Frontier", bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0.)
-
-    else:
-        ax.text(0.5, 0.5, f"Mock Scatter Plot\n(Missing data for {score_col} or {cost_col})",
-                ha='center', va='center', fontsize=9)
-
-    plt.tight_layout(rect=[0, 0, 0.85, 1])
-    return fig
-
-
-def get_mock_tag_map(split_name: str):
-    # Simulate the tag_map structure LeaderboardViewer would provide
-    return {
-        "Overall": [], # Overall usually doesn't list tasks under it in this way
-        "Literature Understanding": [f"mock_task_A_under_MockTag1", f"mock_task_B_under_MockTag1"],
-        f"E2E_{split_name}": [f"task_X_under_SpecificTag_{split_name}", f"task_Y_under_SpecificTag_{split_name}"]
-    }
+# def generate_mock_scatter_plot(df: pd.DataFrame, score_col: str, cost_col: str, agent_name_col: str = "Agent"):
+#     if not isinstance(df, pd.DataFrame):
+#         # Return an empty figure or a message if df is not a DataFrame
+#         fig = go.Figure()
+#         fig.update_layout(title_text="Error: Input data is not a valid DataFrame.",
+#                           xaxis_visible=False, yaxis_visible=False,
+#                           annotations=[dict(text="No data to display.", showarrow=False)])
+#         return fig
+#
+#     if score_col not in df.columns or cost_col not in df.columns:
+#         fig = go.Figure()
+#         fig.update_layout(title_text=f"Missing Data for Plot",
+#                           xaxis_title=cost_col, yaxis_title=score_col,
+#                           annotations=[dict(text=f"Data for '{score_col}' or '{cost_col}' is missing.", showarrow=False)])
+#         return fig
+#
+#     plot_data = df.copy()
+#     plot_data[score_col] = pd.to_numeric(plot_data[score_col], errors='coerce')
+#     plot_data[cost_col] = pd.to_numeric(plot_data[cost_col], errors='coerce')
+#
+#     # Ensure agent_name_col exists, otherwise hover might fail or show 'None'
+#     if agent_name_col not in plot_data.columns:
+#         # Create a placeholder if it doesn't exist to avoid errors,
+#         # or handle this more gracefully based on your data structure.
+#         plot_data[agent_name_col] = "Unknown Agent"
+#
+#
+#     # Create the main scatter plot
+#     fig = px.scatter(
+#         plot_data,
+#         x=cost_col,
+#         y=score_col,
+#         color=agent_name_col, # Color by agent
+#         hover_name=agent_name_col, # This will be the bold title in the hover
+#         hover_data={ # Additional data to show on hover
+#             score_col: ':.2f', # Format score to 2 decimal places
+#             cost_col: ':.2f',  # Format cost to 2 decimal places
+#             # Add any other columns you want in the hover tooltip
+#             # 'Original_Agent_ID': True # if you have another ID column
+#         },
+#         title=f"Interactive: {score_col} vs. {cost_col}",
+#         labels={cost_col: f"{cost_col} (USD)", score_col: f"{score_col} Score"}
+#     )
+#
+#     fig.update_traces(marker=dict(size=10), selector=dict(mode='markers'))
+#     fig.update_layout(xaxis_rangemode='tozero', yaxis_rangemode='tozero') # Similar to xlim(left=0), ylim(bottom=0)
+#
+#     # --- Pareto Frontier Calculation and Plotting ---
+#     frontier_data = plot_data.dropna(subset=[score_col, cost_col])
+#     pareto_points_mock = []
+#     if not frontier_data.empty:
+#         frontier_data = frontier_data.sort_values(by=[cost_col, score_col], ascending=[True, False])
+#         max_score_at_cost_mock = -np.inf
+#         for index, row in frontier_data.iterrows():
+#             # Ensure score is numeric and not NaN for comparison
+#             current_score = pd.to_numeric(row[score_col], errors='coerce')
+#             if pd.notna(current_score) and current_score > max_score_at_cost_mock:
+#                 pareto_points_mock.append(row)
+#                 max_score_at_cost_mock = current_score
+#
+#         if pareto_points_mock:
+#             pareto_df_mock = pd.DataFrame(pareto_points_mock).sort_values(by=cost_col)
+#             if not pareto_df_mock.empty:
+#                 fig.add_trace(go.Scatter(
+#                     x=pareto_df_mock[cost_col],
+#                     y=pareto_df_mock[score_col],
+#                     mode='lines+markers',
+#                     name='Pareto Frontier',
+#                     line=dict(color='red', width=2),
+#                     marker=dict(size=5)
+#                 ))
+#
+#     fig.update_layout(
+#         legend_title_text="Agent / Frontier",
+#         legend=dict(
+#             orientation="v",
+#             yanchor="top",
+#             y=1.02,
+#             xanchor="left",
+#             x=1.02
+#         ),
+#         margin=dict(r=200) # Add right margin to make space for legend
+#     )
+#
+#     return fig
+#
+#
+#
+# def get_mock_tag_map(split_name: str):
+#     # Simulate the tag_map structure LeaderboardViewer would provide
+#     return {
+#         "Overall": [], # Overall usually doesn't list tasks under it in this way
+#         "Literature Understanding": [f"mock_task_A_under_MockTag1", f"mock_task_B_under_MockTag1"],
+#         f"E2E_{split_name}": [f"task_X_under_SpecificTag_{split_name}", f"task_Y_under_SpecificTag_{split_name}"]
+#     }
 
 # --- Global State for Viewers (simple caching) ---
 CACHED_VIEWERS = {}
 CACHED_TAG_MAPS = {} # Will now also be populated by mock tag map
 
 def get_leaderboard_viewer_instance(split: str):
-    global CACHED_VIEWERS, CACHED_TAG_MAPS, USE_MOCK_DATA
+    global CACHED_VIEWERS, CACHED_TAG_MAPS
 
     if USE_MOCK_DATA:
         print(f"MOCK MODE: Generating mock data for split: {split}")
@@ -192,6 +282,7 @@ def get_leaderboard_viewer_instance(split: str):
         return "MOCK_VIEWER_PLACEHOLDER", mock_tag_map
 
     # --- Real LeaderboardViewer logic
+    TARGET_JSON_PATH = "data/1.0.0-dev1/agenteval.json"
     if split in CACHED_VIEWERS:
         return CACHED_VIEWERS[split], CACHED_TAG_MAPS.get(split, {"Overall": []})
 
@@ -200,12 +291,21 @@ def get_leaderboard_viewer_instance(split: str):
 
     print(f"Initializing LeaderboardViewer for split: {split}")
     try:
-        viewer = LeaderboardViewer(
-            repo_id=RESULTS_DATASET,
-            config=CONFIG_NAME,
-            split=split,
-            is_internal=IS_INTERNAL
-        )
+        if TARGET_JSON_PATH:
+            print(f"Using direct JSON for split '{split}': {TARGET_JSON_PATH}")
+            viewer = LeaderboardViewer2(
+                json_file_path=TARGET_JSON_PATH,
+                split=split,   # Still needed for context within the JSON's suite_config
+                is_internal=IS_INTERNAL
+            )
+        else:
+            print(f"Using Hugging Face dataset for split '{split}': {RESULTS_DATASET}/{CONFIG_NAME}")
+            viewer = LeaderboardViewer(
+                repo_id=RESULTS_DATASET,
+                config=CONFIG_NAME,
+                split=split,
+                is_internal=IS_INTERNAL
+            )
         current_tag_map = {"Overall": []} # Start with Overall
         current_tag_map.update({k: v for k, v in viewer.tag_map.items()}) # Add tags from viewer
         CACHED_TAG_MAPS[split] = current_tag_map
@@ -230,22 +330,10 @@ def get_leaderboard_viewer_instance(split: str):
 
 def load_display_data_for_split(split: str, selected_tag: str | None):
     global USE_MOCK_DATA
+    json_path = os.path.join(DATA_DIR, AGENTEVAL_MANIFEST_NAME)
     viewer_or_data, tag_map_for_split = get_leaderboard_viewer_instance(split)
 
-    # Determine the primary metric name based on selected_tag
-    # This name should match column names in the DataFrame (either from real viewer or mock)
-    # LeaderboardViewer's `view` method uses `primary = tag` or `primary = "Overall"`
-    # and then constructs metric names like `f"{primary} cost"`.
-    # For mock data, we made `primary_metric_name` and `f"{primary_metric_name} cost"`.
     primary_metric_name_for_plot = selected_tag if selected_tag and selected_tag != "Overall" else "Overall"
-    # The actual column name for score might just be `primary_metric_name_for_plot`
-    # The actual column name for cost might be `f"{primary_metric_name_for_plot} cost"`
-    # The LeaderboardViewer uses `_pretty_column_name` which might transform "overall/score" to "Overall"
-    # and "overall/cost" to "Overall cost". We need to be mindful of these final column names.
-
-    # Let's assume the DataFrame (real or mock) will have columns:
-    # - Score: `primary_metric_name_for_plot` (e.g., "Overall", "Reasoning")
-    # - Cost: `f"{primary_metric_name_for_plot} cost"` (e.g., "Overall cost", "Reasoning cost")
 
     actual_tag_for_view = selected_tag if selected_tag and selected_tag != "Overall" else None
 
@@ -261,12 +349,11 @@ def load_display_data_for_split(split: str, selected_tag: str | None):
         mock_cost_col = f"{primary_metric_name_for_plot} cost"
         scatter_plot = generate_mock_scatter_plot(df, score_col=mock_score_col, cost_col=mock_cost_col)
 
-    elif isinstance(viewer_or_data, LeaderboardViewer): # Real viewer
+    elif isinstance(viewer_or_data, LeaderboardViewer2): # Real viewer
         viewer = viewer_or_data
         # LeaderboardViewer's view method always generates plots if with_plots=True
         # It returns a dict `plots_dict`
-        df, plots_dict = viewer.view(tag=actual_tag_for_view, with_plots=True) # Always True
-
+        df, plots_dict = viewer.view(tag=actual_tag_for_view, with_plots=True, use_plotly=True)
         # Extract the correct scatter plot based on primary_metric_name_for_plot
         # The keys in plots_dict are like "scatter_{primary_metric_name_for_plot}"
         scatter_plot_key = f"scatter_{primary_metric_name_for_plot}"
@@ -277,7 +364,7 @@ def load_display_data_for_split(split: str, selected_tag: str | None):
                     scatter_plot = value
                     print(f"Warning: Scatter plot for '{primary_metric_name_for_plot}' not found, using fallback: {key}")
                     break
-        # No bar plot to extract: plots_dict.get("bar") is removed
+
 
     elif isinstance(viewer_or_data, tuple): # Pre-processed dummy data from error in real viewer init
         df, _ = viewer_or_data # plots_dict might be empty or contain dummy bar
