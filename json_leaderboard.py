@@ -176,16 +176,11 @@ class LeaderboardViewer2:
                 score_col = f"{metric_name} score"
                 cost_col = f"{metric_name} cost"
                 if score_col in df_view.columns and cost_col in df_view.columns:
-                    if pd.api.types.is_numeric_dtype(df_view[score_col]) and pd.api.types.is_numeric_dtype(df_view[cost_col]):
-                        if use_plotly:
-                            fig = _plot_scatter_plotly(df_view, x=cost_col, y=score_col, agent_col="Agent")
-                        else:
-                            fig = _plot_scatter(df_view, x=cost_col, y=score_col, agent_col="Agent")
-                        plots[f"scatter_{metric_name}"] = fig
+                    if use_plotly:
+                        fig = _plot_scatter_plotly(df_view, x=cost_col, y=score_col, agent_col="Agent")
                     else:
-                        logger.warning(
-                            f"Skipping plot for '{metric_name}': columns '{cost_col}' or '{score_col}' are not numeric."
-                        )
+                        fig = _plot_scatter(df_view, x=cost_col, y=score_col, agent_col="Agent")
+                    plots[f"scatter_{metric_name}"] = fig
                 else:
                     logger.warning(
                         f"Skipping plot for '{metric_name}': score column '{score_col}' or cost column '{cost_col}' not found."
@@ -361,22 +356,138 @@ def _plot_scatter(data: pd.DataFrame, x: str, y: str, agent_col: str) -> plt.Fig
     return fig
 
 
-def _plot_scatter_plotly(data: pd.DataFrame, x: str, y: str, agent_col: str = "Agent"):
+# def _plot_scatter_plotly(data: pd.DataFrame, x: str, y: str, agent_col: str = "Agent"):
+#     fig = go.Figure()
+#     for agent, group in data.groupby(agent_col):
+#         fig.add_trace(go.Scatter(
+#             x=group[x],
+#             y=group[y],
+#             mode='markers',
+#             name=str(agent),
+#             hovertemplate=f"{x}: %{{x:.2f}}<br>{y}: %{{y:.2f}}<extra>{agent}</extra>",
+#             marker=dict(size=10)
+#         ))
+#
+#     fig.update_layout(
+#         title=f"{y} vs. {x}",
+#         xaxis=dict(title=f"{x} (USD)", rangemode="tozero"),
+#         yaxis=dict(title=f"{y}", rangemode="tozero"),
+#         legend_title_text=agent_col
+#     )
+#
+#     return fig
+
+DEFAULT_Y_COLUMN = "Overall Score"
+DUMMY_X_VALUE_FOR_MISSING_COSTS = 0 # Value to use if x-axis data (costs) is missing
+
+def _plot_scatter_plotly(
+        data: pd.DataFrame,
+        x: Optional[str],
+        y: str,
+        agent_col: str = "Agent"
+) -> go.Figure:
+
+    x_col_to_use = x
+    y_col_to_use = y
+
+    # 1. Check if y-column exists
+    if y_col_to_use not in data.columns:
+        logger.error(
+            f"y-axis column '{y_col_to_use}' MUST exist in DataFrame. "
+            f"Cannot generate plot. Available columns: {data.columns.tolist()}"
+        )
+        return go.Figure()
+
+    # 2. Check if agent_col exists
+    if agent_col not in data.columns:
+        logger.warning(
+            f"Agent column '{agent_col}' not found in DataFrame. "
+            f"Available columns: {data.columns.tolist()}. Returning empty figure."
+        )
+        return go.Figure()
+
+    # 3. Prepare data (make a copy, handle numeric conversion for y)
+    data_plot = data.copy()
+    try:
+        data_plot[y_col_to_use] = pd.to_numeric(data_plot[y_col_to_use], errors='coerce')
+    except Exception as e:
+        logger.error(f"Error converting y-column '{y_col_to_use}' to numeric: {e}. Returning empty figure.")
+        return go.Figure()
+
+    # 4. Handle x-column (costs)
+    x_axis_label = x_col_to_use if x_col_to_use else "Cost (Data N/A)" # Label for the x-axis
+    x_data_is_valid = False
+
+    if x_col_to_use and x_col_to_use in data_plot.columns:
+        try:
+            data_plot[x_col_to_use] = pd.to_numeric(data_plot[x_col_to_use], errors='coerce')
+            # Check if there's any non-NaN data after coercion for x
+            if data_plot[x_col_to_use].notna().any():
+                x_data_is_valid = True
+            else:
+                logger.info(f"x-axis column '{x_col_to_use}' exists but contains all NaN/None values after numeric conversion.")
+        except Exception as e:
+            logger.warning(f"Error converting x-column '{x_col_to_use}' to numeric: {e}. Will use dummy x-values.")
+            # x_data_is_valid remains False
+    else:
+        if x_col_to_use: # Name was provided but column doesn't exist
+            logger.warning(f"x-axis column '{x_col_to_use}' not found in DataFrame.")
+        else: # x (column name) was None
+            logger.info("x-axis column name was not provided (is None).")
+
+    if not x_data_is_valid:
+        logger.info(f"Using dummy x-value '{DUMMY_X_VALUE_FOR_MISSING_COSTS}' for all data points as x-data is missing or invalid.")
+        # Create a new column with the dummy x-value for all rows
+        # Use a unique name for this dummy column to avoid potential clashes
+        dummy_x_col_name = "__dummy_x_for_plotting__"
+        data_plot[dummy_x_col_name] = DUMMY_X_VALUE_FOR_MISSING_COSTS
+        x_col_to_use = dummy_x_col_name # Update x_col_to_use to point to our dummy data
+        x_axis_label = x if x else "Cost (Data N/A)" # Use original x name for label if provided
+        # or a generic label if x was None.
+        # Could also be f"Cost (Fixed at {DUMMY_X_VALUE_FOR_MISSING_COSTS})"
+
+
+    # 5. Drop rows where y is NaN (x is now guaranteed to have values, either real or dummy)
+    data_plot.dropna(subset=[y_col_to_use], inplace=True)
+
     fig = go.Figure()
-    for agent, group in data.groupby(agent_col):
+
+    if data_plot.empty:
+        logger.warning(f"No valid data to plot for y='{y_col_to_use}' (and x='{x_col_to_use}') after cleaning NaNs from y.")
+        # Still return a figure object, but it will be empty. Update layout for clarity.
+        fig.update_layout(
+            title=f"{y_col_to_use} vs. {x_axis_label} (No Data)",
+            xaxis=dict(title=x_axis_label, range=[DUMMY_X_VALUE_FOR_MISSING_COSTS - 1, DUMMY_X_VALUE_FOR_MISSING_COSTS + 1] if not x_data_is_valid else None),
+            yaxis=dict(title=y_col_to_use)
+        )
+        return fig
+
+
+    for agent, group in data_plot.groupby(agent_col):
+        hover_x_display = "%{x:.2f}" if x_data_is_valid else str(DUMMY_X_VALUE_FOR_MISSING_COSTS) + " (fixed)"
         fig.add_trace(go.Scatter(
-            x=group[x],
-            y=group[y],
+            x=group[x_col_to_use],
+            y=group[y_col_to_use],
             mode='markers',
             name=str(agent),
-            hovertemplate=f"{x}: %{{x:.2f}}<br>{y}: %{{y:.2f}}<extra>{agent}</extra>",
+            hovertemplate=f"{x_axis_label}: {hover_x_display}<br>{y_col_to_use}: %{{y:.2f}}<extra>{str(agent)}</extra>",
             marker=dict(size=10)
         ))
 
+    # Configure layout
+    xaxis_config = dict(title=x_axis_label)
+    if not x_data_is_valid: # If using dummy x, set a tighter, fixed range for x-axis
+        xaxis_config['range'] = [DUMMY_X_VALUE_FOR_MISSING_COSTS - 1, DUMMY_X_VALUE_FOR_MISSING_COSTS + 1]
+        xaxis_config['tickvals'] = [DUMMY_X_VALUE_FOR_MISSING_COSTS] # Show only one tick at the dummy value
+        xaxis_config['ticktext'] = [str(DUMMY_X_VALUE_FOR_MISSING_COSTS)]
+    else: # Real x-data
+        xaxis_config['rangemode'] = "tozero"
+
+
     fig.update_layout(
-        title=f"{y} vs. {x}",
-        xaxis=dict(title=f"{x} (USD)", rangemode="tozero"),
-        yaxis=dict(title=f"{y}", rangemode="tozero"),
+        title=f"{y_col_to_use} vs. {x_axis_label}",
+        xaxis=xaxis_config,
+        yaxis=dict(title=y_col_to_use, rangemode="tozero"),
         legend_title_text=agent_col
     )
 
