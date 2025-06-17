@@ -22,10 +22,39 @@ from agenteval.models import EvalResult
 
 logger = logging.getLogger(__name__)
 
+import logging
+from typing import Optional, Any, Dict, List # Added List
+from zoneinfo import ZoneInfo # Assuming this might be used by SuiteConfig/EvalResult or _get_dataframe
+import json
+import os
+
+# Assuming these are correctly imported from your project
+from agenteval.config import SuiteConfig
+from agenteval.models import EvalResult
+# from agenteval import compute_summary_statistics # Used by _get_dataframe
+
+logger = logging.getLogger(__name__)
+
 class LeaderboardViewer2:
     """
     Load and visualize leaderboard from a single, local JSON result file.
     """
+    _INFORMAL_TO_FORMAL_NAME_MAP = {
+        "lit": "Literature Understanding",
+        "data": "Data Analysis",
+        "code": "Code Execution",
+        "discovery": "Discovery",
+        "arxivdigestables_validation": "Arxivdigestables Validation",
+        "sqa_dev": "Sqa Dev",
+        "litqa2_validation": "Litqa2 Validation",
+        "paper_finder_validation": "Paper Finder Validation",
+        "discoverybench_validation": "Discoverybench Validation",
+        "core_bench_validation": "Core Bench Validation",
+        "ds1000_validation": "DS1000 Validation",
+        "e2e_discovery_validation": "E2E Discovery Validation",
+        "super_validation": "Super Validation",
+        # Add any other raw names that can appear in task.name or task.tags
+    }
 
     def __init__(
             self,
@@ -36,8 +65,8 @@ class LeaderboardViewer2:
         self._json_file_path = json_file_path
         self._split = split
         self._internal = is_internal
-        self._loaded_json_data: Optional[Dict[str, Any]] = None # To store the loaded JSON content
-        self._cfg: Optional[SuiteConfig] = None # Will hold the SuiteConfig
+        self._loaded_json_data: Optional[Dict[str, Any]] = None
+        self._cfg: Optional[SuiteConfig] = None
 
         logger.info(f"Initializing LeaderboardViewer with local JSON file: {self._json_file_path}")
 
@@ -49,28 +78,55 @@ class LeaderboardViewer2:
                 self._loaded_json_data = json.load(f)
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse JSON from local file {self._json_file_path}: {e}")
-        except Exception as e: # Catch other file reading errors
+        except Exception as e:
             raise ValueError(f"Error reading local file {self._json_file_path}: {e}")
 
         if not self._loaded_json_data:
-            raise ValueError(f"No data loaded from JSON file {self._json_file_path} (file might be empty or loading failed).")
+            raise ValueError(f"No data loaded from JSON file {self._json_file_path}.")
 
-        # Validate the loaded JSON data using EvalResult from agenteval.models
         try:
             eval_result = EvalResult.model_validate(self._loaded_json_data)
-        except Exception as e: # Catch Pydantic validation error
+        except Exception as e:
             raise ValueError(f"Failed to validate JSON data from file '{self._json_file_path}' against EvalResult model: {e}")
 
         self._cfg = eval_result.suite_config
         if not isinstance(self._cfg, SuiteConfig):
             raise TypeError(f"self._cfg is not a SuiteConfig object after loading from '{self._json_file_path}', got {type(self._cfg)}.")
 
-        # --- Populate Tag Map ---
+        # --- Populate Tag Map (Corrected Placement and Helper Function Access) ---
         self.tag_map: dict[str, list[str]] = {}
-        for task in self._cfg.get_tasks(self._split): # self._split is used here
-            for t in task.tags or []:
-                self.tag_map.setdefault(t, []).append(task.name)
 
+        # Access tasks from the loaded config
+        tasks_for_split: List[Any] = self._cfg.get_tasks(self._split) # Assuming get_tasks returns a list of task-like objects
+
+        for task in tasks_for_split:
+            # Ensure task object has 'name' and 'tags' attributes
+            if not hasattr(task, 'name') or not hasattr(task, 'tags'):
+                logger.warning(f"Task object {task} is missing 'name' or 'tags' attribute. Skipping.")
+                continue
+
+            formal_task_display_name = self._get_formal_display_name_static(task.name) # Use the helper method
+
+            if not (task.tags or []):
+                continue
+
+            for raw_tag_name in task.tags:
+                formal_tag_display_name_key = self._get_formal_display_name_static(raw_tag_name)
+
+                self.tag_map.setdefault(formal_tag_display_name_key, []).append(formal_task_display_name)
+
+        for key in self.tag_map:
+            self.tag_map[key] = sorted(list(set(self.tag_map[key])))
+
+    # --- Helper function defined as a static method or regular method ---
+    # Option 1: Static method (doesn't need 'self', uses the class attribute)
+    @staticmethod
+    def _get_formal_display_name_static(raw_name: str) -> str:
+        """
+        Helper function to get the formal display name for a raw tag or task name.
+        Uses the class's map and provides a fallback.
+        """
+        return LeaderboardViewer2._INFORMAL_TO_FORMAL_NAME_MAP.get(raw_name, raw_name.replace("_", " ").title())
 
     def _load(self) -> tuple[pd.DataFrame, dict[str, list[str]]]:
         """
@@ -79,7 +135,7 @@ class LeaderboardViewer2:
         """
         if self._loaded_json_data is None or self._cfg is None:
             # This should not happen if __init__ completed successfully
-            raise RuntimeError("LeaderboardViewer not properly initialized. JSON data or SuiteConfig is missing.")
+            raise RuntimeError("LeaderboardViewer2 not properly initialized. JSON data or SuiteConfig is missing.")
 
         # The _get_dataframe function expects a list of records.
         # Since we have a single JSON file representing one result, wrap it in a list.
@@ -120,51 +176,35 @@ class LeaderboardViewer2:
             primary = tag
             group = tag_map.get(tag, [])
 
-        # if primary not in data.columns:
-        #     logger.warning(f"Primary metric '{primary}' not found. Trying 'Score'.")
-        #     if "score" in data.columns:
-        #         primary = "score"
-        #     else:
-        #         potential_metrics = [
-        #             c for c in data.columns if c not in existing_cols and
-        #                                        "cost" not in c.lower() and "ci" not in c.lower() and "logs" not in c.lower()
-        #         ]
-        #         if potential_metrics:
-        #             primary = potential_metrics[0]
-        #             logger.warning(f"Defaulting primary display metric to '{primary}'.")
-        #         else:
-        #             logger.error(f"Cannot determine primary display metric. '{primary}' and 'Score' not found. Columns: {data.columns.tolist()}")
-        #             return data.loc[:, existing_cols].reset_index(drop=True) if existing_cols else pd.DataFrame(), {}
-
-        if f"{primary} score" in data.columns:
-            data = data.sort_values(f"{primary} score", ascending=False)
+        if f"{primary} Score" in data.columns:
+            data = data.sort_values(f"{primary} Score", ascending=False)
         else:
             logger.warning(f"Primary metric '{primary}' for sorting not found. Data will not be sorted by it.")
 
         metrics_to_display = []
-        if f"{primary} cost" in data.columns:
-            metrics_to_display.append(f"{primary} cost")
-        if f"{primary} score" in data.columns:
-            metrics_to_display.append(f"{primary} score")
+        if f"{primary} Cost" in data.columns:
+            metrics_to_display.append(f"{primary} Cost")
+        if f"{primary} Score" in data.columns:
+            metrics_to_display.append(f"{primary} Score")
 
         for g_item in group:
             if g_item in data.columns:
                 metrics_to_display.append(g_item)
-            if f"{g_item} cost" in data.columns:
-                metrics_to_display.append(f"{g_item} cost")
-            if f"{g_item} score" in data.columns:
-                metrics_to_display.append(f"{g_item} score")
+            if f"{g_item} Cost" in data.columns:
+                metrics_to_display.append(f"{g_item} Cost")
+            if f"{g_item} Score" in data.columns:
+                metrics_to_display.append(f"{g_item} Score")
 
-        ci_cols = []
-        for m_name in metrics_to_display:
-            if not m_name.endswith(" cost"):
-                if f"{m_name} 95% CI" in data.columns:
-                    ci_cols.append(f"{m_name} 95% CI")
-            else:
-                if f"{m_name} 95% CI" in data.columns:
-                    ci_cols.append(f"{m_name} 95% CI")
+        # ci_cols = []
+        # for m_name in metrics_to_display:
+        #     if not m_name.endswith(" Cost"):
+        #         if f"{m_name} 95% CI" in data.columns:
+        #             ci_cols.append(f"{m_name} 95% CI")
+        #     else:
+        #         if f"{m_name} 95% CI" in data.columns:
+        #             ci_cols.append(f"{m_name} 95% CI")
 
-        final_cols_to_display = existing_cols + [m for m in metrics_to_display if m in data.columns] + ci_cols
+        final_cols_to_display = existing_cols + [m for m in metrics_to_display if m in data.columns]
         final_cols_to_display = sorted(list(set(final_cols_to_display)), key=final_cols_to_display.index)
 
         df_view = data.loc[:, final_cols_to_display].reset_index(drop=True)
@@ -173,8 +213,8 @@ class LeaderboardViewer2:
         if with_plots:
             plot_metric_names = [primary] + [g_item for g_item in group if g_item in data.columns]
             for metric_name in plot_metric_names:
-                score_col = f"{metric_name} score"
-                cost_col = f"{metric_name} cost"
+                score_col = f"{metric_name} Score"
+                cost_col = f"{metric_name} Cost"
                 if score_col in df_view.columns and cost_col in df_view.columns:
                     if use_plotly:
                         fig = _plot_scatter_plotly(df_view, x=cost_col, y=score_col, agent_col="Agent")
@@ -298,23 +338,48 @@ def _get_dataframe(
     return overview
 
 def _pretty_column_name(col: str) -> str:
-    # This function remains the same
-    mapping = {
-        "submit_time": "Date", "agent_name": "Agent", "username": "Submitter",
-        "logs_url": "Logs", "overall/score": "Overall score", "overall/cost": "Overall cost",
+    """Map raw column name to display name."""
+    # --- Step 1: Fixed, direct mappings ---
+    fixed_mappings = {
+        "submit_time": "Date",
+        "agent_name": "Agent",
+        "username": "Submitter",
+        "logs_url": "Logs",
+        "overall/score": "Overall Score",
+        "overall/cost": "Overall Cost",
     }
-    if col in mapping: return mapping[col]
+    if col in fixed_mappings:
+        return fixed_mappings[col]
+
+    # --- Step 2: Define your mapping for informal names to descriptive names ---
+    informal_map = LeaderboardViewer2._INFORMAL_TO_FORMAL_NAME_MAP
+
+    # --- Step 3: Dynamic mappings for task or tag columns using the informal_to_formal_name_map ---
     parts = col.split("/")
     if len(parts) == 3:
-        _, name, metric_suffix = parts
-        if metric_suffix == "score": return f"{name} score"
-        if metric_suffix == "cost": return f"{name} cost"
-        if metric_suffix == "score_ci": return f"{name} 95% CI"
-        if metric_suffix == "cost_ci": return f"{name} cost 95% CI"
-    return col.replace("_", " ").title() if "/" not in col else parts[-1]
+        item_type, informal_name, metric_suffix = parts #
+
+        formal_name = informal_map.get(informal_name)
+        if formal_name is None:
+            formal_name = informal_name.replace("_", " ").title()
+            print(f"[DEBUG _pretty_column_name] Informal name '{informal_name}' not in map, using fallback: '{formal_name}'")
+
+        if metric_suffix == "score":
+            return f"{formal_name} Score"
+        if metric_suffix == "cost":
+            return f"{formal_name} Cost"
+        if metric_suffix == "score_ci":
+            return f"{formal_name} Score 95% CI"
+        if metric_suffix == "cost_ci":
+            return f"{formal_name} Cost 95% CI"
+
+    # --- Step 4: Fallback for columns that don't match the "type/name/metric" pattern ---
+    if "/" not in col:
+        return col.replace("_", " ").title()
+    else:
+        return parts[-1].replace("_", " ").title()
 
 def _plot_scatter(data: pd.DataFrame, x: str, y: str, agent_col: str) -> plt.Figure:
-    # This function remains the same
     fig, ax = plt.subplots(figsize=(20,7))
     plot_data = data.copy()
     plot_data[y] = pd.to_numeric(plot_data[y], errors='coerce')
@@ -355,27 +420,6 @@ def _plot_scatter(data: pd.DataFrame, x: str, y: str, agent_col: str) -> plt.Fig
     plt.tight_layout(rect=[0, 0, 0.85, 1])
     return fig
 
-
-# def _plot_scatter_plotly(data: pd.DataFrame, x: str, y: str, agent_col: str = "Agent"):
-#     fig = go.Figure()
-#     for agent, group in data.groupby(agent_col):
-#         fig.add_trace(go.Scatter(
-#             x=group[x],
-#             y=group[y],
-#             mode='markers',
-#             name=str(agent),
-#             hovertemplate=f"{x}: %{{x:.2f}}<br>{y}: %{{y:.2f}}<extra>{agent}</extra>",
-#             marker=dict(size=10)
-#         ))
-#
-#     fig.update_layout(
-#         title=f"{y} vs. {x}",
-#         xaxis=dict(title=f"{x} (USD)", rangemode="tozero"),
-#         yaxis=dict(title=f"{y}", rangemode="tozero"),
-#         legend_title_text=agent_col
-#     )
-#
-#     return fig
 
 DEFAULT_Y_COLUMN = "Overall Score"
 DUMMY_X_VALUE_FOR_MISSING_COSTS = 0 # Value to use if x-axis data (costs) is missing

@@ -351,7 +351,6 @@ def load_display_data_for_split(split: str, selected_tag: str | None):
 
     elif isinstance(viewer_or_data, LeaderboardViewer2): # Real viewer
         viewer = viewer_or_data
-        # LeaderboardViewer's view method always generates plots if with_plots=True
         # It returns a dict `plots_dict`
         df, plots_dict = viewer.view(tag=actual_tag_for_view, with_plots=True, use_plotly=True)
         # Extract the correct scatter plot based on primary_metric_name_for_plot
