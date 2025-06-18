@@ -33,8 +33,11 @@ def format_log(msg):
     return f"<p style='color: green; font-size: 20px; text-align: center;'>{msg}</p>"
 
 
-def hyperlink(link, text):
-    return f'<a target="_blank" href="{link}" style="color: var(--link-text-color); text-decoration: underline;text-decoration-style: dotted;">{text}</a>'
+def hyperlink(link_url: str, text: str = "🔗") -> str:
+    if not link_url or not isinstance(link_url, str):
+        return str(text) # Or simply "" if link_url is bad
+    # Using a simpler style here for broad compatibility, your original style is fine too.
+    return f'<a target="_blank" href="{link_url}">{text}</a>'
 
 
 def hf_uri_to_web_url(uri: str) -> str:

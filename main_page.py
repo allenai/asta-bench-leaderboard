@@ -376,13 +376,17 @@ def load_display_data_for_split(split: str, selected_tag: str | None):
         # scatter_plot remains None
 
     # --- Post-processing (common for real and mock data, if needed) ---
-    if "Logs" in df.columns and not (USE_MOCK_DATA and "Logs" in df.columns and df["Logs"].str.startswith("[").any()): # Avoid re-processing mock logs
-        try:
-            df["Logs"] = df["Logs"].apply(
-                lambda x: hyperlink(hf_uri_to_web_url(x), "🔗") if isinstance(x, str) and x.startswith("datasets/") else (hyperlink(x, "🔗") if isinstance(x, str) and x.startswith("http") else x)
-            )
-        except Exception as e:
-            print(f"Could not convert Logs to Markdown for split {split}: {e}")
+    if "Logs" in df.columns:
+        def format_log_entry_to_html(raw_uri):
+            if pd.isna(raw_uri) or raw_uri == "": # Handle None, NaN, or empty strings
+                return "" # No link if URI is missing
+
+            web_url = hf_uri_to_web_url(str(raw_uri)) # Ensure it's a string
+
+            if web_url: # Only create hyperlink if we have a valid web_url
+                return hyperlink(web_url, "🔗")
+            return "" # Return empty if web_url couldn't be formed
+        df["Logs"] = df["Logs"].apply(format_log_entry_to_html)
     df = df.fillna("")
 
     tag_choices_for_dropdown = ["Overall"] + sorted([k for k in tag_map_for_split.keys() if k != "Overall"])
@@ -692,13 +696,18 @@ with gr.Blocks() as demo:
         val_split_name = gr.State("validation")
         with gr.Row():
             val_refresh_button = gr.Button("Refresh Validation Tab")
-        val_df_output = gr.DataFrame(interactive=False, wrap=True, label="Validation Leaderboard")
-        val_scatter_plot_output = gr.Plot(label="Score vs. Cost (Validation)")
-
         initial_val_df, initial_val_scatter, _ = load_display_data_for_split(
             "validation", global_tag_dropdown.value
         )
-        val_df_output.value = initial_val_df
+        df_headers = initial_val_df.columns.tolist()
+        df_datatypes = ["markdown" if col_name == "Logs" else ("number" if "Score" in col_name or "Cost" in col_name else "str") for col_name in df_headers]
+        val_df_output = gr.DataFrame(  headers=df_headers,
+                                       value=initial_val_df,
+                                       datatype=df_datatypes, # Crucial for rendering HTML as links
+                                       interactive=False,
+                                       wrap=True,
+                                       label="Validation Leaderboard")
+        val_scatter_plot_output = gr.Plot(label="Score vs. Cost (Validation)")
         val_scatter_plot_output.value = initial_val_scatter
 
         val_refresh_button.click(
@@ -711,15 +720,18 @@ with gr.Blocks() as demo:
         test_split_name = gr.State("test")
         with gr.Row():
             test_refresh_button = gr.Button("Refresh Test Tab")
-        test_df_output = gr.DataFrame(interactive=False, wrap=True, label="Test Leaderboard")
-
-        test_scatter_plot_output = gr.Plot(label="Score vs. Cost (Test)")
-
-
         initial_test_df, initial_test_scatter, _ = load_display_data_for_split(
             "test", global_tag_dropdown.value
         )
-        test_df_output.value = initial_test_df
+        df_headers = initial_val_df.columns.tolist()
+        df_datatypes = ["markdown" if col_name == "Logs" else ("number" if "Score" in col_name or "Cost" in col_name else "str") for col_name in df_headers]
+        test_df_output = gr.DataFrame(  headers=df_headers,
+                                        value=initial_val_df,
+                                        datatype=df_datatypes, # Crucial for rendering HTML as links
+                                        interactive=False,
+                                        wrap=True,
+                                        label="Test Leaderboard")
+        test_scatter_plot_output = gr.Plot(label="Score vs. Cost (Test)")
         test_scatter_plot_output.value = initial_test_scatter
 
         test_refresh_button.click(
