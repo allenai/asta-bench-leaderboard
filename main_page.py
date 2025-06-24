@@ -2,6 +2,7 @@ import matplotlib
 matplotlib.use('Agg')
 
 import pandas as pd
+import plotly.graph_objects as go
 
 import os
 import shutil
@@ -28,7 +29,7 @@ from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
 import leaderboard_transformer
-from leaderboard_transformer import DataTransformer, create_pretty_tag_map, INFORMAL_TO_FORMAL_NAME_MAP
+from leaderboard_transformer import DataTransformer, create_pretty_tag_map, INFORMAL_TO_FORMAL_NAME_MAP, transform_raw_dataframe
 
 from content import (
     CITATION_BUTTON_LABEL,
@@ -72,12 +73,29 @@ os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 CACHED_VIEWERS = {}
 CACHED_TAG_MAPS = {}
 
+# --- New Helper Class to Solve the Type Mismatch Bug ---
+class DummyViewer:
+    """A mock viewer to be cached on error. It has a ._load() method
+       to ensure it behaves like the real LeaderboardViewer."""
+    def __init__(self, error_df):
+        self._error_df = error_df
+
+    def _load(self):
+        # The _load method returns the error DataFrame and an empty tag map
+        return self._error_df, {}
+
 def get_leaderboard_viewer_instance(split: str):
+    """
+    Fetches the LeaderboardViewer for a split, using a cache to avoid
+    re-downloading data. On error, returns a stable DummyViewer object.
+    """
     global CACHED_VIEWERS, CACHED_TAG_MAPS
-    # TARGET_JSON_PATH = "data/1.0.0-dev1/agenteval.json"
-    TARGET_JSON_PATH = None
+
     if split in CACHED_VIEWERS:
+        # Cache hit: return the cached viewer and tag map
         return CACHED_VIEWERS[split], CACHED_TAG_MAPS.get(split, {"Overall": []})
+
+    # --- Cache miss: try to load data from the source ---
     try:
         print(f"Using Hugging Face dataset for split '{split}': {RESULTS_DATASET}/{CONFIG_NAME}")
         viewer = LeaderboardViewer(
@@ -86,60 +104,65 @@ def get_leaderboard_viewer_instance(split: str):
             split=split,
             is_internal=IS_INTERNAL
         )
-        current_tag_map = {"Overall": []} # Start with Overall
-        current_tag_map.update({k: v for k, v in viewer.tag_map.items()}) # Add tags from viewer
-        CACHED_TAG_MAPS[split] = current_tag_map
 
+        # Simplify tag map creation
+        pretty_tag_map = create_pretty_tag_map(viewer.tag_map, INFORMAL_TO_FORMAL_NAME_MAP)
+
+        # Cache the results for next time
         CACHED_VIEWERS[split] = viewer
-        return viewer, CACHED_TAG_MAPS[split]
-    except ValueError as e:
-        print(format_warning(f"Could not initialize LeaderboardViewer for split '{split}': {e}"))
-        dummy_df = pd.DataFrame({"Message": [f"No data or error for split '{split}'."]})
-        dummy_plots = {}
-        CACHED_VIEWERS[split] = (dummy_df, dummy_plots)
-        CACHED_TAG_MAPS[split] = {"Overall": []} # Default tag map on error
-        return (dummy_df, dummy_plots), CACHED_TAG_MAPS[split]
+        CACHED_TAG_MAPS[split] = pretty_tag_map # Cache the pretty map directly
+
+        return viewer, pretty_tag_map
+
     except Exception as e:
-        print(format_error(f"Unexpected error initializing LeaderboardViewer for split '{split}': {e}"))
-        dummy_df = pd.DataFrame({"Message": [f"Error loading data for split '{split}'."]})
-        dummy_plots = {}
-        CACHED_VIEWERS[split] = (dummy_df, dummy_plots)
-        CACHED_TAG_MAPS[split] = {"Overall": []} # Default tag map on error
-        return (dummy_df, dummy_plots), CACHED_TAG_MAPS[split]
+        # On ANY error, create a consistent error message and cache a DummyViewer
+        error_message = f"Error loading data for split '{split}': {e}"
+        print(format_error(error_message))
+
+        dummy_df = pd.DataFrame({"Message": [error_message]})
+        dummy_viewer = DummyViewer(dummy_df)
+        dummy_tag_map = {"Overall": []}
+
+        # Cache the dummy objects so we don't try to fetch again on this run
+        CACHED_VIEWERS[split] = dummy_viewer
+        CACHED_TAG_MAPS[split] = dummy_tag_map
+
+        return dummy_viewer, dummy_tag_map
 
 
 def load_display_data_for_split(split: str, selected_tag: str | None):
-    viewer_or_data, raw_tag_map_for_split = get_leaderboard_viewer_instance(split)
+    """
+    Loads, transforms, and prepares all data and plots for a given split and tag.
+    This is the single source of truth for updating the UI.
+    """
+    # Default to "Overall" if the tag is None or empty
+    if not selected_tag:
+        selected_tag = "Overall"
 
-    primary_metric_name_for_plot = selected_tag if selected_tag and selected_tag != "Overall" else "Overall"
+    viewer_or_data, raw_tag_map = get_leaderboard_viewer_instance(split)
 
-    actual_tag_for_view = selected_tag if selected_tag and selected_tag != "Overall" else None
-
-    df = pd.DataFrame()
-    scatter_plot = None
+    # Initialize with empty/default values
+    df = pd.DataFrame({"Message": [f"No data available for split '{split}'."]})
+    scatter_plot = go.Figure()
+    tag_choices = [("Overall", "Overall")]
 
     if isinstance(viewer_or_data, LeaderboardViewer):
-        viewer = viewer_or_data
-        # It returns a dict `plots_dict`
-        raw_df, _ = viewer._load()  # 1. Get raw data from the old viewer's internal loader.
-        pretty_df = leaderboard_transformer.transform_raw_dataframe(raw_df)  # 2. Apply our new, centralized transformation.
-        pretty_tag_map = create_pretty_tag_map(raw_tag_map_for_split, INFORMAL_TO_FORMAL_NAME_MAP)
-        df, plots_dict = DataTransformer(pretty_df, pretty_tag_map).view(tag=actual_tag_for_view, use_plotly=True)
-        # Extract the correct scatter plot based on primary_metric_name_for_plot
-        scatter_plot_key = f"scatter_{primary_metric_name_for_plot}"
-        scatter_plot = plots_dict.get(scatter_plot_key)
-        if not scatter_plot: # Fallback if specific scatter plot not found by that exact key
-            for key, value in plots_dict.items():
-                if key.startswith("scatter_"): # Pick the first available scatter
-                    scatter_plot = value
-                    print(f"Warning: Scatter plot for '{primary_metric_name_for_plot}' not found, using fallback: {key}")
-                    break
+        # --- The Clean Workflow ---
+        raw_df, _ = viewer_or_data._load()
+        pretty_df = transform_raw_dataframe(raw_df)
+        pretty_tag_map = create_pretty_tag_map(raw_tag_map, INFORMAL_TO_FORMAL_NAME_MAP)
 
-    else:
-        df = pd.DataFrame({"Error": ["Unexpected state in get_leaderboard_viewer_instance"]})
-        # scatter_plot remains None
+        transformer = DataTransformer(pretty_df, pretty_tag_map)
+        df, plots_dict = transformer.view(tag=selected_tag, use_plotly=True)
 
-    # --- Post-processing (common for real and mock data, if needed) ---
+        # --- Simplified Plot Retrieval ---
+        # We now get the plot with a consistent key, no more guessing!
+        scatter_plot = plots_dict.get('scatter_plot', go.Figure())
+
+        # Update the dropdown choices from the pretty map
+        tag_choices = [("Overall", "Overall")] + sorted([(k, k) for k in pretty_tag_map.keys()])
+
+    # --- Post-processing (remains the same) ---
     if "Logs" in df.columns:
         def format_log_entry_to_html(raw_uri):
             if pd.isna(raw_uri) or raw_uri == "": # Handle None, NaN, or empty strings
@@ -153,30 +176,58 @@ def load_display_data_for_split(split: str, selected_tag: str | None):
         df["Logs"] = df["Logs"].apply(format_log_entry_to_html)
     df = df.fillna("")
 
-    tag_choices_for_dropdown = ["Overall"] + sorted([k for k in pretty_tag_map.keys() if k != "Overall"])
-    tag_choices_for_dropdown = list(dict.fromkeys(tag_choices_for_dropdown))
-
-    # Return only DataFrame, Scatter Plot, and Dropdown Update
-    return df, scatter_plot, gr.update(choices=tag_choices_for_dropdown, value=selected_tag)
+    # The order of this return statement is CRITICAL for Gradio event handlers
+    return df, scatter_plot, gr.update(choices=tag_choices, value=selected_tag)
 
 
-# --- Helper to get initial tags for the global dropdown ---
-def get_initial_global_tag_choices():
-    initial_split_for_tags = "validation" if IS_INTERNAL else "test"
-    try:
-        # This will now correctly use the mock tag map if USE_MOCK_DATA is True
-        _, tag_map_for_initial_split = get_leaderboard_viewer_instance(initial_split_for_tags)
+def create_leaderboard_tab(split_name: str, global_dropdown: gr.Dropdown):
+    """
+    A helper function to create the UI components for a single leaderboard tab.
+    This avoids duplicating code for the 'validation' and 'test' tabs.
+    """
+    # --- 1. Initial Data Load for this Tab ---
+    # This runs ONCE when the app starts to populate the initial view.
+    initial_df, initial_scatter, initial_tags_update = load_display_data_for_split(
+        split_name, global_dropdown.value
+    )
 
-        if isinstance(tag_map_for_initial_split, dict):
-            choices = sorted([k for k in tag_map_for_initial_split.keys() if k != "Overall"])
-            choices.insert(0, "Overall")
-            return list(dict.fromkeys(choices))
-        else:
-            print(f"Warning: Tag map for initial split '{initial_split_for_tags}' was not a dict. Defaulting tags.")
-            return ["Overall"]
-    except Exception as e:
-        print(f"Error getting initial global tag choices for split '{initial_split_for_tags}': {e}. Defaulting tags.")
-        return ["Overall"]
+    # Update the global dropdown's choices based on the first tab that loads.
+    global_dropdown.choices = initial_tags_update['choices']
+
+    # --- 2. Define UI Components for this Tab ---
+    with gr.Row():
+        refresh_button = gr.Button(f"Refresh {split_name.capitalize()} Tab")
+
+    # Define headers and datatypes based on the initial DataFrame
+    df_headers = initial_df.columns.tolist()
+    df_datatypes = ["markdown" if col == "Logs" else "number" for col in df_headers]
+
+    df_output = gr.DataFrame(
+        headers=df_headers,
+        value=initial_df,
+        datatype=df_datatypes,
+        interactive=False,
+        wrap=True,
+        label=f"{split_name.capitalize()} Leaderboard"
+    )
+
+    # The plot is now correctly populated on initial load via its `value`
+    scatter_plot_output = gr.Plot(
+        value=initial_scatter,
+        label=f"Score vs. Cost ({split_name.capitalize()})"
+    )
+
+    # --- 3. Wire Up Event Handler for the Refresh Button ---
+    # This connects the button specific to THIS tab.
+    refresh_button.click(
+        fn=load_display_data_for_split,
+        inputs=[gr.State(split_name), global_dropdown],
+        outputs=[df_output, scatter_plot_output, global_dropdown]
+    )
+
+    # --- 4. Return Components That Need to Be Accessed Globally ---
+    # We need to return these so the GLOBAL dropdown can update them.
+    return df_output, scatter_plot_output
 
 
 
@@ -438,70 +489,55 @@ with gr.Blocks() as demo:
             submission_result,
         )
 
-    # --- Leaderboard Display Section (within main_page) ---
-    gr.Markdown("---") # Separator
+    # --- Leaderboard Display Section ---
+    gr.Markdown("---")
     gr.Markdown("## Leaderboard Results")
 
-    # Shared controls for plots and tag selection
     with gr.Row():
-        # Assuming get_initial_global_tag_choices is defined elsewhere
-        # initial_choices_for_dropdown = get_initial_global_tag_choices()
-        initial_choices_for_dropdown = ["Overall", "Literature Understanding"] # Placeholder if function not available yet
+        # Define the global dropdown. Its choices will be populated by the first tab.
         global_tag_dropdown = gr.Dropdown(
-            choices=initial_choices_for_dropdown,
+            choices=["Overall"], # Start with a default
             value="Overall",
             label="Filter by Tag/Capability",
-            elem_id="global_tag_dropdown"
         )
 
-    # Tabs for Test and Validation
-    with gr.Tab("Results: Validation") as val_tab:
-        val_split_name = gr.State("validation")
-        with gr.Row():
-            val_refresh_button = gr.Button("Refresh Validation Tab")
-        initial_val_df, initial_val_scatter, _ = load_display_data_for_split(
-            "validation", global_tag_dropdown.value
-        )
-        df_headers = initial_val_df.columns.tolist()
-        df_datatypes = ["markdown" if col_name == "Logs" else ("number" if "Score" in col_name or "Cost" in col_name else "str") for col_name in df_headers]
-        val_df_output = gr.DataFrame(  headers=df_headers,
-                                       value=initial_val_df,
-                                       datatype=df_datatypes, # Crucial for rendering HTML as links
-                                       interactive=False,
-                                       wrap=True,
-                                       label="Validation Leaderboard")
-        val_scatter_plot_output = gr.Plot(label="Score vs. Cost (Validation)")
-        val_scatter_plot_output.value = initial_val_scatter
+    # Use the helper function to create the tabs, avoiding duplicate code
+    with gr.Tabs():
+        with gr.Tab("Results: Validation"):
+            # This creates all components and sets up the refresh button event
+            val_df_output, val_scatter_plot_output = create_leaderboard_tab(
+                split_name="validation",
+                global_dropdown=global_tag_dropdown
+            )
 
-        val_refresh_button.click(
-            fn=load_display_data_for_split,
-            inputs=[val_split_name, global_tag_dropdown],
-            outputs=[val_df_output, val_scatter_plot_output, global_tag_dropdown]
-        )
+        with gr.Tab("Results: Test"):
+            test_df_output, test_scatter_plot_output = create_leaderboard_tab(
+                split_name="test",
+                global_dropdown=global_tag_dropdown
+            )
 
-    with gr.Tab("Results: Test") as test_tab:
-        test_split_name = gr.State("test")
-        with gr.Row():
-            test_refresh_button = gr.Button("Refresh Test Tab")
-        initial_test_df, initial_test_scatter, _ = load_display_data_for_split(
-            "test", global_tag_dropdown.value
-        )
-        df_headers = initial_val_df.columns.tolist()
-        df_datatypes = ["markdown" if col_name == "Logs" else ("number" if "Score" in col_name or "Cost" in col_name else "str") for col_name in df_headers]
-        test_df_output = gr.DataFrame(  headers=df_headers,
-                                        value=initial_val_df,
-                                        datatype=df_datatypes, # Crucial for rendering HTML as links
-                                        interactive=False,
-                                        wrap=True,
-                                        label="Test Leaderboard")
-        test_scatter_plot_output = gr.Plot(label="Score vs. Cost (Test)")
-        test_scatter_plot_output.value = initial_test_scatter
+    # --- FINAL CRITICAL STEP: Add the missing event handler for the dropdown ---
+    # This single event handler updates ALL relevant components in BOTH tabs
+    # whenever the dropdown value changes.
 
-        test_refresh_button.click(
-            fn=load_display_data_for_split,
-            inputs=[test_split_name, global_tag_dropdown],
-            outputs=[test_df_output, test_scatter_plot_output, global_tag_dropdown]
-        )
+    # We need a small wrapper because the dropdown doesn't know which split is active.
+    # This wrapper will call the main loading function for both splits.
+    def update_all_tabs(selected_tag: str):
+        val_df, val_plot, val_tags = load_display_data_for_split("validation", selected_tag)
+        test_df, test_plot, _ = load_display_data_for_split("test", selected_tag) # Tags are the same
+        return val_df, val_plot, test_df, test_plot, val_tags # Return all updated components
+
+    global_tag_dropdown.change(
+        fn=update_all_tabs,
+        inputs=[global_tag_dropdown],
+        outputs=[
+            val_df_output,
+            val_scatter_plot_output,
+            test_df_output,
+            test_scatter_plot_output,
+            global_tag_dropdown  # The last returned item updates the dropdown itself
+        ]
+    )
 
     with gr.Accordion("📙 Citation", open=False):
         gr.Textbox(value=CITATION_BUTTON_TEXT, label=CITATION_BUTTON_LABEL, elem_id="citation-button-main", interactive=False)

@@ -159,57 +159,81 @@ class DataTransformer:
         self.tag_map = tag_map
         logger.info(f"DataTransformer initialized with a DataFrame of shape {self.data.shape}.")
 
+
     def view(
             self,
-            tag: Optional[str] = None,
+            tag: Optional[str] = "Overall", # Default to "Overall" for clarity
             use_plotly: bool = False,
-    ) -> tuple[pd.DataFrame, dict[str, Any]]:
-        """Generates a filtered view of the leaderboard DataFrame."""
+    ) -> tuple[pd.DataFrame, dict[str, go.Figure]]:
+        """
+        Generates a filtered view of the DataFrame and a corresponding scatter plot.
+        """
         if self.data.empty:
             logger.warning("No data available to view.")
             return self.data, {}
 
-        base_cols = ["Agent", "Submitter", "Date", "Logs"]
-        existing_cols = [col for col in base_cols if col in self.data.columns]
+        # --- 1. Determine Primary and Group Metrics Based on the Tag ---
+        # This logic is now explicit and easy to read.
+        if tag is None or tag == "Overall":
+            primary_metric = "Overall"
+            # For the Overall view, the group IS all the main categories (the keys of the tag map).
+            group_metrics = list(self.tag_map.keys())
+        else:
+            primary_metric = tag
+            # For a specific tag, the group is its list of sub-tasks.
+            group_metrics = self.tag_map.get(tag, [])
 
-        primary = tag if tag else "Overall"
-        group = self.tag_map.get(tag, list(self.tag_map.keys()) if tag is None else [])
-
+        # --- 2. Sort the DataFrame by the Primary Score ---
+        primary_score_col = f"{primary_metric} Score"
         df_sorted = self.data
-        if f"{primary} Score" in self.data.columns:
-            df_sorted = self.data.sort_values(f"{primary} Score", ascending=False)
+        if primary_score_col in self.data.columns:
+            df_sorted = self.data.sort_values(primary_score_col, ascending=False, na_position='last')
 
-        metrics_to_display = []
-        print(f"I'M A PRIMARY COLOR BITCH {primary} IM THE GROUP{group}")
-        if f"{primary} Score" in df_sorted.columns: metrics_to_display.append(f"{primary} Score")
-        if f"{primary} Cost" in df_sorted.columns: metrics_to_display.append(f"{primary} Cost")
+        # --- 3. Build the List of Columns to Display ---
+        base_cols = ["Agent", "Submitter", "Date", "Logs"]
 
-        for g_item in group:
-            if f"{g_item} Score" in df_sorted.columns: metrics_to_display.append(f"{g_item} Score")
-            if f"{g_item} Cost" in df_sorted.columns: metrics_to_display.append(f"{g_item} Cost")
+        # Start with the primary metric score and cost
+        metrics_to_display = [primary_score_col, f"{primary_metric} Cost"]
 
-        final_cols = existing_cols + list(dict.fromkeys(metrics_to_display))
-        df_view = df_sorted.loc[:, [c for c in final_cols if c in df_sorted.columns]].reset_index(drop=True)
+        # Add the score and cost for each item in our group
+        for item in group_metrics:
+            metrics_to_display.append(f"{item} Score")
+            metrics_to_display.append(f"{item} Cost")
 
-        plots: dict[str, Any] = {}
+        # Combine base columns with metric columns, ensuring uniqueness and order
+        final_cols_ordered = base_cols + list(dict.fromkeys(metrics_to_display))
+
+        # Filter to only include columns that actually exist in our DataFrame
+        existing_final_cols = [col for col in final_cols_ordered if col in df_sorted.columns]
+
+        df_view = df_sorted[existing_final_cols].reset_index(drop=True)
+
+        # --- 4. Generate the Scatter Plot for the Primary Metric ---
+        plots: dict[str, go.Figure] = {}
         if use_plotly:
-            plot_metric_names = [primary] + [g_item for g_item in group if g_item in df_sorted.columns]
-            for metric_name in plot_metric_names:
-                score_col = f"{metric_name} Score"
-                cost_col = f"{metric_name} Cost"
-                if score_col in df_view.columns and cost_col in df_view.columns:
-                    if use_plotly:
-                        fig = _plot_scatter_plotly(df_view, x=cost_col, y=score_col, agent_col="Agent")
-                    plots[f"scatter_{metric_name}"] = fig
-                else:
-                    logger.warning(
-                        f"Skipping plot for '{metric_name}': score column '{score_col}' or cost column '{cost_col}' not found."
-                    )
+            primary_cost_col = f"{primary_metric} Cost"
+            # Check if the primary score and cost columns exist in the FINAL view
+            if primary_score_col in df_view.columns and primary_cost_col in df_view.columns:
+                fig = _plot_scatter_plotly(
+                    data=df_view,
+                    x=primary_cost_col,
+                    y=primary_score_col,
+                    agent_col="Agent"
+                )
+                # Use a consistent key for easy retrieval later
+                plots['scatter_plot'] = fig
+            else:
+                logger.warning(
+                    f"Skipping plot for '{primary_metric}': score column '{primary_score_col}' "
+                    f"or cost column '{primary_cost_col}' not found."
+                )
+                # Add an empty figure to avoid downstream errors
+                plots['scatter_plot'] = go.Figure()
 
         return df_view, plots
 
 DEFAULT_Y_COLUMN = "Overall Score"
-DUMMY_X_VALUE_FOR_MISSING_COSTS = 0 # Value to use if x-axis data (costs) is missing
+DUMMY_X_VALUE_FOR_MISSING_COSTS = 0
 
 def _plot_scatter_plotly(
         data: pd.DataFrame,
@@ -218,102 +242,92 @@ def _plot_scatter_plotly(
         agent_col: str = "Agent"
 ) -> go.Figure:
 
+    # --- Steps 1-4: Data Validation and Preparation (No changes here) ---
     x_col_to_use = x
     y_col_to_use = y
 
-    # 1. Check if y-column exists
     if y_col_to_use not in data.columns:
-        logger.error(
-            f"y-axis column '{y_col_to_use}' MUST exist in DataFrame. "
-            f"Cannot generate plot. Available columns: {data.columns.tolist()}"
-        )
+        logger.error(f"y-axis column '{y_col_to_use}' not found.")
         return go.Figure()
-
-    # 2. Check if agent_col exists
     if agent_col not in data.columns:
-        logger.warning(
-            f"Agent column '{agent_col}' not found in DataFrame. "
-            f"Available columns: {data.columns.tolist()}. Returning empty figure."
-        )
+        logger.warning(f"Agent column '{agent_col}' not found.")
         return go.Figure()
 
-    # 3. Prepare data (make a copy, handle numeric conversion for y)
     data_plot = data.copy()
-    try:
-        data_plot[y_col_to_use] = pd.to_numeric(data_plot[y_col_to_use], errors='coerce')
-    except Exception as e:
-        logger.error(f"Error converting y-column '{y_col_to_use}' to numeric: {e}. Returning empty figure.")
-        return go.Figure()
+    data_plot[y_col_to_use] = pd.to_numeric(data_plot[y_col_to_use], errors='coerce')
 
-    # 4. Handle x-column (costs)
-    x_axis_label = x_col_to_use if x_col_to_use else "Cost (Data N/A)" # Label for the x-axis
+    x_axis_label = x if x else "Cost (Data N/A)"
     x_data_is_valid = False
-
-    if x_col_to_use and x_col_to_use in data_plot.columns:
+    if x and x in data_plot.columns:
         try:
             data_plot[x_col_to_use] = pd.to_numeric(data_plot[x_col_to_use], errors='coerce')
-            # Check if there's any non-NaN data after coercion for x
             if data_plot[x_col_to_use].notna().any():
                 x_data_is_valid = True
-            else:
-                logger.info(f"x-axis column '{x_col_to_use}' exists but contains all NaN/None values after numeric conversion.")
         except Exception as e:
-            logger.warning(f"Error converting x-column '{x_col_to_use}' to numeric: {e}. Will use dummy x-values.")
-            # x_data_is_valid remains False
-    else:
-        if x_col_to_use: # Name was provided but column doesn't exist
-            logger.warning(f"x-axis column '{x_col_to_use}' not found in DataFrame.")
-        else: # x (column name) was None
-            logger.info("x-axis column name was not provided (is None).")
+            logger.warning(f"Error converting x-column '{x_col_to_use}' to numeric: {e}")
 
     if not x_data_is_valid:
-        logger.info(f"Using dummy x-value '{DUMMY_X_VALUE_FOR_MISSING_COSTS}' for all data points as x-data is missing or invalid.")
-        # Create a new column with the dummy x-value for all rows
-        # Use a unique name for this dummy column to avoid potential clashes
         dummy_x_col_name = "__dummy_x_for_plotting__"
         data_plot[dummy_x_col_name] = DUMMY_X_VALUE_FOR_MISSING_COSTS
-        x_col_to_use = dummy_x_col_name # Update x_col_to_use to point to our dummy data
-        x_axis_label = x if x else "Cost (Data N/A)" # Use original x name for label if provided
-        # or a generic label if x was None.
-        # Could also be f"Cost (Fixed at {DUMMY_X_VALUE_FOR_MISSING_COSTS})"
+        x_col_to_use = dummy_x_col_name
+        logger.info("Using dummy x-values for plotting.")
 
-
-    # 5. Drop rows where y is NaN (x is now guaranteed to have values, either real or dummy)
-    data_plot.dropna(subset=[y_col_to_use], inplace=True)
-
+    # --- Step 5: Clean Data and Initialize Figure ---
+    data_plot.dropna(subset=[y_col_to_use, x_col_to_use], inplace=True)
     fig = go.Figure()
-
     if data_plot.empty:
-        logger.warning(f"No valid data to plot for y='{y_col_to_use}' (and x='{x_col_to_use}') after cleaning NaNs from y.")
-        # Still return a figure object, but it will be empty. Update layout for clarity.
-        fig.update_layout(
-            title=f"{y_col_to_use} vs. {x_axis_label} (No Data)",
-            xaxis=dict(title=x_axis_label, range=[DUMMY_X_VALUE_FOR_MISSING_COSTS - 1, DUMMY_X_VALUE_FOR_MISSING_COSTS + 1] if not x_data_is_valid else None),
-            yaxis=dict(title=y_col_to_use)
-        )
+        logger.warning(f"No valid data to plot for y='{y_col_to_use}' and x='{x_col_to_use}'.")
         return fig
 
+    # ========================================================================
+    # --- NEW: Step 6 - Calculate and Draw the Efficiency Frontier Line ---
+    # ========================================================================
+    if x_data_is_valid:
+        # Sort by cost (ascending), then by score (descending) to break ties
+        sorted_data = data_plot.sort_values(by=[x_col_to_use, y_col_to_use], ascending=[True, False])
 
+        frontier_points = []
+        max_score_so_far = float('-inf')
+
+        for index, row in sorted_data.iterrows():
+            score = row[y_col_to_use]
+            # If this point offers a better score than any we've seen before,
+            # it's part of the frontier.
+            if score > max_score_so_far:
+                frontier_points.append({'x': row[x_col_to_use], 'y': score})
+                max_score_so_far = score
+
+        # Add the frontier line trace to the plot if we found any points
+        if frontier_points:
+            frontier_df = pd.DataFrame(frontier_points)
+            fig.add_trace(go.Scatter(
+                x=frontier_df['x'],
+                y=frontier_df['y'],
+                mode='lines',
+                name='Efficiency Frontier',
+                line=dict(color='firebrick', width=2, dash='dash'),
+                hoverinfo='skip' # The line doesn't need a hover tooltip
+            ))
+
+    # --- Step 7: Plot Individual Agent Markers (No changes here) ---
     for agent, group in data_plot.groupby(agent_col):
-        hover_x_display = "%{x:.2f}" if x_data_is_valid else str(DUMMY_X_VALUE_FOR_MISSING_COSTS) + " (fixed)"
+        hover_x_display = "%{x:.2f}" if x_data_is_valid else "N/A"
         fig.add_trace(go.Scatter(
             x=group[x_col_to_use],
             y=group[y_col_to_use],
             mode='markers',
             name=str(agent),
             hovertemplate=f"{x_axis_label}: {hover_x_display}<br>{y_col_to_use}: %{{y:.2f}}<extra>{str(agent)}</extra>",
-            marker=dict(size=10)
+            marker=dict(size=10, opacity=0.8)
         ))
 
-    # Configure layout
+    # --- Step 8: Configure Layout (No changes here) ---
     xaxis_config = dict(title=x_axis_label)
-    if not x_data_is_valid: # If using dummy x, set a tighter, fixed range for x-axis
+    if not x_data_is_valid:
         xaxis_config['range'] = [DUMMY_X_VALUE_FOR_MISSING_COSTS - 1, DUMMY_X_VALUE_FOR_MISSING_COSTS + 1]
-        xaxis_config['tickvals'] = [DUMMY_X_VALUE_FOR_MISSING_COSTS] # Show only one tick at the dummy value
-        xaxis_config['ticktext'] = [str(DUMMY_X_VALUE_FOR_MISSING_COSTS)]
-    else: # Real x-data
+        xaxis_config['tickvals'] = [DUMMY_X_VALUE_FOR_MISSING_COSTS]
+    else:
         xaxis_config['rangemode'] = "tozero"
-
 
     fig.update_layout(
         title=f"{y_col_to_use} vs. {x_axis_label}",
