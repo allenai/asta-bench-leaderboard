@@ -194,11 +194,7 @@ def create_leaderboard_tab(split_name: str, global_dropdown: gr.Dropdown):
     # Update the global dropdown's choices based on the first tab that loads.
     global_dropdown.choices = initial_tags_update['choices']
 
-    # --- 2. Define UI Components for this Tab ---
-    with gr.Row():
-        refresh_button = gr.Button(f"Refresh {split_name.capitalize()} Tab")
 
-    # Define headers and datatypes based on the initial DataFrame
     df_headers = initial_df.columns.tolist()
     df_datatypes = ["markdown" if col == "Logs" else "number" for col in df_headers]
 
@@ -217,15 +213,6 @@ def create_leaderboard_tab(split_name: str, global_dropdown: gr.Dropdown):
         label=f"Score vs. Cost ({split_name.capitalize()})"
     )
 
-    # --- 3. Wire Up Event Handler for the Refresh Button ---
-    # This connects the button specific to THIS tab.
-    refresh_button.click(
-        fn=load_display_data_for_split,
-        inputs=[gr.State(split_name), global_dropdown],
-        outputs=[df_output, scatter_plot_output, global_dropdown]
-    )
-
-    # --- 4. Return Components That Need to Be Accessed Globally ---
     # We need to return these so the GLOBAL dropdown can update them.
     return df_output, scatter_plot_output
 
