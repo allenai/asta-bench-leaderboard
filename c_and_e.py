@@ -1,11 +1,16 @@
 import gradio as gr
 
+# Import our new UI factory
+from ui_components import create_leaderboard_display
 
 with gr.Blocks() as demo:
-    gr.Markdown("# Code & Execution")
-    gr.Markdown("This is some text to explain what Code & Execution metrics are!")
-    t = gr.Textbox()
-    demo.load(lambda : "Yipeeee", None, t)
+    gr.Markdown("## Code Execution Results")
+    # This page shows the "Literature Understanding" view.
 
-if __name__ == "__main__":
-    demo.launch()
+    with gr.Tabs():
+        with gr.Tab("Results: Validation"):
+            # Call the factory with the "Literature Understanding" tag
+            create_leaderboard_display(split_name="validation", tag_name="Code Execution")
+
+        with gr.Tab("Results: Test"):
+            create_leaderboard_display(split_name="test", tag_name="Code Execution")
