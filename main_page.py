@@ -28,7 +28,7 @@ from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
 import leaderboard_transformer
-from leaderboard_transformer import DataTransformer
+from leaderboard_transformer import DataTransformer, create_pretty_tag_map, INFORMAL_TO_FORMAL_NAME_MAP
 
 from content import (
     CITATION_BUTTON_LABEL,
@@ -78,24 +78,14 @@ def get_leaderboard_viewer_instance(split: str):
     TARGET_JSON_PATH = None
     if split in CACHED_VIEWERS:
         return CACHED_VIEWERS[split], CACHED_TAG_MAPS.get(split, {"Overall": []})
-
-
     try:
-        if TARGET_JSON_PATH:
-            print(f"Using direct JSON for split '{split}': {TARGET_JSON_PATH}")
-            viewer = LeaderboardViewer2(
-                json_file_path=TARGET_JSON_PATH,
-                split=split,   # Still needed for context within the JSON's suite_config
-                is_internal=IS_INTERNAL
-            )
-        else:
-            print(f"Using Hugging Face dataset for split '{split}': {RESULTS_DATASET}/{CONFIG_NAME}")
-            viewer = LeaderboardViewer(
-                repo_id=RESULTS_DATASET,
-                config=CONFIG_NAME,
-                split=split,
-                is_internal=IS_INTERNAL
-            )
+        print(f"Using Hugging Face dataset for split '{split}': {RESULTS_DATASET}/{CONFIG_NAME}")
+        viewer = LeaderboardViewer(
+            repo_id=RESULTS_DATASET,
+            config=CONFIG_NAME,
+            split=split,
+            is_internal=IS_INTERNAL
+        )
         current_tag_map = {"Overall": []} # Start with Overall
         current_tag_map.update({k: v for k, v in viewer.tag_map.items()}) # Add tags from viewer
         CACHED_TAG_MAPS[split] = current_tag_map
@@ -119,22 +109,22 @@ def get_leaderboard_viewer_instance(split: str):
 
 
 def load_display_data_for_split(split: str, selected_tag: str | None):
-    json_path = os.path.join(DATA_DIR, AGENTEVAL_MANIFEST_NAME)
-    viewer_or_data, tag_map_for_split = get_leaderboard_viewer_instance(split)
+    viewer_or_data, raw_tag_map_for_split = get_leaderboard_viewer_instance(split)
 
     primary_metric_name_for_plot = selected_tag if selected_tag and selected_tag != "Overall" else "Overall"
 
     actual_tag_for_view = selected_tag if selected_tag and selected_tag != "Overall" else None
 
-    df = pd.DataFrame() # Initialize df
-    scatter_plot = None # Initialize scatter_plot
+    df = pd.DataFrame()
+    scatter_plot = None
 
-    if isinstance(viewer_or_data, LeaderboardViewer): # Real viewer
+    if isinstance(viewer_or_data, LeaderboardViewer):
         viewer = viewer_or_data
         # It returns a dict `plots_dict`
         raw_df, _ = viewer._load()  # 1. Get raw data from the old viewer's internal loader.
         pretty_df = leaderboard_transformer.transform_raw_dataframe(raw_df)  # 2. Apply our new, centralized transformation.
-        df, plots_dict = DataTransformer(pretty_df, tag_map_for_split).view(tag=actual_tag_for_view, use_plotly=True)
+        pretty_tag_map = create_pretty_tag_map(raw_tag_map_for_split, INFORMAL_TO_FORMAL_NAME_MAP)
+        df, plots_dict = DataTransformer(pretty_df, pretty_tag_map).view(tag=actual_tag_for_view, use_plotly=True)
         # Extract the correct scatter plot based on primary_metric_name_for_plot
         scatter_plot_key = f"scatter_{primary_metric_name_for_plot}"
         scatter_plot = plots_dict.get(scatter_plot_key)
@@ -163,7 +153,7 @@ def load_display_data_for_split(split: str, selected_tag: str | None):
         df["Logs"] = df["Logs"].apply(format_log_entry_to_html)
     df = df.fillna("")
 
-    tag_choices_for_dropdown = ["Overall"] + sorted([k for k in tag_map_for_split.keys() if k != "Overall"])
+    tag_choices_for_dropdown = ["Overall"] + sorted([k for k in pretty_tag_map.keys() if k != "Overall"])
     tag_choices_for_dropdown = list(dict.fromkeys(tag_choices_for_dropdown))
 
     # Return only DataFrame, Scatter Plot, and Dropdown Update

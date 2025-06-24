@@ -76,6 +76,33 @@ def _pretty_column_name(raw_col: str) -> str:
     return raw_col.title()
 
 
+def create_pretty_tag_map(raw_tag_map: dict, name_map: dict) -> dict:
+    """
+    Converts a tag map with raw names into a tag map with pretty, formal names.
+
+    Args:
+        raw_tag_map: The map with raw keys and values (e.g., {'lit': ['litqa2_validation']}).
+        name_map: The INFORMAL_TO_FORMAL_NAME_MAP used for translation.
+
+    Returns:
+        A new dictionary with pretty names (e.g., {'Literature Understanding': ['Litqa2 Validation']}).
+    """
+    pretty_map = {}
+    # A reverse map to find raw keys from formal names if needed, though not used here
+    # This is just for understanding; the main logic uses the forward map.
+
+    # Helper to get pretty name with a fallback
+    def get_pretty(raw_name):
+        return name_map.get(raw_name, raw_name.replace("_", " ").title())
+
+    for raw_key, raw_value_list in raw_tag_map.items():
+        pretty_key = get_pretty(raw_key)
+        pretty_value_list = [get_pretty(raw_val) for raw_val in raw_value_list]
+        pretty_map[pretty_key] = sorted(list(set(pretty_value_list)))
+
+    return pretty_map
+
+
 def transform_raw_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     """
     Transforms a raw leaderboard DataFrame into a presentation-ready format.
@@ -93,7 +120,6 @@ def transform_raw_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         raise TypeError("Input 'raw_df' must be a pandas DataFrame.")
 
     df = raw_df.copy()
-    print(f"OOOOOOOGA OOOGA OOOOOGA TELL ME MORE  {raw_df.columns}")
 
     # Create the mapping for pretty column names
     pretty_cols_map = {col: _pretty_column_name(col) for col in df.columns}
