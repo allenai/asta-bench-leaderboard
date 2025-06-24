@@ -28,6 +28,7 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "super_validation": "Super Validation",
 }
 
+
 ### 2. The Updated Helper Functions ###
 
 def _safe_round(value, digits=2):

@@ -24,7 +24,7 @@ from datasets import Dataset, DatasetDict, VerificationMode, load_dataset # load
 from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
-from ui_components import create_leaderboard_display
+from ui_components import create_leaderboard_display, get_full_leaderboard_data
 
 from content import (
     CITATION_BUTTON_LABEL,
@@ -325,16 +325,41 @@ with gr.Blocks() as demo:
 
     # --- Leaderboard Display Section ---
     gr.Markdown("---")
-    gr.Markdown("## Leaderboard Results")
+    CATEGORY_NAME = "Overall"
+    gr.Markdown(f"## {CATEGORY_NAME} Leaderboard Results")
 
+    # The structure is now identical to the category pages
     with gr.Tabs():
         with gr.Tab("Results: Validation"):
-            # Call the factory for the validation split with the "Overall" tag
-            create_leaderboard_display(split_name="validation", tag_name="Overall")
+            # 1. Load all necessary data for the "validation" split ONCE.
+            validation_df, validation_tag_map = get_full_leaderboard_data("validation")
+
+            # Check if data was loaded successfully before trying to display it
+            if not validation_df.empty:
+                # 2. Render the display by calling the factory with the loaded data.
+                create_leaderboard_display(
+                    full_df=validation_df,
+                    tag_map=validation_tag_map,
+                    category_name=CATEGORY_NAME, # Use our constant
+                    split_name="validation"
+                )
+            else:
+                # Display a message if no data is available
+                gr.Markdown("No data available for validation split.")
 
         with gr.Tab("Results: Test"):
-            # Call the factory for the test split with the "Overall" tag
-            create_leaderboard_display(split_name="test", tag_name="Overall")
+            # Repeat the exact same process for the "test" split
+            test_df, test_tag_map = get_full_leaderboard_data("test")
+
+            if not test_df.empty:
+                create_leaderboard_display(
+                    full_df=test_df,
+                    tag_map=test_tag_map,
+                    category_name=CATEGORY_NAME, # Use our constant
+                    split_name="test"
+                )
+            else:
+                gr.Markdown("No data available for test split.")
 
     with gr.Accordion("📙 Citation", open=False):
         gr.Textbox(value=CITATION_BUTTON_TEXT, label=CITATION_BUTTON_LABEL, elem_id="citation-button-main", interactive=False)

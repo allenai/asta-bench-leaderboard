@@ -37,7 +37,7 @@ with demo.route("Code & Execution"):
     c_and_e.demo.render()
 with demo.route("Data Analysis"):
     data_analysis.demo.render()
-with demo.route("End to End"):
+with demo.route("Discovery"):
     e2e.demo.render()
 
 # --- Scheduler and Launch
