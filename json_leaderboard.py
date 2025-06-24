@@ -33,9 +33,8 @@ from agenteval.config import SuiteConfig
 from agenteval.models import EvalResult
 # from agenteval import compute_summary_statistics # Used by _get_dataframe
 
-logger = logging.getLogger(__name__)
 
-class LeaderboardViewer2:
+class DataTransformer:
     """
     Load and visualize leaderboard from a single, local JSON result file.
     """
@@ -126,7 +125,7 @@ class LeaderboardViewer2:
         Helper function to get the formal display name for a raw tag or task name.
         Uses the class's map and provides a fallback.
         """
-        return LeaderboardViewer2._INFORMAL_TO_FORMAL_NAME_MAP.get(raw_name, raw_name.replace("_", " ").title())
+        return DataTransformer._INFORMAL_TO_FORMAL_NAME_MAP.get(raw_name, raw_name.replace("_", " ").title())
 
     def _load(self) -> tuple[pd.DataFrame, dict[str, list[str]]]:
         """
@@ -195,14 +194,6 @@ class LeaderboardViewer2:
             if f"{g_item} Score" in data.columns:
                 metrics_to_display.append(f"{g_item} Score")
 
-        # ci_cols = []
-        # for m_name in metrics_to_display:
-        #     if not m_name.endswith(" Cost"):
-        #         if f"{m_name} 95% CI" in data.columns:
-        #             ci_cols.append(f"{m_name} 95% CI")
-        #     else:
-        #         if f"{m_name} 95% CI" in data.columns:
-        #             ci_cols.append(f"{m_name} 95% CI")
 
         final_cols_to_display = existing_cols + [m for m in metrics_to_display if m in data.columns]
         final_cols_to_display = sorted(list(set(final_cols_to_display)), key=final_cols_to_display.index)
@@ -218,8 +209,6 @@ class LeaderboardViewer2:
                 if score_col in df_view.columns and cost_col in df_view.columns:
                     if use_plotly:
                         fig = _plot_scatter_plotly(df_view, x=cost_col, y=score_col, agent_col="Agent")
-                    else:
-                        fig = _plot_scatter(df_view, x=cost_col, y=score_col, agent_col="Agent")
                     plots[f"scatter_{metric_name}"] = fig
                 else:
                     logger.warning(
@@ -352,7 +341,7 @@ def _pretty_column_name(col: str) -> str:
         return fixed_mappings[col]
 
     # --- Step 2: Define your mapping for informal names to descriptive names ---
-    informal_map = LeaderboardViewer2._INFORMAL_TO_FORMAL_NAME_MAP
+    informal_map = DataTransformer._INFORMAL_TO_FORMAL_NAME_MAP
 
     # --- Step 3: Dynamic mappings for task or tag columns using the informal_to_formal_name_map ---
     parts = col.split("/")
@@ -378,48 +367,6 @@ def _pretty_column_name(col: str) -> str:
         return col.replace("_", " ").title()
     else:
         return parts[-1].replace("_", " ").title()
-
-def _plot_scatter(data: pd.DataFrame, x: str, y: str, agent_col: str) -> plt.Figure:
-    fig, ax = plt.subplots(figsize=(20,7))
-    plot_data = data.copy()
-    plot_data[y] = pd.to_numeric(plot_data[y], errors='coerce')
-    plot_data[x] = pd.to_numeric(plot_data[x], errors='coerce')
-    plot_data_cleaned = plot_data.dropna(subset=[y, x]).copy()
-    pareto_points_df = pd.DataFrame()
-    if not plot_data_cleaned.empty:
-        frontier_data = plot_data_cleaned.sort_values(by=[x, y], ascending=[True, False])
-        pareto_points_list = []
-        current_max_score = -np.inf
-        for _, row in frontier_data.iterrows():
-            if row[y] > current_max_score:
-                pareto_points_list.append(row)
-                current_max_score = row[y]
-        if pareto_points_list:
-            pareto_points_df = pd.DataFrame(pareto_points_list).sort_values(by=x)
-            if not pareto_points_df.empty:
-                ax.plot(pareto_points_df[x], pareto_points_df[y], marker='o', linestyle='-', color='red', alpha=0.7, linewidth=2, markersize=5, label='Pareto Frontier')
-    if not plot_data_cleaned.empty:
-        sns.scatterplot(data=plot_data_cleaned, x=x, y=y, hue=agent_col, s=100, ax=ax, legend="auto")
-    else:
-        logger.warning(f"No data points to scatter plot for y='{y}' and x='{x}'.")
-    x_ci_col_name = f"{x} 95% CI"; y_ci_col_name = f"{y} 95% CI"
-    x_err_values = pd.to_numeric(plot_data_cleaned.get(x_ci_col_name), errors='coerce') if x_ci_col_name in plot_data_cleaned else None
-    y_err_values = pd.to_numeric(plot_data_cleaned.get(y_ci_col_name), errors='coerce') if y_ci_col_name in plot_data_cleaned else None
-    if not plot_data_cleaned.empty and (pd.Series(x_err_values).notna().any() or pd.Series(y_err_values).notna().any()):
-        ax.errorbar(x=plot_data_cleaned[x], y=plot_data_cleaned[y], xerr=x_err_values, yerr=y_err_values,
-                    fmt="none", ecolor="gray", alpha=0.5, capsize=3, zorder=0)
-    if not plot_data_cleaned.empty:
-        ax.set_xlim(left=max(0, plot_data_cleaned[x].min() - (plot_data_cleaned[x].std() if plot_data_cleaned[x].std() > 0 else 0) * 0.1))
-    else: ax.set_xlim(left=0)
-    ax.set_ylim(bottom=0); ax.set_xlabel(x); ax.set_ylabel(y)
-    handles, labels = ax.get_legend_handles_labels()
-    if not pareto_points_df.empty and "Pareto Frontier" not in labels:
-        frontier_line = next((line for line in ax.get_lines() if line.get_label() == 'Pareto Frontier'), None)
-        if frontier_line: handles.append(frontier_line); labels.append('Pareto Frontier')
-    if handles: ax.legend(handles=handles, labels=labels, title=agent_col, bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0.)
-    plt.tight_layout(rect=[0, 0, 0.85, 1])
-    return fig
-
 
 DEFAULT_Y_COLUMN = "Overall Score"
 DUMMY_X_VALUE_FOR_MISSING_COSTS = 0 # Value to use if x-axis data (costs) is missing
