@@ -104,6 +104,8 @@ def add_new_eval(
         agent_name: str | None,
         agent_description: str,
         agent_url: str,
+        openness: str | None,
+        degree_of_control: str | None,
         path_to_file: tempfile._TemporaryFileWrapper | None,
         username: str,
         mail: str,
@@ -259,6 +261,8 @@ def add_new_eval(
     eval_result_obj.submission.agent_name = agent_name
     eval_result_obj.submission.agent_description = agent_description
     eval_result_obj.submission.agent_url = agent_url
+    eval_result_obj.submission.openness = openness
+    eval_result_obj.submission.degree_of_control = degree_of_control
     eval_result_obj.submission.username = username
     eval_result_obj.submission.submit_time = submission_time
     eval_result_obj.submission.logs_url = logs_url_private_val
@@ -297,6 +301,8 @@ with gr.Blocks() as demo:
                 agent_name_tb = gr.Textbox(label="Agent Name")
                 agent_desc_tb = gr.Textbox(label="Agent Description")
                 agent_url_tb = gr.Textbox(label="URL to Agent Information")
+                openness_radio = gr.Radio(["Open Source", "API", "UI"], value=None, label="Openness of Agent")
+                degree_of_control_radio = gr.Radio(["Standard", "Custom"], value=None, label="Degree of Control")
             with gr.Column():
                 username_tb = gr.Textbox(label="Organization or User Name (Defaults to HF username)")
                 mail_tb = gr.Textbox(label="Contact Email (Private, for submission issues)")
@@ -316,6 +322,8 @@ with gr.Blocks() as demo:
                 agent_name_tb,
                 agent_desc_tb,
                 agent_url_tb,
+                openness_radio,
+                degree_of_control_radio,
                 file_upload_comp,
                 username_tb,
                 mail_tb

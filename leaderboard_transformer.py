@@ -191,7 +191,8 @@ class DataTransformer:
             df_sorted = self.data.sort_values(primary_score_col, ascending=False, na_position='last')
 
         # --- 3. Build the List of Columns to Display ---
-        base_cols = ["Agent", "Submitter", "Date", "Logs"]
+        base_cols = ["Agent", "Submitter"]
+        ending_cols = ["Date", "Logs"]
 
         # Start with the primary metric score and cost
         metrics_to_display = [primary_score_col, f"{primary_metric} Cost"]
@@ -202,12 +203,48 @@ class DataTransformer:
             metrics_to_display.append(f"{item} Cost")
 
         # Combine base columns with metric columns, ensuring uniqueness and order
-        final_cols_ordered = base_cols + list(dict.fromkeys(metrics_to_display))
+        final_cols_ordered = base_cols + list(dict.fromkeys(metrics_to_display)) + ending_cols
 
         # Filter to only include columns that actually exist in our DataFrame
         existing_final_cols = [col for col in final_cols_ordered if col in df_sorted.columns]
 
         df_view = df_sorted[existing_final_cols].reset_index(drop=True)
+
+        # Calculated and add "Categories Attempted" column
+        if primary_metric == "Overall":
+            def calculate_attempted(row):
+                count = 0
+                main_categories = ['Literature Understanding', 'Data Analysis', 'Code Execution', 'Discovery']
+                for category in main_categories:
+                    # Check if score data exists and is not NaN for this category
+                    if pd.notna(row.get(f"{category} Cost")):
+                        count += 1
+
+                # Return the formatted string with the correct emoji
+                if count == 4:
+                    return f"4/4 ✅"
+                if count == 0:
+                    return f"0/4 🚫"
+                return f"{count}/4 ⚠️"
+
+            # Apply the function row-wise to create the new column
+            attempted_column = df_view.apply(calculate_attempted, axis=1)
+            # Insert the new column at a nice position (e.g., after "Date")
+            df_view.insert(2, "Categories Attempted", attempted_column)
+        else:
+            total_benchmarks = len(group_metrics)
+            def calculate_benchmarks_attempted(row):
+                # Count how many benchmarks in this category have COST data reported
+                count = sum(1 for benchmark in group_metrics if pd.notna(row.get(f"{benchmark} Cost")))
+                if count == total_benchmarks:
+                    return f"{count}/{total_benchmarks} ✅"
+                elif count == 0:
+                    return f"{count}/{total_benchmarks} 🚫"
+                else:
+                    return f"{count}/{total_benchmarks}⚠️"
+            # Insert the new column, for example, after "Date"
+            df_view.insert(2, "Benchmarks Attempted", df_view.apply(calculate_benchmarks_attempted, axis=1))
+
 
         # --- 4. Generate the Scatter Plot for the Primary Metric ---
         plots: dict[str, go.Figure] = {}
@@ -243,7 +280,7 @@ def _plot_scatter_plotly(
         agent_col: str = "Agent"
 ) -> go.Figure:
 
-    # --- Steps 1-4: Data Validation and Preparation (No changes here) ---
+    # --- Steps 1-4: Data Validation and Preparation ---
     x_col_to_use = x
     y_col_to_use = y
 
@@ -280,9 +317,7 @@ def _plot_scatter_plotly(
         logger.warning(f"No valid data to plot for y='{y_col_to_use}' and x='{x_col_to_use}'.")
         return fig
 
-    # ========================================================================
-    # --- NEW: Step 6 - Calculate and Draw the Efficiency Frontier Line ---
-    # ========================================================================
+    # Step 6 - Calculate and Draw the Efficiency Frontier Line ---
     if x_data_is_valid:
         # Sort by cost (ascending), then by score (descending) to break ties
         sorted_data = data_plot.sort_values(by=[x_col_to_use, y_col_to_use], ascending=[True, False])
@@ -318,7 +353,7 @@ def _plot_scatter_plotly(
             y=group[y_col_to_use],
             mode='markers',
             name=str(agent),
-            hovertemplate=f"{x_axis_label}: {hover_x_display}<br>{y_col_to_use}: %{{y:.2f}}<extra>{str(agent)}</extra>",
+            hovertemplate=f"<b>{str(agent)}</b><br>{x_axis_label}: {hover_x_display}<br>{y_col_to_use}: %{{y:.2f}}""<extra></extra>",
             marker=dict(size=10, opacity=0.8)
         ))
 
