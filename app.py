@@ -19,12 +19,38 @@ api = HfApi()
 
 
 # --- Theme Definition ---
-theme = gr.themes.Soft(
-    primary_hue="pink",
-    secondary_hue="teal",
-    spacing_size="lg",
+theme = gr.themes.Base(
+    primary_hue=gr.themes.Color(c100="#CFF5E8", c200="#B7EFDD", c300="#9FEAD1", c400="#87E5C5", c50="#E7FAF3", c500="#6FE0BA", c600="#57DBAF", c700="#3FD5A3", c800="#27D09C", c900="#0FCB8C", c950="#0fcb8c"),
+    secondary_hue=gr.themes.Color(c100="#FCDCEB", c200="#FBCBE1", c300="#F9BAD7", c400="#F7A8CD", c50="#FDEEF5", c500="#F697C4", c600="#F586BA", c700="#F375B0", c800="#F263A6", c900="#F0529C", c950="#F0529C"),
+    neutral_hue=gr.themes.Color(c100="#FDF9F4", c200="#C9C9C3", c300="#B0B5AF", c400="#97A09C", c50="#FAF2E9", c500="#7F8C89", c600="#667876", c700="#344F4F", c800="#1C3A3C", c900="#032629", c950="032629"),
+    font=[gr.themes.GoogleFont('Manrope'), 'ui-sans-serif', 'sans-serif', 'sans-serif'],
+    font_mono=[gr.themes.GoogleFont('Roboto Mono'), 'ui-monospace', 'monospace', 'monospace'],
 ).set(
-    background_fill_primary_dark='*neutral_100'
+    body_text_color='*neutral_950',
+    body_text_color_dark='*neutral_50',
+    background_fill_primary='*neutral_50',
+    background_fill_primary_dark='*neutral_900',
+    background_fill_secondary='*neutral_100',
+    background_fill_secondary_dark='*neutral_800',
+    border_color_accent='*secondary_900',
+    border_color_accent_subdued='*neutral_400',
+    border_color_accent_subdued_dark='*neutral_400',
+    color_accent='*primary_900',
+    color_accent_soft='*neutral_200',
+    color_accent_soft_dark='*neutral_800',
+    link_text_color='*secondary_900',
+    link_text_color_dark='*primary_900',
+    link_text_color_active_dark='*primary_600',
+    link_text_color_hover_dark='*primary_700',
+    link_text_color_visited_dark='*primary_600',
+    table_even_background_fill='*neutral_100',
+    table_even_background_fill_dark='*neutral_800',
+    button_primary_background_fill='*secondary_900',
+    button_primary_background_fill_dark='*primary_900',
+    button_primary_background_fill_hover='*secondary_600',
+    button_primary_background_fill_hover_dark='*primary_600',
+    button_primary_text_color='*neutral_900',
+    button_primary_text_color_dark='*neutral_900'
 )
 # --- Gradio App Definition ---
 demo = gr.Blocks(theme=theme, css=css)

@@ -1,4 +1,5 @@
 import gradio as gr
+from gradio.events import SelectData
 import pandas as pd
 import plotly.graph_objects as go
 import os
@@ -6,7 +7,7 @@ import os
 from agenteval.leaderboard.view import LeaderboardViewer
 from huggingface_hub import HfApi
 
-from leaderboard_transformer import DataTransformer, transform_raw_dataframe, create_pretty_tag_map, INFORMAL_TO_FORMAL_NAME_MAP, _plot_scatter_plotly
+from leaderboard_transformer import DataTransformer, transform_raw_dataframe, create_pretty_tag_map, INFORMAL_TO_FORMAL_NAME_MAP, _plot_scatter_plotly, format_cost_column, format_score_column
 from content import (
     format_error,
     format_log,
@@ -115,11 +116,20 @@ def create_leaderboard_display(
     # The function no longer loads data itself; it filters the data it receives.
     transformer = DataTransformer(full_df, tag_map)
     df_view, plots_dict = transformer.view(tag=category_name, use_plotly=True)
+    # format cost columns
+    for col in df_view.columns:
+        if "Cost" in col:
+            df_view = format_cost_column(df_view, col)
+
+    # 2. Fill NaN scores with 0
+    for col in df_view.columns:
+        if "Score" in col:
+            df_view = format_score_column(df_view, col)
     scatter_plot = plots_dict.get('scatter_plot', go.Figure())
 
     # 2. Define the UI components with the filtered data.
     df_headers = df_view.columns.tolist()
-    df_datatypes = ["markdown" if col == "Logs" else "str" for col in df_headers]
+    df_datatypes = ["markdown" if col == "Logs" or "Cost" in col or "Score" in col else "str" for col in df_headers]
 
     gr.DataFrame(
         headers=df_headers,
@@ -173,7 +183,6 @@ def create_benchmark_details_display(
     """
     Generates a detailed breakdown for each benchmark within a given category.
     For each benchmark, it creates a title, a filtered table, and a scatter plot.
-
     Args:
         full_df (pd.DataFrame): The complete, "pretty" dataframe for the entire split.
         tag_map (dict): The "pretty" tag map to find the list of benchmarks.
@@ -217,12 +226,20 @@ def create_benchmark_details_display(
 
                 if has_score and has_cost:
                     return "✅"
-                if has_score:
+                if has_score or has_cost:
                     return "⚠️"
                 return "🚫 "
 
             # Apply the function to create the new column
             benchmark_table_df['Attempted Benchmark'] = benchmark_table_df.apply(check_benchmark_status, axis=1)
+            # Sort the DataFrame
+            if benchmark_score_col in benchmark_table_df.columns:
+                benchmark_table_df = benchmark_table_df.sort_values(
+                    by=benchmark_score_col, ascending=False, na_position='last'
+                )
+            # 1. Format the cost and score columns
+            benchmark_table_df = format_cost_column(benchmark_table_df, benchmark_cost_col)
+            benchmark_table_df = format_score_column(benchmark_table_df, benchmark_score_col)
             desired_cols_in_order = [
                 'Agent',
                 'Submitter',
@@ -232,13 +249,8 @@ def create_benchmark_details_display(
                 'Date',
                 'Logs'
             ]
-            # Filter to only the columns that actually exist in our temp_df
             existing_cols_in_order = [col for col in desired_cols_in_order if col in benchmark_table_df.columns]
-
-            # Select and sort the final columns for the table view
             benchmark_table_df = benchmark_table_df[existing_cols_in_order]
-            benchmark_table_df = benchmark_table_df.sort_values(by=benchmark_score_col, ascending=False)
-
             # Rename columns for a cleaner table display, as requested
             benchmark_table_df.rename(columns={
                 benchmark_score_col: 'Score',
@@ -247,7 +259,10 @@ def create_benchmark_details_display(
             # Ensure the 'Logs' column is formatted correctly
             table_headers = benchmark_table_df.columns.tolist()
             # If the column is 'Logs', render as markdown; otherwise, as a string.
-            df_datatypes = ["markdown" if col == "Logs" else "str" for col in table_headers]
+            df_datatypes = [
+                "markdown" if col in ["Logs", "Cost", "Score"] else "str"
+                for col in table_headers
+            ]
 
             # Create the Gradio component, now with the correct datatypes
             gr.DataFrame(

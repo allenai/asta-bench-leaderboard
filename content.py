@@ -1,3 +1,4 @@
+import gradio as gr
 TITLE = """<h1 align="center" id="space-title">AstaBench Leaderboard</h1>"""
 
 INTRODUCTION_TEXT = """

@@ -174,10 +174,8 @@ class DataTransformer:
             return self.data, {}
 
         # --- 1. Determine Primary and Group Metrics Based on the Tag ---
-        # This logic is now explicit and easy to read.
         if tag is None or tag == "Overall":
             primary_metric = "Overall"
-            # For the Overall view, the group IS all the main categories (the keys of the tag map).
             group_metrics = list(self.tag_map.keys())
         else:
             primary_metric = tag
@@ -213,12 +211,8 @@ class DataTransformer:
         # Calculated and add "Categories Attempted" column
         if primary_metric == "Overall":
             def calculate_attempted(row):
-                count = 0
                 main_categories = ['Literature Understanding', 'Data Analysis', 'Code Execution', 'Discovery']
-                for category in main_categories:
-                    # Check if score data exists and is not NaN for this category
-                    if pd.notna(row.get(f"{category} Cost")):
-                        count += 1
+                count = sum(1 for category in main_categories if pd.notna(row.get(f"{category} Cost")))
 
                 # Return the formatted string with the correct emoji
                 if count == 4:
@@ -267,7 +261,6 @@ class DataTransformer:
                 )
                 # Add an empty figure to avoid downstream errors
                 plots['scatter_plot'] = go.Figure()
-
         return df_view, plots
 
 DEFAULT_Y_COLUMN = "Overall Score"
@@ -373,3 +366,67 @@ def _plot_scatter_plotly(
     )
 
     return fig
+
+def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
+    """
+    Applies custom formatting to a cost column based on its corresponding score column.
+    - If cost is not null, it remains unchanged.
+    - If cost is null but score is not, it becomes "Missing Cost".
+    - If both cost and score are null, it becomes "Not Attempted".
+    Args:
+        df: The DataFrame to modify.
+        cost_col_name: The name of the cost column to format (e.g., "Overall Cost").
+    Returns:
+        The DataFrame with the formatted cost column.
+    """
+    # Find the corresponding score column by replacing "Cost" with "Score"
+    score_col_name = cost_col_name.replace("Cost", "Score")
+
+    # Ensure the score column actually exists to avoid errors
+    if score_col_name not in df.columns:
+        return df # Return the DataFrame unmodified if there's no matching score
+
+    def apply_formatting_logic(row):
+        cost_value = row[cost_col_name]
+        score_value = row[score_col_name]
+        status_color = "#ec4899"
+
+        if pd.notna(cost_value) and isinstance(cost_value, (int, float)):
+            return f"${cost_value:.2f}"
+        elif pd.notna(score_value):
+            return f'<span style="color: {status_color};">Missing Cost</span>'  # Score exists, but cost is missing
+        else:
+            return f'<span style="color: {status_color};">Not Attempted</span>'  # Neither score nor cost exists
+
+    # Apply the logic to the specified cost column and update the DataFrame
+    df[cost_col_name] = df.apply(apply_formatting_logic, axis=1)
+
+    return df
+
+def format_score_column(df: pd.DataFrame, score_col_name: str) -> pd.DataFrame:
+    """
+    Applies custom formatting to a score column for display.
+    - If a score is 0 or NaN, it's displayed as a colored "0".
+    - Other scores are formatted to two decimal places.
+    """
+    status_color = "#ec4899"  # The same color as your other status text
+
+    # First, fill any NaN values with 0 so we only have one case to handle.
+    # We must use reassignment to avoid the SettingWithCopyWarning.
+    df[score_col_name] = df[score_col_name].fillna(0)
+
+    def apply_formatting(score_value):
+        # Now, we just check if the value is 0.
+        if score_value == 0:
+            return f'<span style="color: {status_color};">0.0</span>'
+
+        # For all other numbers, format them for consistency.
+        if isinstance(score_value, (int, float)):
+            return f"{score_value:.2f}"
+
+        # Fallback for any unexpected non-numeric data
+        return score_value
+
+    # Apply the formatting and return the updated DataFrame
+    return df.assign(**{score_col_name: df[score_col_name].apply(apply_formatting)})
+
