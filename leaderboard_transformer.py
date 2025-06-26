@@ -190,6 +190,7 @@ class DataTransformer:
 
         # --- 3. Build the List of Columns to Display ---
         base_cols = ["Agent", "Submitter"]
+        new_cols = ["Openness", "Degree of Control"]
         ending_cols = ["Date", "Logs"]
 
         # Start with the primary metric score and cost
@@ -201,12 +202,15 @@ class DataTransformer:
             metrics_to_display.append(f"{item} Cost")
 
         # Combine base columns with metric columns, ensuring uniqueness and order
-        final_cols_ordered = base_cols + list(dict.fromkeys(metrics_to_display)) + ending_cols
+        final_cols_ordered = base_cols + list(dict.fromkeys(metrics_to_display))+ new_cols + ending_cols
 
         # Filter to only include columns that actually exist in our DataFrame
-        existing_final_cols = [col for col in final_cols_ordered if col in df_sorted.columns]
+        df_view = df_sorted.copy()
+        for col in final_cols_ordered:
+            if col not in df_view.columns:
+                df_view[col] = pd.NA
 
-        df_view = df_sorted[existing_final_cols].reset_index(drop=True)
+        df_view = df_view[final_cols_ordered].reset_index(drop=True)
 
         # Calculated and add "Categories Attempted" column
         if primary_metric == "Overall":

@@ -246,11 +246,15 @@ def create_benchmark_details_display(
                 'Attempted Benchmark',
                 benchmark_score_col,
                 benchmark_cost_col,
+                'Openness',
+                'Degree of Control',
                 'Date',
                 'Logs'
             ]
-            existing_cols_in_order = [col for col in desired_cols_in_order if col in benchmark_table_df.columns]
-            benchmark_table_df = benchmark_table_df[existing_cols_in_order]
+            for col in desired_cols_in_order:
+                if col not in benchmark_table_df.columns:
+                    benchmark_table_df[col] = pd.NA # Add as an empty column
+            benchmark_table_df = benchmark_table_df[desired_cols_in_order]
             # Rename columns for a cleaner table display, as requested
             benchmark_table_df.rename(columns={
                 benchmark_score_col: 'Score',
