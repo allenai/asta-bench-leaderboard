@@ -131,7 +131,7 @@ def create_leaderboard_display(
     df_headers = df_view.columns.tolist()
     df_datatypes = ["markdown" if col == "Logs" or "Cost" in col or "Score" in col else "str" for col in df_headers]
 
-    gr.DataFrame(
+    dataframe_component = gr.DataFrame(
         headers=df_headers,
         value=df_view,
         datatype=df_datatypes,
@@ -140,10 +140,13 @@ def create_leaderboard_display(
         label=f"{split_name.capitalize()} Leaderboard",
     )
 
-    gr.Plot(
+    plot_component = gr.Plot(
         value=scatter_plot,
         label=f"Score vs. Cost ({category_name})"
     )
+
+    # Return the components so they can be referenced elsewhere.
+    return dataframe_component, plot_component
 
 def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     """

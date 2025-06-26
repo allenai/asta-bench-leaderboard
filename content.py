@@ -69,4 +69,9 @@ css = """
     font-weight: bold !important;
     font-size: 1.2em !important;
 }
+#logo-image { 
+    margin: auto;          
+    max-width: 250px;       
+    height: auto;           
+}
 """

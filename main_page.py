@@ -336,8 +336,7 @@ with gr.Blocks() as demo:
     CATEGORY_NAME = "Overall"
     gr.Markdown(f"## {CATEGORY_NAME} Leaderboard Results")
 
-    # The structure is now identical to the category pages
-    with gr.Tabs():
+    with gr.Tabs() as tabs:
         with gr.Tab("Results: Validation"):
             # 1. Load all necessary data for the "validation" split ONCE.
             validation_df, validation_tag_map = get_full_leaderboard_data("validation")
@@ -356,9 +355,7 @@ with gr.Blocks() as demo:
                 gr.Markdown("No data available for validation split.")
 
         with gr.Tab("Results: Test"):
-            # Repeat the exact same process for the "test" split
             test_df, test_tag_map = get_full_leaderboard_data("test")
-
             if not test_df.empty:
                 create_leaderboard_display(
                     full_df=test_df,

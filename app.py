@@ -15,6 +15,7 @@ OWNER = "allenai"
 PROJECT_NAME = "asta-bench" + ("-internal" if IS_INTERNAL else "")
 LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
 api = HfApi()
+LOGO_PATH = "Ai2_logo_pink_padding_RGB.png"
 
 
 
@@ -55,7 +56,17 @@ theme = gr.themes.Base(
 # --- Gradio App Definition ---
 demo = gr.Blocks(theme=theme, css=css)
 with demo:
+    gr.Image(
+        value=LOGO_PATH,
+        show_label=False,
+        interactive=False,
+        container=False,
+        show_download_button=False,
+        show_fullscreen_button=False,
+        elem_id="logo-image"
+    )
     gr.HTML(TITLE)
+
     main_page.demo.render()
 with demo.route("Literature Understanding"):
     literature_understanding.demo.render()
