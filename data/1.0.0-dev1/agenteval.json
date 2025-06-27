@@ -1,0 +1,332 @@
+{
+  "suite_config": {
+    "name": "asta-bench",
+    "version": "1.0.0-dev1",
+    "splits": [
+      {
+        "name": "validation",
+        "tasks": [
+          {
+            "name": "arxivdigestables_validation",
+            "path": "astabench/arxivdigestables_validation",
+            "primary_metric": "score_tables/mean",
+            "tags": [
+              "lit"
+            ]
+          },
+          {
+            "name": "sqa_dev",
+            "path": "astabench/sqa_dev",
+            "primary_metric": "global_avg/mean",
+            "tags": [
+              "lit"
+            ]
+          },
+          {
+            "name": "litqa2_validation",
+            "path": "astabench/litqa2_validation",
+            "primary_metric": "is_correct/accuracy",
+            "tags": [
+              "lit"
+            ]
+          },
+          {
+            "name": "paper_finder_validation",
+            "path": "astabench/paper_finder_validation",
+            "primary_metric": "score_paper_finder/macro_avg",
+            "tags": [
+              "lit"
+            ]
+          },
+          {
+            "name": "discoverybench_validation",
+            "path": "astabench/discoverybench_validation",
+            "primary_metric": "score_discoverybench/mean",
+            "tags": [
+              "data"
+            ]
+          },
+          {
+            "name": "core_bench_validation",
+            "path": "astabench/core_bench_validation",
+            "primary_metric": "evaluate_task_questions/accuracy",
+            "tags": [
+              "code"
+            ]
+          },
+          {
+            "name": "ds1000_validation",
+            "path": "astabench/ds1000_validation",
+            "primary_metric": "ds1000_scorer/accuracy",
+            "tags": [
+              "code"
+            ]
+          },
+          {
+            "name": "e2e_discovery_validation",
+            "path": "astabench/e2e_discovery_validation",
+            "primary_metric": "score_rubric/accuracy",
+            "tags": [
+              "discovery"
+            ]
+          },
+          {
+            "name": "super_validation",
+            "path": "astabench/super_validation",
+            "primary_metric": "check_super_execution/entrypoints",
+            "tags": [
+              "code"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "test",
+        "tasks": [
+          {
+            "name": "paper_finder_test",
+            "path": "astabench/paper_finder_test",
+            "primary_metric": "score_paper_finder/macro_avg",
+            "tags": [
+              "lit"
+            ]
+          },
+          {
+            "name": "sqa_test",
+            "path": "astabench/sqa_test",
+            "primary_metric": "global_avg/mean",
+            "tags": [
+              "lit"
+            ]
+          },
+          {
+            "name": "arxivdigestables_test",
+            "path": "astabench/arxivdigestables_test",
+            "primary_metric": "score_tables/mean",
+            "tags": [
+              "lit"
+            ]
+          },
+          {
+            "name": "litqa2_test",
+            "path": "astabench/litqa2_test",
+            "primary_metric": "is_correct/accuracy",
+            "tags": [
+              "lit"
+            ]
+          },
+          {
+            "name": "discoverybench_test",
+            "path": "astabench/discoverybench_test",
+            "primary_metric": "score_discoverybench/mean",
+            "tags": [
+              "data"
+            ]
+          },
+          {
+            "name": "core_bench_test",
+            "path": "astabench/core_bench_test",
+            "primary_metric": "evaluate_task_questions/accuracy",
+            "tags": [
+              "code"
+            ]
+          },
+          {
+            "name": "ds1000_test",
+            "path": "astabench/ds1000_test",
+            "primary_metric": "ds1000_scorer/accuracy",
+            "tags": [
+              "code"
+            ]
+          },
+          {
+            "name": "e2e_discovery_test",
+            "path": "astabench/e2e_discovery_test",
+            "primary_metric": "score_rubric/accuracy",
+            "tags": [
+              "discovery"
+            ]
+          },
+          {
+            "name": "super_test",
+            "path": "astabench/super_test",
+            "primary_metric": "check_super_execution/entrypoints",
+            "tags": [
+              "code"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "split": "validation",
+  "results": [
+    {
+      "task_name": "sqa_dev",
+      "metrics": [
+        {
+          "name": "global_avg/mean",
+          "value": 0.6215245045241414
+        },
+        {
+          "name": "global_avg/stderr",
+          "value": 0.02088486499225903
+        },
+        {
+          "name": "ingredient_recall/mean",
+          "value": 0.6029178145087237
+        },
+        {
+          "name": "ingredient_recall/stderr",
+          "value": 0.026215888361291618
+        },
+        {
+          "name": "answer_precision/mean",
+          "value": 0.7960436785436785
+        },
+        {
+          "name": "answer_precision/stderr",
+          "value": 0.027692773517249983
+        },
+        {
+          "name": "citation_precision/mean",
+          "value": 0.697849041353826
+        },
+        {
+          "name": "citation_precision/stderr",
+          "value": 0.026784164936602798
+        },
+        {
+          "name": "citation_recall/mean",
+          "value": 0.3892874836903378
+        },
+        {
+          "name": "citation_recall/stderr",
+          "value": 0.015094770200171756
+        }
+      ],
+      "model_costs": [
+        1.3829150000000001,
+        0.9759700000000001,
+        2.2324650000000004,
+        0.76631,
+        0.9277900000000001,
+        2.6388600000000006,
+        0.8114100000000002,
+        2.3263174999999996,
+        2.5423725,
+        1.2398675000000001,
+        1.7387300000000003,
+        1.2176599999999997,
+        0.564655,
+        0.9726750000000001,
+        0.7675700000000001,
+        1.5198850000000002,
+        1.4726625000000002,
+        2.1937650000000004,
+        0.6907700000000001,
+        1.39835,
+        1.2598175,
+        2.5373550000000002,
+        2.19239,
+        1.2508875000000006,
+        2.2650550000000007,
+        1.6047725,
+        0.6525125000000003,
+        1.4262200000000003,
+        1.0533299999999999,
+        1.7252375,
+        1.407145,
+        1.5408700000000004,
+        2.8073224999999993,
+        1.0448125000000006,
+        1.7037300000000004,
+        0.8650500000000001,
+        1.0171225000000002,
+        0.5697925000000001,
+        2.7851025,
+        1.0551425,
+        2.9213775,
+        1.7772975000000004,
+        1.2753225000000001,
+        0.8108325000000001,
+        0.6958375000000001,
+        0.8840950000000003,
+        1.2028724999999998,
+        1.2490475000000003,
+        2.4272,
+        1.95026,
+        1.5352475,
+        2.11181,
+        2.3612249999999997,
+        1.8619225000000004,
+        0.7431075000000001,
+        1.5189675000000002,
+        1.089575,
+        1.6103700000000003,
+        1.4201450000000002,
+        2.397835,
+        1.469175,
+        1.0723550000000004,
+        0.7964050000000003,
+        3.3733175,
+        4.197085,
+        4.2637675,
+        1.2982124999999998,
+        0.66146,
+        1.1130475000000002,
+        2.4393974999999997,
+        2.582,
+        1.7381725000000001,
+        0.415025,
+        1.6777325,
+        1.0507825000000002,
+        2.4627125000000003,
+        1.017005,
+        1.9210250000000002,
+        1.5009025000000003,
+        0.8283125000000001,
+        2.9854425,
+        0.4633375000000001,
+        0.397685,
+        1.2803425,
+        3.0388200000000003,
+        1.2610875000000004,
+        1.798365,
+        3.427287500000001,
+        0.29307750000000005,
+        0.37101249999999997,
+        2.8046925000000003,
+        0.35557000000000005,
+        3.5481700000000007,
+        1.1073975,
+        1.5280825,
+        1.1714900000000001,
+        3.1791275000000003,
+        3.8214725000000005,
+        1.8440275,
+        1.730515,
+        1.9350675000000002,
+        1.6592125000000002,
+        1.9227124999999998,
+        1.202885,
+        1.2688150000000002,
+        0.8819875000000001,
+        0.6989325,
+        1.965635,
+        1.7467800000000002,
+        1.6940625000000002
+      ]
+    }
+  ],
+  "submission": {
+    "submit_time": "2025-06-09T20:55:35.869831Z",
+    "username": "miked-ai",
+    "agent_name": "Basic ReAct",
+    "agent_description": null,
+    "agent_url": null,
+    "logs_url": "hf://datasets/allenai/asta-bench-internal-submissions/1.0.0-dev1/validation/miked-ai_Basic_ReAct__task_tools__report_editor__2025-06-09T20-55-35",
+    "logs_url_public": null,
+    "summary_url": null
+  }
+}
