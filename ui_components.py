@@ -9,6 +9,7 @@ from huggingface_hub import HfApi
 
 from leaderboard_transformer import DataTransformer, transform_raw_dataframe, create_pretty_tag_map, INFORMAL_TO_FORMAL_NAME_MAP, _plot_scatter_plotly, format_cost_column, format_score_column
 from content import (
+    SCATTER_DISCLAIMER,
     format_error,
     format_log,
     format_warning,
@@ -137,13 +138,14 @@ def create_leaderboard_display(
         datatype=df_datatypes,
         interactive=False,
         wrap=True,
-        label=f"{split_name.capitalize()} Leaderboard",
+        column_widths=[100, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 75, 75, 50, 50]
     )
 
     plot_component = gr.Plot(
         value=scatter_plot,
         label=f"Score vs. Cost ({category_name})"
     )
+    gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
     # Return the components so they can be referenced elsewhere.
     return dataframe_component, plot_component
@@ -275,7 +277,6 @@ def create_benchmark_details_display(
             gr.DataFrame(
                 value=benchmark_table_df,
                 datatype=df_datatypes,
-                label=f"Results for {benchmark_name}",
                 interactive=False,
                 wrap=True,
             )
@@ -289,3 +290,4 @@ def create_benchmark_details_display(
                 agent_col="Agent"
             )
             gr.Plot(value=benchmark_plot)
+            gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")

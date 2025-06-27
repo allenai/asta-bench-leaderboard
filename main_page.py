@@ -32,6 +32,7 @@ from content import (
     INTRODUCTION_TEXT,
     SUBMISSION_TEXT,
     INTRO_PARAGRAPH,
+    SCATTER_DISCLAIMER,
     format_error,
     format_log,
     format_warning,

@@ -1,10 +1,16 @@
-import gradio as gr
 TITLE = """<h1 align="center" id="space-title">AstaBench Leaderboard</h1>"""
 
 INTRODUCTION_TEXT = """
 ## Introduction
 """
-INTRO_PARAGRAPH = "Hello welcome to the AstaBench Leaderboard. We made this leaderboard for you, do you like it? Please say yes, or we will cry. You don't want to make us cry do you? That's what I thought."
+INTRO_PARAGRAPH = """
+AI agents are on the rise, promising everything from travel planning to scientific discovery. But evaluating them—especially for real-world research tasks—remains a messy, inconsistent process. Metrics vary, cost is often ignored, and scientific use cases are rarely the focus. <br>
+<br>
+Enter AstaBench, a grand challenge benchmark developed by Ai2 to test how well agentic AI systems perform on scientific tasks that actually matter. As part of the Asta initiative, AstaBench spans ten multi-step benchmarks covering literature review, data analysis, code execution, and complex decision-making. It brings standardization and transparency to agent evaluation, with statistical confidence reporting, and a leaderboard that highlights tradeoffs between accuracy and computational cost.
+"""
+SCATTER_DISCLAIMER = """
+Only agents that have cost data available will be shown in the scatter plot. If you don't see your agent, please ensure that you have provided cost data in your submission.
+"""
 
 SUBMISSION_TEXT = """
 ## Submissions
@@ -73,5 +79,41 @@ css = """
     margin: auto;          
     max-width: 250px;       
     height: auto;           
+}
+.table-component{
+    height: auto !important;
+    max-height: none !important;
+}
+
+.table-wrap {
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
+}
+/* --- New Rules for Table Density --- */
+table.gr-table th, table.gr-table td {
+    padding: 4px 4px !important; 
+    width: 1%;
+    white-space: nowrap;
+}
+
+table.gr-table {
+    font-size: 14px !important;
+}
+
+/* Example of making the "Agent" column (the 1st column) a bit wider if needed */
+table.gr-table th:nth-child(1),
+table.gr-table td:nth-child(1) {
+    min-width: 150px !important;
+    white-space: normal !important; /* Allow agent names to wrap if long */
+}
+.html-container {
+    padding-top: 0 !important;
+}
+#scatter-disclaimer {
+    color: #f0529c !important;
+}
+thead.svelte-1e98i6s th {
+    background: white !important;
 }
 """
