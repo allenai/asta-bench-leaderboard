@@ -3,3 +3,5 @@ gradio[oauth]==5.30.0
 huggingface-hub
 APScheduler
 agent-eval==0.1.9
+pandas
+plotly
