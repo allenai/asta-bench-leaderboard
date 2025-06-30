@@ -5,3 +5,4 @@ APScheduler
 agent-eval==0.1.9
 pandas
 plotly
+matplotlib
