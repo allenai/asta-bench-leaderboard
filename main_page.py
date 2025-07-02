@@ -29,10 +29,8 @@ from ui_components import create_leaderboard_display, get_full_leaderboard_data
 from content import (
     CITATION_BUTTON_LABEL,
     CITATION_BUTTON_TEXT,
-    INTRODUCTION_TEXT,
     SUBMISSION_TEXT,
     INTRO_PARAGRAPH,
-    SCATTER_DISCLAIMER,
     format_error,
     format_log,
     format_warning,
@@ -289,8 +287,7 @@ def add_new_eval(
         "Please refresh the leaderboard in a few moments. It may take some time for changes to propagate."
     )
 
-with gr.Blocks() as demo:
-    gr.Markdown(INTRODUCTION_TEXT, elem_classes="markdown-text")
+with gr.Blocks(fill_width=True) as demo:
     gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
 
     # --- Submission Accordion ---
@@ -302,7 +299,7 @@ with gr.Blocks() as demo:
                 agent_name_tb = gr.Textbox(label="Agent Name")
                 agent_desc_tb = gr.Textbox(label="Agent Description")
                 agent_url_tb = gr.Textbox(label="URL to Agent Information")
-                openness_radio = gr.Radio(["Open Source", "API", "UI"], value=None, label="Openness of Agent")
+                openness_radio = gr.Radio(["Open Source","Open Source Open Weights" "API", "UI Only"], value=None, label="Openness of Agent")
                 degree_of_control_radio = gr.Radio(["Standard", "Custom"], value=None, label="Degree of Control")
             with gr.Column():
                 username_tb = gr.Textbox(label="Organization or User Name (Defaults to HF username)")
@@ -352,7 +349,6 @@ with gr.Blocks() as demo:
                     split_name="validation"
                 )
             else:
-                # Display a message if no data is available
                 gr.Markdown("No data available for validation split.")
 
         with gr.Tab("Results: Test"):

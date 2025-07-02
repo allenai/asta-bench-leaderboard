@@ -1,8 +1,5 @@
-TITLE = """<h1 align="center" id="space-title">AstaBench Leaderboard</h1>"""
+TITLE = """<h1 align="left" id="space-title">AstaBench Leaderboard</h1>"""
 
-INTRODUCTION_TEXT = """
-## Introduction
-"""
 INTRO_PARAGRAPH = """
 AI agents are on the rise, promising everything from travel planning to scientific discovery. But evaluating them—especially for real-world research tasks—remains a messy, inconsistent process. Metrics vary, cost is often ignored, and scientific use cases are rarely the focus. <br>
 <br>
@@ -10,6 +7,9 @@ Enter AstaBench, a grand challenge benchmark developed by Ai2 to test how well a
 """
 SCATTER_DISCLAIMER = """
 Only agents that have cost data available will be shown in the scatter plot. If you don't see your agent, please ensure that you have provided cost data in your submission.
+"""
+PARETO_DISCLAIMER = """
+Agents names that are green are Pareto optimal, meaning they achieve the best performance for their cost. 
 """
 
 SUBMISSION_TEXT = """
@@ -113,7 +113,16 @@ table.gr-table td:nth-child(1) {
 #scatter-disclaimer {
     color: #f0529c !important;
 }
+#pareto-disclaimer {
+    color: #f0529c !important;
+}
 thead.svelte-1e98i6s th {
     background: white !important;
 }
+.dark thead.svelte-1e98i6s th {
+    background: #091a1a !important;
+}
+.cell-wrap.svelte-v1pjjd {
+    font-family: 'Manrope';
+    }
 """

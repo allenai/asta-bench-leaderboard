@@ -146,7 +146,6 @@ class DataTransformer:
     def __init__(self, dataframe: pd.DataFrame, tag_map: dict[str, list[str]]):
         """
         Initializes the viewer.
-
         Args:
             dataframe (pd.DataFrame): The presentation-ready leaderboard data.
             tag_map (dict): A map of formal tag names to formal task names.
@@ -242,7 +241,6 @@ class DataTransformer:
                     return f"{count}/{total_benchmarks}⚠️"
             # Insert the new column, for example, after "Date"
             df_view.insert(2, "Benchmarks Attempted", df_view.apply(calculate_benchmarks_attempted, axis=1))
-
 
         # --- 4. Generate the Scatter Plot for the Primary Metric ---
         plots: dict[str, go.Figure] = {}
@@ -344,7 +342,7 @@ def _plot_scatter_plotly(
 
     # --- Step 7: Plot Individual Agent Markers (No changes here) ---
     for agent, group in data_plot.groupby(agent_col):
-        hover_x_display = "%{x:.2f}" if x_data_is_valid else "N/A"
+        hover_x_display = "%{x:$.2f}" if x_data_is_valid else "N/A"
         fig.add_trace(go.Scatter(
             x=group[x_col_to_use],
             y=group[y_col_to_use],
@@ -398,7 +396,7 @@ def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
         if pd.notna(cost_value) and isinstance(cost_value, (int, float)):
             return f"${cost_value:.2f}"
         elif pd.notna(score_value):
-            return f'<span style="color: {status_color};">Missing Cost</span>'  # Score exists, but cost is missing
+            return f'<span style="color: {status_color};">Missing</span>'  # Score exists, but cost is missing
         else:
             return f'<span style="color: {status_color};">Not Attempted</span>'  # Neither score nor cost exists
 
@@ -433,4 +431,35 @@ def format_score_column(df: pd.DataFrame, score_col_name: str) -> pd.DataFrame:
 
     # Apply the formatting and return the updated DataFrame
     return df.assign(**{score_col_name: df[score_col_name].apply(apply_formatting)})
+
+
+def get_pareto_df(data):
+    # This is a placeholder; use your actual function that handles dynamic column names
+    # A robust version might look for any column with "Cost" and "Score"
+    cost_cols = [c for c in data.columns if 'Cost' in c]
+    score_cols = [c for c in data.columns if 'Score' in c]
+    if not cost_cols or not score_cols:
+        return pd.DataFrame()
+
+    x_col, y_col = cost_cols[0], score_cols[0]
+
+    frontier_data = data.dropna(subset=[x_col, y_col]).copy()
+    frontier_data[y_col] = pd.to_numeric(frontier_data[y_col], errors='coerce')
+    frontier_data[x_col] = pd.to_numeric(frontier_data[x_col], errors='coerce')
+    frontier_data.dropna(subset=[x_col, y_col], inplace=True)
+    if frontier_data.empty:
+        return pd.DataFrame()
+
+    frontier_data = frontier_data.sort_values(by=[x_col, y_col], ascending=[True, False])
+
+    pareto_points = []
+    max_score_at_cost = -np.inf
+
+    for _, row in frontier_data.iterrows():
+        if row[y_col] >= max_score_at_cost:
+            pareto_points.append(row)
+            max_score_at_cost = row[y_col]
+
+    return pd.DataFrame(pareto_points)
+
 
