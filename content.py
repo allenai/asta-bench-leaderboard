@@ -12,10 +12,6 @@ PARETO_DISCLAIMER = """
 Agents names that are green are Pareto optimal, meaning they achieve the best performance for their cost. 
 """
 
-SUBMISSION_TEXT = """
-## Submissions
-"""
-
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"
 CITATION_BUTTON_TEXT = r"""@article{asta-bench,
     title={AstaBench},

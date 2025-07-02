@@ -4,7 +4,7 @@ import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
-import literature_understanding, main_page, c_and_e, data_analysis, e2e
+import literature_understanding, main_page, c_and_e, data_analysis, e2e, submission
 
 from content import TITLE, css
 
@@ -76,6 +76,8 @@ with demo.route("Data Analysis"):
     data_analysis.demo.render()
 with demo.route("Discovery"):
     e2e.demo.render()
+with demo.route("Submit an Agent"):
+    submission.demo.render()
 
 # --- Scheduler and Launch
 def restart_space_job():
