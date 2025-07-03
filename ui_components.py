@@ -1,5 +1,4 @@
 import gradio as gr
-from gradio.events import SelectData
 import pandas as pd
 import plotly.graph_objects as go
 import os
@@ -133,6 +132,10 @@ def create_leaderboard_display(
         pareto_agent_names = pareto_df['Agent'].tolist()
     else:
         pareto_agent_names = []
+    df_view['Pareto'] = df_view.apply(
+        lambda row: '🎯' if row['Agent'] in pareto_agent_names else '',
+        axis=1
+    )
 
     # Format cost columns
     for col in df_view.columns:
@@ -145,24 +148,13 @@ def create_leaderboard_display(
             df_view = format_score_column(df_view, col)
     scatter_plot = plots_dict.get('scatter_plot', go.Figure())
 
-    # Highlight agents on the Pareto frontier in the DataFrame.
-    styled_data = []
-    df_headers = df_view.columns.tolist()
-    try:
-        agent_col_index = df_headers.index('Agent')
-    except ValueError:
-        agent_col_index = -1 # Agent column not found
 
-    for _, row in df_view.iterrows():
-        new_row = []
-        for i, item in enumerate(row):
-            # Check if this is the 'Agent' column AND if this agent is on the frontier.
-            if i == agent_col_index and item in pareto_agent_names:
-                styled_item = f"<span style='color: #22c55e; font-weight: bold;'>{item}</span>"
-                new_row.append(styled_item)
-            else:
-                new_row.append(str(item) if pd.notna(item) else "")
-        styled_data.append(new_row)
+    all_cols = df_view.columns.tolist()
+    # Remove 'Pareto' from the list and insert it at the beginning
+    all_cols.insert(0, all_cols.pop(all_cols.index('Pareto')))
+    df_view = df_view[all_cols]
+
+    df_headers = df_view.columns.tolist()
     df_datatypes = ["markdown" if col == "Logs" or col == "Agent" or "Cost" in col or "Score" in col else "str" for col in df_headers]
 
     plot_component = gr.Plot(
@@ -172,13 +164,12 @@ def create_leaderboard_display(
     gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
     dataframe_component = gr.DataFrame(
         headers=df_headers,
-        value=styled_data,
+        value=df_view,
         datatype=df_datatypes,
         interactive=False,
         wrap=True,
-        column_widths=[100, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 75, 75, 50, 50]
+        column_widths=[30, 30, 30, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 50, 30]
     )
-    gr.HTML(PARETO_DISCLAIMER, elem_id="pareto-disclaimer")
 
     # Return the components so they can be referenced elsewhere.
     return plot_component, dataframe_component,
@@ -263,11 +254,14 @@ def create_benchmark_details_display(
                 pareto_agent_names = pareto_df['Agent'].tolist()
             else:
                 pareto_agent_names = []
+            benchmark_table_df['Pareto'] = benchmark_table_df.apply(
+                lambda row: '🎯' if row['Agent'] in pareto_agent_names else '',
+                axis=1
+            )
             # Calculated and add "Benchmark Attempted" column
             def check_benchmark_status(row):
                 has_score = pd.notna(row.get(benchmark_score_col))
                 has_cost = pd.notna(row.get(benchmark_cost_col))
-
                 if has_score and has_cost:
                     return "✅"
                 if has_score or has_cost:
@@ -285,6 +279,7 @@ def create_benchmark_details_display(
             benchmark_table_df = format_cost_column(benchmark_table_df, benchmark_cost_col)
             benchmark_table_df = format_score_column(benchmark_table_df, benchmark_score_col)
             desired_cols_in_order = [
+                'Pareto',
                 'Agent',
                 'Submitter',
                 'Attempted Benchmark',
@@ -305,25 +300,7 @@ def create_benchmark_details_display(
                 benchmark_cost_col: 'Cost'
             }, inplace=True)
             # Ensure the 'Logs' column is formatted correctly
-
-            # Highlight agents on the Pareto frontier in the DataFrame.
-            styled_data = []
             df_headers = benchmark_table_df.columns.tolist()
-            try:
-                agent_col_index = df_headers.index('Agent')
-            except ValueError:
-                agent_col_index = -1 # Agent column not found
-
-            for _, row in benchmark_table_df.iterrows():
-                new_row = []
-                for i, item in enumerate(row):
-                    # Check if this is the 'Agent' column AND if this agent is on the frontier.
-                    if i == agent_col_index and item in pareto_agent_names:
-                        styled_item = f"<span style='color: #22c55e; font-weight: bold;'>{item}</span>"
-                        new_row.append(styled_item)
-                    else:
-                        new_row.append(str(item) if pd.notna(item) else "")
-                styled_data.append(new_row)
             df_datatypes = ["markdown" if col == "Logs" or col == "Agent" or "Cost" in col or "Score" in col else "str" for col in df_headers]
 
             # Create the scatter plot using the full data for context, but plotting benchmark metrics
@@ -339,9 +316,9 @@ def create_benchmark_details_display(
             # Create the Gradio component, now with the correct datatypes
             gr.DataFrame(
                 headers=df_headers,
-                value=styled_data,
+                value=benchmark_table_df,
                 datatype=df_datatypes,
                 interactive=False,
                 wrap=True,
             )
-            gr.HTML(PARETO_DISCLAIMER, elem_id="pareto-disclaimer")
+

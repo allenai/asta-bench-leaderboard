@@ -62,17 +62,10 @@ def hf_uri_to_web_url(uri: str) -> str:
     return f"https://huggingface.co/datasets/{namespace}/{repo}/tree/main/{path}"
 
 css = """
-.submission-accordion {
-    border-style: solid;
-    border-width: 3px !important;
-    border-color: #ec4899;
-}
-.submission-accordion span.svelte-1w6vloh { 
-    font-weight: bold !important;
-    font-size: 1.2em !important;
-}
+
 #logo-image { 
-    margin: auto;          
+    margin: 0;
+    justify-content: flex-start;        
     max-width: 250px;       
     height: auto;           
 }
@@ -80,7 +73,6 @@ css = """
     height: auto !important;
     max-height: none !important;
 }
-
 .table-wrap {
     max-height: none !important;
     height: auto !important;
@@ -92,16 +84,11 @@ table.gr-table th, table.gr-table td {
     width: 1%;
     white-space: nowrap;
 }
-
+table.svelte-1e98i6s td {
+    vertical-align: top !important;
+}
 table.gr-table {
     font-size: 14px !important;
-}
-
-/* Example of making the "Agent" column (the 1st column) a bit wider if needed */
-table.gr-table th:nth-child(1),
-table.gr-table td:nth-child(1) {
-    min-width: 150px !important;
-    white-space: normal !important; /* Allow agent names to wrap if long */
 }
 .html-container {
     padding-top: 0 !important;
@@ -121,4 +108,7 @@ thead.svelte-1e98i6s th {
 .cell-wrap.svelte-v1pjjd {
     font-family: 'Manrope';
     }
+nav.svelte-ti537g.svelte-ti537g {
+    justify-content: flex-start;
+}
 """

@@ -187,29 +187,51 @@ class DataTransformer:
         if primary_score_col in self.data.columns:
             df_sorted = self.data.sort_values(primary_score_col, ascending=False, na_position='last')
 
-        # --- 3. Build the List of Columns to Display ---
-        base_cols = ["Agent", "Submitter"]
+        df_view = df_sorted.copy()
+        # 3. Combine "Agent" and "Submitter" into a single HTML-formatted column
+        #    We do this *before* defining the final column list.
+        if 'Agent' in df_view.columns and 'Submitter' in df_view.columns:
+
+            def combine_agent_submitter(row):
+                agent = row['Agent']
+                submitter = row['Submitter']
+
+                # Check if submitter exists and is not empty
+                if pd.notna(submitter) and submitter.strip() != '':
+                    # Create a two-line HTML string with styled submitter text
+                    return (
+                        f"<div>{agent}<br>"
+                        f"<span style='font-size: 0.9em; color: #667876;'>{submitter}</span>"
+                        f"</div>"
+                    )
+                else:
+                    # If no submitter, just return the agent name
+                    return agent
+
+            # Apply the function to create the new combined 'Agent' column
+            df_view['Agent'] = df_view.apply(combine_agent_submitter, axis=1)
+            # The 'Submitter' column is no longer needed
+            df_view = df_view.drop(columns=['Submitter'])
+
+        # 4. Build the List of Columns to Display (now simplified)
+        base_cols = ["Agent"]
         new_cols = ["Openness", "Degree of Control"]
-        ending_cols = ["Date", "Logs"]
+        ending_cols = ["Logs"]
 
-        # Start with the primary metric score and cost
         metrics_to_display = [primary_score_col, f"{primary_metric} Cost"]
-
-        # Add the score and cost for each item in our group
         for item in group_metrics:
             metrics_to_display.append(f"{item} Score")
             metrics_to_display.append(f"{item} Cost")
 
-        # Combine base columns with metric columns, ensuring uniqueness and order
-        final_cols_ordered = base_cols + list(dict.fromkeys(metrics_to_display))+ new_cols + ending_cols
+        final_cols_ordered = new_cols + base_cols +  list(dict.fromkeys(metrics_to_display)) + ending_cols
 
-        # Filter to only include columns that actually exist in our DataFrame
-        df_view = df_sorted.copy()
         for col in final_cols_ordered:
             if col not in df_view.columns:
                 df_view[col] = pd.NA
 
+        # The final selection will now use the new column structure
         df_view = df_view[final_cols_ordered].reset_index(drop=True)
+        cols = len(final_cols_ordered)
 
         # Calculated and add "Categories Attempted" column
         if primary_metric == "Overall":
@@ -219,28 +241,28 @@ class DataTransformer:
 
                 # Return the formatted string with the correct emoji
                 if count == 4:
-                    return f"4/4 ✅"
+                    return f"4/4"
                 if count == 0:
-                    return f"0/4 🚫"
-                return f"{count}/4 ⚠️"
+                    return f"0/4"
+                return f"{count}/4"
 
             # Apply the function row-wise to create the new column
             attempted_column = df_view.apply(calculate_attempted, axis=1)
             # Insert the new column at a nice position (e.g., after "Date")
-            df_view.insert(2, "Categories Attempted", attempted_column)
+            df_view.insert((cols - 1), "Categories Attempted", attempted_column)
         else:
             total_benchmarks = len(group_metrics)
             def calculate_benchmarks_attempted(row):
                 # Count how many benchmarks in this category have COST data reported
                 count = sum(1 for benchmark in group_metrics if pd.notna(row.get(f"{benchmark} Cost")))
                 if count == total_benchmarks:
-                    return f"{count}/{total_benchmarks} ✅"
+                    return f"{count}/{total_benchmarks} "
                 elif count == 0:
-                    return f"{count}/{total_benchmarks} 🚫"
+                    return f"{count}/{total_benchmarks} "
                 else:
-                    return f"{count}/{total_benchmarks}⚠️"
+                    return f"{count}/{total_benchmarks}"
             # Insert the new column, for example, after "Date"
-            df_view.insert(2, "Benchmarks Attempted", df_view.apply(calculate_benchmarks_attempted, axis=1))
+            df_view.insert((cols - 1), "Benchmarks Attempted", df_view.apply(calculate_benchmarks_attempted, axis=1))
 
         # --- 4. Generate the Scatter Plot for the Primary Metric ---
         plots: dict[str, go.Figure] = {}
