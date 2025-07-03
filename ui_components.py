@@ -18,7 +18,6 @@ from leaderboard_transformer import (
 )
 from content import (
     SCATTER_DISCLAIMER,
-    PARETO_DISCLAIMER,
     format_error,
     format_log,
     format_warning,
@@ -28,7 +27,7 @@ from content import (
 
 # --- Constants and Configuration  ---
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
-CONFIG_NAME = "1.0.0-dev1" # This corresponds to 'config' in LeaderboardViewer
+CONFIG_NAME = "1.0.0-dev2" # This corresponds to 'config' in LeaderboardViewer
 IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
 
 OWNER = "allenai"

@@ -59,7 +59,8 @@ theme = gr.themes.Base(
     block_title_text_color_dark="#ffffff",
     checkbox_label_text_color_dark="#000",
     button_primary_text_color_dark='*neutral_900',
-    block_border_color="#9fead1",
+    block_border_color="#032629",
+    block_border_color_dark="#9fead1",
 )
 # --- Gradio App Definition ---
 demo = gr.Blocks(theme=theme, css=css)
