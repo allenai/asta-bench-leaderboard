@@ -2,10 +2,7 @@ import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
 import logging
-from typing import Optional, Any, Dict, List # Added List
-from zoneinfo import ZoneInfo # Assuming this might be used by SuiteConfig/EvalResult or _get_dataframe
-import json
-import os
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -46,14 +43,18 @@ def _pretty_column_name(raw_col: str) -> str:
     """
     # Case 1: Handle fixed, special-case mappings first.
     fixed_mappings = {
+        'id': 'id',
         'Agent': 'Agent',
         'Agent description': 'Agent Description',
         'User/organization': 'Submitter',
         'Submission date': 'Date',
         'Overall': 'Overall Score',
         'Overall cost': 'Overall Cost',
-        'Logs': 'Logs'
+        'Logs': 'Logs',
+        'Openness': 'Openness',
+        'Agent tooling': 'Degree of Control',
     }
+
     if raw_col in fixed_mappings:
         return fixed_mappings[raw_col]
 
@@ -188,6 +189,8 @@ class DataTransformer:
             df_sorted = self.data.sort_values(primary_score_col, ascending=False, na_position='last')
 
         df_view = df_sorted.copy()
+        #preserve just agent name for scatterplot hover
+        df_view['agent_for_hover'] = df_view['Agent']
         # 3. Combine "Agent" and "Submitter" into a single HTML-formatted column
         #    We do this *before* defining the final column list.
         if 'Agent' in df_view.columns and 'Submitter' in df_view.columns:
@@ -294,18 +297,31 @@ def _plot_scatter_plotly(
         data: pd.DataFrame,
         x: Optional[str],
         y: str,
-        agent_col: str = "Agent"
+        agent_col: str = 'agent_for_hover'
 ) -> go.Figure:
 
-    # --- Steps 1-4: Data Validation and Preparation ---
+    # --- Section 1: Define Mappings ---
+    color_map = {
+        "Closed": "red",
+        "API Available": "orange",
+        "Open Source": "green",
+        "Open Source + Open Weights": "blue"
+    }
+    category_order = list(color_map.keys())
+
+    shape_map = {
+        "Standard": "diamond",
+        "Custom with Standard Search": "square",
+        "Fully Custom": "circle"
+    }
+    default_shape = 'star'
+
     x_col_to_use = x
     y_col_to_use = y
 
-    if y_col_to_use not in data.columns:
-        logger.error(f"y-axis column '{y_col_to_use}' not found.")
-        return go.Figure()
-    if agent_col not in data.columns:
-        logger.warning(f"Agent column '{agent_col}' not found.")
+    required_cols = [y_col_to_use, agent_col, "Openness", "Degree of Control"]
+    if not all(col in data.columns for col in required_cols):
+        logger.error(f"Missing one or more required columns for plotting: {required_cols}")
         return go.Figure()
 
     data_plot = data.copy()
@@ -327,30 +343,27 @@ def _plot_scatter_plotly(
         x_col_to_use = dummy_x_col_name
         logger.info("Using dummy x-values for plotting.")
 
-    # --- Step 5: Clean Data and Initialize Figure ---
-    data_plot.dropna(subset=[y_col_to_use, x_col_to_use], inplace=True)
+    # Clean data based on all necessary columns
+    data_plot.dropna(subset=[y_col_to_use, x_col_to_use, "Openness", "Degree of Control"], inplace=True)
+
+    # --- Section 3: Initialize Figure ---
     fig = go.Figure()
     if data_plot.empty:
-        logger.warning(f"No valid data to plot for y='{y_col_to_use}' and x='{x_col_to_use}'.")
+        logger.warning(f"No valid data to plot after cleaning.")
         return fig
 
-    # Step 6 - Calculate and Draw the Efficiency Frontier Line ---
+    # --- Section 4: Calculate and Draw Pareto Frontier (Restored from your original code) ---
     if x_data_is_valid:
-        # Sort by cost (ascending), then by score (descending) to break ties
         sorted_data = data_plot.sort_values(by=[x_col_to_use, y_col_to_use], ascending=[True, False])
-
         frontier_points = []
         max_score_so_far = float('-inf')
 
-        for index, row in sorted_data.iterrows():
+        for _, row in sorted_data.iterrows():
             score = row[y_col_to_use]
-            # If this point offers a better score than any we've seen before,
-            # it's part of the frontier.
             if score > max_score_so_far:
                 frontier_points.append({'x': row[x_col_to_use], 'y': score})
                 max_score_so_far = score
 
-        # Add the frontier line trace to the plot if we found any points
         if frontier_points:
             frontier_df = pd.DataFrame(frontier_points)
             fig.add_trace(go.Scatter(
@@ -359,22 +372,75 @@ def _plot_scatter_plotly(
                 mode='lines',
                 name='Efficiency Frontier',
                 line=dict(color='firebrick', width=2, dash='dash'),
-                hoverinfo='skip' # The line doesn't need a hover tooltip
+                hoverinfo='skip'
             ))
 
-    # --- Step 7: Plot Individual Agent Markers (No changes here) ---
-    for agent, group in data_plot.groupby(agent_col):
-        hover_x_display = "%{x:$.2f}" if x_data_is_valid else "N/A"
+    # --- Section 5: Prepare for Marker Plotting ---
+    # Pre-generate hover text and shapes for each point
+    data_plot['hover_text'] = data_plot.apply(
+        lambda row: f"<b>{row['Agent']}</b><br>{x_axis_label}: ${row[x_col_to_use]:.2f}<br>{y_col_to_use}: {row[y_col_to_use]:.2f}",
+        axis=1
+    )
+    data_plot['shape_symbol'] = data_plot['Degree of Control'].map(shape_map).fillna(default_shape)
+
+    # --- Section 6: Plot Markers by "Openness" Category ---
+    for category in category_order:
+        group = data_plot[data_plot['Openness'] == category]
+        if group.empty:
+            continue
+
         fig.add_trace(go.Scatter(
             x=group[x_col_to_use],
             y=group[y_col_to_use],
             mode='markers',
-            name=str(agent),
-            hovertemplate=f"<b>{str(agent)}</b><br>{x_axis_label}: {hover_x_display}<br>{y_col_to_use}: %{{y:.2f}}""<extra></extra>",
-            marker=dict(size=10, opacity=0.8)
+            name=category,
+            showlegend=False,
+            text=group['hover_text'],
+            hoverinfo='text',
+            marker=dict(
+                color=color_map.get(category, 'grey'),
+                symbol=group['shape_symbol'],
+                size=10,
+                opacity=0.8,
+                line=dict(width=1, color='DarkSlateGrey')
+            )
+        ))
+    # ---- Add logic for making the legend -----------
+    for i, category in enumerate(category_order):
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None],
+            mode='markers',
+            name=category,
+            legendgroup="openness_group",
+            legendgrouptitle_text="Agent Openness" if i == 0 else None,
+            marker=dict(
+                color=color_map.get(category, 'grey'),
+                symbol='circle',
+                size=12
+            )
         ))
 
-    # --- Step 8: Configure Layout (No changes here) ---
+    # Part B: Dummy traces for the SHAPES ("Agent Tooling")
+    shape_items = list(shape_map.items())
+    for i, (shape_name, shape_symbol) in enumerate(shape_items):
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None],
+            mode='markers',
+            name=shape_name,
+            legendgroup="tooling_group",
+            legendgrouptitle_text="Agent Tooling" if i == 0 else None,
+            marker=dict(color='grey', symbol=shape_symbol, size=12)
+        ))
+    # Add the 'Other' shape to the same tooling group
+    fig.add_trace(go.Scatter(
+        x=[None], y=[None],
+        mode='markers',
+        name='Other',
+        legendgroup="tooling_group",
+        marker=dict(color='grey', symbol=default_shape, size=12)
+    ))
+
+    # --- Section 8: Configure Layout (Restored from your original code) ---
     xaxis_config = dict(title=x_axis_label)
     if not x_data_is_valid:
         xaxis_config['range'] = [DUMMY_X_VALUE_FOR_MISSING_COSTS - 1, DUMMY_X_VALUE_FOR_MISSING_COSTS + 1]
@@ -386,10 +452,11 @@ def _plot_scatter_plotly(
         title=f"{y_col_to_use} vs. {x_axis_label}",
         xaxis=xaxis_config,
         yaxis=dict(title=y_col_to_use, rangemode="tozero"),
-        legend_title_text=agent_col
+        legend_title_text="Legend" # New general title
     )
 
     return fig
+
 
 def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
     """

@@ -135,6 +135,28 @@ def create_leaderboard_display(
         lambda row: '🎯' if row['Agent'] in pareto_agent_names else '',
         axis=1
     )
+    # Create mapping for Openness
+    openness_emoji_map = {
+        "Closed": '🔴',
+        "API Available": '🟠',
+        "Open Source": '🟢',
+        "Open Source + Open Weights": '🔵'
+    }
+    original_openness = df_view['Openness']
+    df_view['Openness'] = df_view['Openness'].map(openness_emoji_map)
+    df_view['Openness'].fillna(original_openness, inplace=True)
+
+    # Create mapping for Degree of Control
+    control_emoji_map = {
+        "Standard": "🔶",
+        "Custom with Standard Search": "⬜️",
+        "Fully Custom": "⚪️",
+    }
+    # For this column, we'll use .apply() to handle the "Other" case cleanly.
+    df_view['Degree of Control'] = df_view['Degree of Control'].apply(
+        lambda ctrl: control_emoji_map.get(ctrl, f"{ctrl}" if pd.notna(ctrl) else "")
+    )
+
 
     # Format cost columns
     for col in df_view.columns:
@@ -236,7 +258,7 @@ def create_benchmark_details_display(
             benchmark_cost_col = f"{benchmark_name} Cost"
 
             # Define the columns needed for the detailed table
-            table_cols = ['Agent', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs']
+            table_cols = ['Agent','Openness','Degree of Control', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs']
 
             # Filter to only columns that actually exist in the full dataframe
             existing_table_cols = [col for col in table_cols if col in full_df.columns]
@@ -257,6 +279,27 @@ def create_benchmark_details_display(
                 lambda row: '🎯' if row['Agent'] in pareto_agent_names else '',
                 axis=1
             )
+            # Create mapping for Openness
+            openness_emoji_map = {
+                "Closed": '🔴',
+                "API Available": '🟠',
+                "Open Source": '🟢',
+                "Open Source + Open Weights": '🔵'
+            }
+            original_openness = benchmark_table_df['Openness']
+            benchmark_table_df['Openness'] = benchmark_table_df['Openness'].map(openness_emoji_map)
+            benchmark_table_df['Openness'].fillna(original_openness, inplace=True)
+            # Create mapping for Degree of Control
+            control_emoji_map = {
+                "Standard": "🔶",
+                "Custom with Standard Search": "⬜️",
+                "Fully Custom": "⚪️",
+            }
+            # For this column, we'll use .apply() to handle the "Other" case cleanly.
+            benchmark_table_df['Degree of Control'] = benchmark_table_df['Degree of Control'].apply(
+                lambda ctrl: control_emoji_map.get(ctrl, f"{ctrl}" if pd.notna(ctrl) else "")
+            )
+
             # Calculated and add "Benchmark Attempted" column
             def check_benchmark_status(row):
                 has_score = pd.notna(row.get(benchmark_score_col))
@@ -279,13 +322,13 @@ def create_benchmark_details_display(
             benchmark_table_df = format_score_column(benchmark_table_df, benchmark_score_col)
             desired_cols_in_order = [
                 'Pareto',
+                'Openness',
+                'Degree of Control',
                 'Agent',
                 'Submitter',
                 'Attempted Benchmark',
                 benchmark_score_col,
                 benchmark_cost_col,
-                'Openness',
-                'Degree of Control',
                 'Date',
                 'Logs'
             ]
