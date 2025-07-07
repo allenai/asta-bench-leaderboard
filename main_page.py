@@ -20,7 +20,7 @@ with gr.Blocks(fill_width=True) as demo:
     # --- Leaderboard Display Section ---
     gr.Markdown("---")
     CATEGORY_NAME = "Overall"
-    gr.Markdown(f"## {CATEGORY_NAME} Aggregated")
+    gr.Markdown(f"## {CATEGORY_NAME} Categories Aggregated")
 
     with gr.Tabs() as tabs:
         with gr.Tab("Results: Validation"):

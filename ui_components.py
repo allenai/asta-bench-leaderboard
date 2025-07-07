@@ -2,6 +2,7 @@ import gradio as gr
 import pandas as pd
 import plotly.graph_objects as go
 import os
+import re
 
 from agenteval.leaderboard.view import LeaderboardViewer
 from huggingface_hub import HfApi
@@ -62,7 +63,7 @@ control_emoji_map = {
     "Fully Custom": "⚪️",
 }
 legend_markdown = """
-    <span>📈 on pareto curve</span>
+    <span>On pareto curve:📈</span>
     <span>**Agent Openness**:</span>   <span>🔴 Closed</span>    <span>🟠 API Available</span>    <span>🟢 Open Source</span>    <span>🔵 Open Source + Open Weights</span>
     <span>**Agent Tooling**:</span>   <span>🔶 Standard</span>    <span>⬜️ Custom with Standard Search</span>    <span>⚪️ Fully Custom</span>
     """
@@ -193,7 +194,7 @@ def create_leaderboard_display(
     gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
     # Put table and key into an accordion
-    with gr.Accordion("See Details", open=False):
+    with gr.Accordion("See Details", open=False, elem_id="leaderboard-accordion"):
         gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
         dataframe_component = gr.DataFrame(
             headers=df_headers,
@@ -235,8 +236,36 @@ def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
 
     # Fallback for unexpected types
     return pd.DataFrame(), {}
+# Create sub-nav bar for benchmarks
+def create_gradio_anchor_id(text: str) -> str:
+    """
+    Replicates the ID format created by gr.Markdown(header_links=True).
+    Example: "Paper Finder Validation" -> "h-paper-finder-validation"
+    """
+    text = text.lower()
+    text = re.sub(r'\s+', '-', text) # Replace spaces with hyphens
+    text = re.sub(r'[^\w-]', '', text) # Remove non-word characters
+    return f"h-{text}"
+def create_sub_navigation_bar(tag_map: dict, category_name: str):
+    """
+    Generates and renders the HTML for the anchor-link sub-navigation bar.
+    """
+    benchmark_names = tag_map.get(category_name, [])
+    if not benchmark_names:
+        return # Do nothing if there are no benchmarks
 
-# --- Detailed Benchmark Display ---
+    anchor_links = []
+    for name in benchmark_names:
+        # Use the helper function to create the correct ID format
+        target_id = create_gradio_anchor_id(name)
+        anchor_links.append(f"<a href='#{target_id}'>{name}</a>")
+
+    nav_bar_html = f"<div class='sub-nav-bar'>{'   '.join(anchor_links)}</div>"
+
+    # Use gr.HTML to render the links correctly
+    gr.HTML(nav_bar_html)
+
+# # --- Detailed Benchmark Display ---
 def create_benchmark_details_display(
         full_df: pd.DataFrame,
         tag_map: dict,
@@ -263,7 +292,7 @@ def create_benchmark_details_display(
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
         with gr.Blocks():
-            gr.Markdown(f"### {benchmark_name}")
+            gr.Markdown(f"### {benchmark_name}", header_links=True)
 
             # 3. Prepare the data for this specific benchmark's table and plot
             benchmark_score_col = f"{benchmark_name} Score"
@@ -356,7 +385,7 @@ def create_benchmark_details_display(
             gr.Plot(value=benchmark_plot)
             gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
             # Put table and key into an accordion
-            with gr.Accordion("See Details", open=False):
+            with gr.Accordion("See Details", open=False, elem_id="leaderboard-accordion"):
                 gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
                 gr.DataFrame(
                     headers=df_headers,

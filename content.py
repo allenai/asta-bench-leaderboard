@@ -62,9 +62,17 @@ def hf_uri_to_web_url(uri: str) -> str:
     return f"https://huggingface.co/datasets/{namespace}/{repo}/tree/main/{path}"
 
 css = """
-
+#intro-paragraph {
+    font-size: 18px;
+    max-width: 60%;
+}
+#category-intro {
+    font-size: 18px;
+    max-width: 60%;
+}
 #logo-image { 
     margin: 0;
+    margin-bottom: 30px; 
     justify-content: flex-start;        
     max-width: 250px;       
     height: auto;           
@@ -113,5 +121,26 @@ nav.svelte-ti537g.svelte-ti537g {
 }
 #legend-markdown span {
     margin-right: 15px !important; 
+}
+#leaderboard-accordion .label-wrap {
+    font-size: 1.4rem !important; 
+}
+.dark #leaderboard-accordion .label-wrap {
+    color: #0FCB8C !important; 
+}
+.dark block.svelte-1svsvh2 {
+    background: #032629 !important;
+}
+.sub-nav-bar {
+    margin-bottom: 20px; /* The space below the nav bar */
+}
+.sub-nav-bar a {
+    font-size: 16px;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+    padding-right: 15px;
+}
+.padding.svelte-phx28p {
+    padding: 0 !important;
 }
 """

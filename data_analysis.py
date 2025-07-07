@@ -2,12 +2,17 @@ import gradio as gr
 import pandas as pd
 
 # Import our UI factories and the data loader
-from ui_components import create_leaderboard_display, create_benchmark_details_display, get_full_leaderboard_data
+from ui_components import create_leaderboard_display, create_benchmark_details_display, get_full_leaderboard_data, create_sub_navigation_bar
 
 # Define the category for this page
 CATEGORY_NAME = "Data Analysis"
 
 with gr.Blocks() as demo:
+    validation_df, validation_tag_map = get_full_leaderboard_data("validation")
+    test_df, test_tag_map = get_full_leaderboard_data("test")
+    if validation_tag_map:
+        create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME)
+
     gr.Markdown(f"## {CATEGORY_NAME} Aggregated")
 
     # --- This page now has two main sections: Validation and Test ---

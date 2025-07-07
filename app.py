@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
 import literature_understanding, main_page, c_and_e, data_analysis, e2e, submission
 
-from content import TITLE, css
+from content import css
 
 # --- Constants and Configuration  ---
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
@@ -15,7 +15,7 @@ OWNER = "allenai"
 PROJECT_NAME = "asta-bench" + ("-internal" if IS_INTERNAL else "")
 LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
 api = HfApi()
-LOGO_PATH = "Ai2_logo_pink_padding_RGB.png"
+LOGO_PATH = "assets/logo.svg"
 
 
 
@@ -61,11 +61,11 @@ theme = gr.themes.Base(
     button_primary_text_color_dark='*neutral_900',
     block_border_color="#032629",
     block_border_color_dark="#9fead1",
+    block_background_fill_dark="#032629",
+    block_background_fill="#FAF2E9",
 )
-# --- Gradio App Definition ---
-demo = gr.Blocks(theme=theme, css=css)
-with demo:
-    gr.Image(
+def render_logo():
+    return gr.Image(
         value=LOGO_PATH,
         show_label=False,
         interactive=False,
@@ -74,18 +74,25 @@ with demo:
         show_fullscreen_button=False,
         elem_id="logo-image"
     )
-    gr.HTML(TITLE)
-
+# --- Gradio App Definition ---
+demo = gr.Blocks(theme=theme, css=css)
+with demo:
+    render_logo()
     main_page.demo.render()
 with demo.route("Literature Understanding"):
+    render_logo()
     literature_understanding.demo.render()
 with demo.route("Code & Execution"):
+    render_logo()
     c_and_e.demo.render()
 with demo.route("Data Analysis"):
+    render_logo()
     data_analysis.demo.render()
 with demo.route("Discovery"):
+    render_logo()
     e2e.demo.render()
 with demo.route("Submit an Agent"):
+    render_logo()
     submission.demo.render()
 
 # --- Scheduler and Launch
