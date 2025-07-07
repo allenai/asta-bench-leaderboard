@@ -8,7 +8,7 @@ from ui_components import create_leaderboard_display, create_benchmark_details_d
 CATEGORY_NAME = "Data Analysis"
 
 with gr.Blocks() as demo:
-    gr.Markdown(f"## {CATEGORY_NAME} Leaderboard Results")
+    gr.Markdown(f"## {CATEGORY_NAME} Aggregated")
 
     # --- This page now has two main sections: Validation and Test ---
     with gr.Tabs():

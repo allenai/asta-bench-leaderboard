@@ -49,6 +49,23 @@ MAX_UPLOAD_BYTES = 100 * 1024**2
 AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 
+# Global variables
+openness_emoji_map = {
+    "Closed": '🔴',
+    "API Available": '🟠',
+    "Open Source": '🟢',
+    "Open Source + Open Weights": '🔵'
+}
+control_emoji_map = {
+    "Standard": "🔶",
+    "Custom with Standard Search": "⬜️",
+    "Fully Custom": "⚪️",
+}
+legend_markdown = """
+    <span>📈 on pareto curve</span>
+    <span>**Agent Openness**:</span>   <span>🔴 Closed</span>    <span>🟠 API Available</span>    <span>🟢 Open Source</span>    <span>🔵 Open Source + Open Weights</span>
+    <span>**Agent Tooling**:</span>   <span>🔶 Standard</span>    <span>⬜️ Custom with Standard Search</span>    <span>⚪️ Fully Custom</span>
+    """
 
 # --- Global State for Viewers (simple caching) ---
 CACHED_VIEWERS = {}
@@ -127,31 +144,19 @@ def create_leaderboard_display(
     df_view, plots_dict = transformer.view(tag=category_name, use_plotly=True)
     pareto_df = get_pareto_df(df_view)
     # Get the list of agents on the frontier. We'll use this list later.
-    if not pareto_df.empty and 'Agent' in pareto_df.columns:
-        pareto_agent_names = pareto_df['Agent'].tolist()
+    if not pareto_df.empty and 'id' in pareto_df.columns:
+        pareto_agent_names = pareto_df['id'].tolist()
     else:
         pareto_agent_names = []
     df_view['Pareto'] = df_view.apply(
-        lambda row: '🎯' if row['Agent'] in pareto_agent_names else '',
+        lambda row: '📈' if row['id'] in pareto_agent_names else '',
         axis=1
     )
     # Create mapping for Openness
-    openness_emoji_map = {
-        "Closed": '🔴',
-        "API Available": '🟠',
-        "Open Source": '🟢',
-        "Open Source + Open Weights": '🔵'
-    }
     original_openness = df_view['Openness']
     df_view['Openness'] = df_view['Openness'].map(openness_emoji_map)
     df_view['Openness'].fillna(original_openness, inplace=True)
 
-    # Create mapping for Degree of Control
-    control_emoji_map = {
-        "Standard": "🔶",
-        "Custom with Standard Search": "⬜️",
-        "Fully Custom": "⚪️",
-    }
     # For this column, we'll use .apply() to handle the "Other" case cleanly.
     df_view['Degree of Control'] = df_view['Degree of Control'].apply(
         lambda ctrl: control_emoji_map.get(ctrl, f"{ctrl}" if pd.notna(ctrl) else "")
@@ -174,6 +179,9 @@ def create_leaderboard_display(
     # Remove 'Pareto' from the list and insert it at the beginning
     all_cols.insert(0, all_cols.pop(all_cols.index('Pareto')))
     df_view = df_view[all_cols]
+    # Drop internally used columns that are not needed in the display
+    columns_to_drop = ['id', 'agent_for_hover']
+    df_view = df_view.drop(columns=columns_to_drop, errors='ignore')
 
     df_headers = df_view.columns.tolist()
     df_datatypes = ["markdown" if col == "Logs" or col == "Agent" or "Cost" in col or "Score" in col else "str" for col in df_headers]
@@ -183,14 +191,18 @@ def create_leaderboard_display(
         label=f"Score vs. Cost ({category_name})"
     )
     gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
-    dataframe_component = gr.DataFrame(
-        headers=df_headers,
-        value=df_view,
-        datatype=df_datatypes,
-        interactive=False,
-        wrap=True,
-        column_widths=[30, 30, 30, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 50, 30]
-    )
+
+    # Put table and key into an accordion
+    with gr.Accordion("See Details", open=False):
+        gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
+        dataframe_component = gr.DataFrame(
+            headers=df_headers,
+            value=df_view,
+            datatype=df_datatypes,
+            interactive=False,
+            wrap=True,
+            column_widths=[30, 30, 30, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 50, 30]
+        )
 
     # Return the components so they can be referenced elsewhere.
     return plot_component, dataframe_component,
@@ -258,7 +270,7 @@ def create_benchmark_details_display(
             benchmark_cost_col = f"{benchmark_name} Cost"
 
             # Define the columns needed for the detailed table
-            table_cols = ['Agent','Openness','Degree of Control', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs']
+            table_cols = ['Agent','Openness','Degree of Control', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id']
 
             # Filter to only columns that actually exist in the full dataframe
             existing_table_cols = [col for col in table_cols if col in full_df.columns]
@@ -271,30 +283,19 @@ def create_benchmark_details_display(
             benchmark_table_df = full_df[existing_table_cols].copy()
             pareto_df = get_pareto_df(benchmark_table_df)
             # Get the list of agents on the frontier. We'll use this list later.
-            if not pareto_df.empty and 'Agent' in pareto_df.columns:
-                pareto_agent_names = pareto_df['Agent'].tolist()
+            if not pareto_df.empty and 'id' in pareto_df.columns:
+                pareto_agent_names = pareto_df['id'].tolist()
             else:
                 pareto_agent_names = []
             benchmark_table_df['Pareto'] = benchmark_table_df.apply(
-                lambda row: '🎯' if row['Agent'] in pareto_agent_names else '',
+                lambda row: '📈' if row['id'] in pareto_agent_names else '',
                 axis=1
             )
-            # Create mapping for Openness
-            openness_emoji_map = {
-                "Closed": '🔴',
-                "API Available": '🟠',
-                "Open Source": '🟢',
-                "Open Source + Open Weights": '🔵'
-            }
+
             original_openness = benchmark_table_df['Openness']
             benchmark_table_df['Openness'] = benchmark_table_df['Openness'].map(openness_emoji_map)
             benchmark_table_df['Openness'].fillna(original_openness, inplace=True)
-            # Create mapping for Degree of Control
-            control_emoji_map = {
-                "Standard": "🔶",
-                "Custom with Standard Search": "⬜️",
-                "Fully Custom": "⚪️",
-            }
+
             # For this column, we'll use .apply() to handle the "Other" case cleanly.
             benchmark_table_df['Degree of Control'] = benchmark_table_df['Degree of Control'].apply(
                 lambda ctrl: control_emoji_map.get(ctrl, f"{ctrl}" if pd.notna(ctrl) else "")
@@ -329,7 +330,6 @@ def create_benchmark_details_display(
                 'Attempted Benchmark',
                 benchmark_score_col,
                 benchmark_cost_col,
-                'Date',
                 'Logs'
             ]
             for col in desired_cols_in_order:
@@ -355,12 +355,14 @@ def create_benchmark_details_display(
             )
             gr.Plot(value=benchmark_plot)
             gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
-            # Create the Gradio component, now with the correct datatypes
-            gr.DataFrame(
-                headers=df_headers,
-                value=benchmark_table_df,
-                datatype=df_datatypes,
-                interactive=False,
-                wrap=True,
-            )
+            # Put table and key into an accordion
+            with gr.Accordion("See Details", open=False):
+                gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
+                gr.DataFrame(
+                    headers=df_headers,
+                    value=benchmark_table_df,
+                    datatype=df_datatypes,
+                    interactive=False,
+                    wrap=True,
+                )
 

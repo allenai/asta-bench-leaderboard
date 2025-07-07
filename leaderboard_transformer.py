@@ -217,7 +217,7 @@ class DataTransformer:
             df_view = df_view.drop(columns=['Submitter'])
 
         # 4. Build the List of Columns to Display (now simplified)
-        base_cols = ["Agent"]
+        base_cols = ["id","Agent","agent_for_hover"]
         new_cols = ["Openness", "Degree of Control"]
         ending_cols = ["Logs"]
 
@@ -277,7 +277,7 @@ class DataTransformer:
                     data=df_view,
                     x=primary_cost_col,
                     y=primary_score_col,
-                    agent_col="Agent"
+                    agent_col="agent_for_hover"
                 )
                 # Use a consistent key for easy retrieval later
                 plots['scatter_plot'] = fig
@@ -360,7 +360,7 @@ def _plot_scatter_plotly(
 
         for _, row in sorted_data.iterrows():
             score = row[y_col_to_use]
-            if score > max_score_so_far:
+            if score >= max_score_so_far:
                 frontier_points.append({'x': row[x_col_to_use], 'y': score})
                 max_score_so_far = score
 
@@ -378,7 +378,7 @@ def _plot_scatter_plotly(
     # --- Section 5: Prepare for Marker Plotting ---
     # Pre-generate hover text and shapes for each point
     data_plot['hover_text'] = data_plot.apply(
-        lambda row: f"<b>{row['Agent']}</b><br>{x_axis_label}: ${row[x_col_to_use]:.2f}<br>{y_col_to_use}: {row[y_col_to_use]:.2f}",
+        lambda row: f"<b>{row[agent_col]}</b><br>{x_axis_label}: ${row[x_col_to_use]:.2f}<br>{y_col_to_use}: {row[y_col_to_use]:.2f}",
         axis=1
     )
     data_plot['shape_symbol'] = data_plot['Degree of Control'].map(shape_map).fillna(default_shape)

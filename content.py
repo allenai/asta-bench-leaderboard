@@ -111,4 +111,7 @@ thead.svelte-1e98i6s th {
 nav.svelte-ti537g.svelte-ti537g {
     justify-content: flex-start;
 }
+#legend-markdown span {
+    margin-right: 15px !important; 
+}
 """
