@@ -53,7 +53,7 @@ def _pretty_column_name(raw_col: str) -> str:
         'Overall cost': 'Overall Cost',
         'Logs': 'Logs',
         'Openness': 'Openness',
-        'Agent tooling': 'Degree of Control',
+        'Agent tooling': 'Agent Tooling',
     }
 
     if raw_col in fixed_mappings:
@@ -219,7 +219,7 @@ class DataTransformer:
 
         # 4. Build the List of Columns to Display (now simplified)
         base_cols = ["id","Agent","agent_for_hover"]
-        new_cols = ["Openness", "Degree of Control"]
+        new_cols = ["Openness", "Agent Tooling"]
         ending_cols = ["Logs"]
 
         metrics_to_display = [primary_score_col, f"{primary_metric} Cost"]
@@ -311,16 +311,16 @@ def _plot_scatter_plotly(
     category_order = list(color_map.keys())
 
     shape_map = {
-        "Standard": "diamond",
-        "Custom with Standard Search": "square",
+        "Standard": "star",
+        "Custom with Standard Search": "diamond",
         "Fully Custom": "circle"
     }
-    default_shape = 'star'
+    default_shape = 'square'
 
     x_col_to_use = x
     y_col_to_use = y
 
-    required_cols = [y_col_to_use, agent_col, "Openness", "Degree of Control"]
+    required_cols = [y_col_to_use, agent_col, "Openness", "Agent Tooling"]
     if not all(col in data.columns for col in required_cols):
         logger.error(f"Missing one or more required columns for plotting: {required_cols}")
         return go.Figure()
@@ -345,7 +345,7 @@ def _plot_scatter_plotly(
         logger.info("Using dummy x-values for plotting.")
 
     # Clean data based on all necessary columns
-    data_plot.dropna(subset=[y_col_to_use, x_col_to_use, "Openness", "Degree of Control"], inplace=True)
+    data_plot.dropna(subset=[y_col_to_use, x_col_to_use, "Openness", "Agent Tooling"], inplace=True)
 
     # --- Section 3: Initialize Figure ---
     fig = go.Figure()
@@ -382,7 +382,7 @@ def _plot_scatter_plotly(
         lambda row: f"<b>{row[agent_col]}</b><br>{x_axis_label}: ${row[x_col_to_use]:.2f}<br>{y_col_to_use}: {row[y_col_to_use]:.2f}",
         axis=1
     )
-    data_plot['shape_symbol'] = data_plot['Degree of Control'].map(shape_map).fillna(default_shape)
+    data_plot['shape_symbol'] = data_plot['Agent Tooling'].map(shape_map).fillna(default_shape)
 
     # --- Section 6: Plot Markers by "Openness" Category ---
     for category in category_order:
@@ -432,14 +432,6 @@ def _plot_scatter_plotly(
             legendgrouptitle_text="Agent Tooling" if i == 0 else None,
             marker=dict(color='grey', symbol=shape_symbol, size=12)
         ))
-    # Add the 'Other' shape to the same tooling group
-    fig.add_trace(go.Scatter(
-        x=[None], y=[None],
-        mode='markers',
-        name='Other',
-        legendgroup="tooling_group",
-        marker=dict(color='grey', symbol=default_shape, size=12)
-    ))
 
     # --- Section 8: Configure Layout (Restored from your original code) ---
     xaxis_config = dict(title=x_axis_label)
