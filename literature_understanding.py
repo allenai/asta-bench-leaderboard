@@ -3,18 +3,18 @@ import pandas as pd
 
 # Import our UI factories and the data loader
 from ui_components import create_leaderboard_display, create_benchmark_details_display, get_full_leaderboard_data, create_sub_navigation_bar
-
+from content import LIT_DESCRIPTION
 # Define the category for this page
 CATEGORY_NAME = "Literature Understanding"
 
 with gr.Blocks() as demo:
+    gr.Markdown(f"## {CATEGORY_NAME} Aggregated")
+
     validation_df, validation_tag_map = get_full_leaderboard_data("validation")
     test_df, test_tag_map = get_full_leaderboard_data("test")
-    gr.Markdown("Several of the evaluations in AstaBench probe an AI model's literature understanding skills — that is, its ability to find research papers based on a description, review questions on citation quality, retrieve information from the literature, and so on.", elem_id="category-intro")
+    gr.Markdown(LIT_DESCRIPTION, elem_id="category-intro")
     if validation_tag_map:
         create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME)
-
-    gr.Markdown(f"## {CATEGORY_NAME} Aggregated")
 
     # --- This page now has two main sections: Validation and Test ---
     with gr.Tabs():

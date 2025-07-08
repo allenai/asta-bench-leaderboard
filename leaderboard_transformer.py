@@ -328,7 +328,7 @@ def _plot_scatter_plotly(
     data_plot = data.copy()
     data_plot[y_col_to_use] = pd.to_numeric(data_plot[y_col_to_use], errors='coerce')
 
-    x_axis_label = x if x else "Cost (Data N/A)"
+    x_axis_label = f"{x} (USD)" if x else "Cost (Data N/A)"
     x_data_is_valid = False
     if x and x in data_plot.columns:
         try:

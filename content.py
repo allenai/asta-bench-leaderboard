@@ -11,6 +11,12 @@ Only agents that have cost data available will be shown in the scatter plot. If 
 PARETO_DISCLAIMER = """
 Agents names that are green are Pareto optimal, meaning they achieve the best performance for their cost. 
 """
+LIT_DESCRIPTION = """
+Several of the evaluations in AstaBench probe an AI model's literature understanding skills — that is, its ability to find research papers based on a description, review questions on citation quality, retrieve information from the literature, and so on.
+"""
+PLACEHOLDER_DESCRIPTION = """
+THIS IS PLACEHOLDER TEXT. AstaBench is a benchmark suite designed to evaluate AI agents on their ability to perform complex tasks that require reasoning, planning, and execution. It includes a variety of benchmarks that test different aspects of agent performance, such as literature understanding, data analysis, and code execution.
+"""
 
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"
 CITATION_BUTTON_TEXT = r"""@article{asta-bench,

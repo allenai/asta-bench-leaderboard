@@ -91,7 +91,7 @@ with demo.route("Data Analysis"):
 with demo.route("Discovery"):
     render_logo()
     e2e.demo.render()
-with demo.route("Submit an Agent"):
+with demo.route(" 🚀 Submit an Agent"):
     render_logo()
     submission.demo.render()
 

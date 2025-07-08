@@ -66,6 +66,7 @@ legend_markdown = """
     <span>On pareto curve:📈</span>
     <span>**Agent Openness**:</span>   <span>🔴 Closed</span>    <span>🟠 API Available</span>    <span>🟢 Open Source</span>    <span>🔵 Open Source + Open Weights</span>
     <span>**Agent Tooling**:</span>   <span>🔶 Standard</span>    <span>⬜️ Custom with Standard Search</span>    <span>⚪️ Fully Custom</span>
+    <span>**COMING SOON:** COLUMN DESCRIPTIONS</span>
     """
 
 # --- Global State for Viewers (simple caching) ---
@@ -194,8 +195,7 @@ def create_leaderboard_display(
     gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
     # Put table and key into an accordion
-    with gr.Accordion("See Details", open=False, elem_id="leaderboard-accordion"):
-        gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
+    with gr.Accordion("See Table", open=False, elem_id="leaderboard-accordion"):
         dataframe_component = gr.DataFrame(
             headers=df_headers,
             value=df_view,
@@ -204,6 +204,7 @@ def create_leaderboard_display(
             wrap=True,
             column_widths=[30, 30, 30, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 50, 30]
         )
+        gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
 
     # Return the components so they can be referenced elsewhere.
     return plot_component, dataframe_component,
@@ -385,8 +386,7 @@ def create_benchmark_details_display(
             gr.Plot(value=benchmark_plot)
             gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
             # Put table and key into an accordion
-            with gr.Accordion("See Details", open=False, elem_id="leaderboard-accordion"):
-                gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
+            with gr.Accordion("See Table", open=False, elem_id="leaderboard-accordion"):
                 gr.DataFrame(
                     headers=df_headers,
                     value=benchmark_table_df,
@@ -394,4 +394,5 @@ def create_benchmark_details_display(
                     interactive=False,
                     wrap=True,
                 )
+                gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
 

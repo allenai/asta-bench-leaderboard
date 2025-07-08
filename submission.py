@@ -291,7 +291,7 @@ with gr.Blocks() as demo:
             agent_name_tb = gr.Textbox(label="Agent Name")
             agent_desc_tb = gr.Textbox(label="Agent Description")
             agent_url_tb = gr.Textbox(label="URL to Agent Information")
-            openness_radio = gr.Radio(["Open Source","Open Source Open Weights" "API", "Closed"], value=None, label="Openness of Agent")
+            openness_radio = gr.Radio(["Open Source","Open Source Open Weights", "API Available", "Closed"], value=None, label="Openness of Agent")
             degree_of_control_radio = gr.Radio(["Standard","Custom with Standard Search", "Fully Custom"], value=None, label="Degree of Control")
         with gr.Column():
             username_tb = gr.Textbox(label="Organization or User Name (Defaults to HF username)")
