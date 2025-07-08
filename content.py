@@ -1,8 +1,5 @@
-TITLE = """<h1 align="center" id="space-title">AstaBench Leaderboard</h1>"""
+TITLE = """<h1 align="left" id="space-title">AstaBench Leaderboard</h1>"""
 
-INTRODUCTION_TEXT = """
-## Introduction
-"""
 INTRO_PARAGRAPH = """
 AI agents are on the rise, promising everything from travel planning to scientific discovery. But evaluating them—especially for real-world research tasks—remains a messy, inconsistent process. Metrics vary, cost is often ignored, and scientific use cases are rarely the focus. <br>
 <br>
@@ -11,9 +8,14 @@ Enter AstaBench, a grand challenge benchmark developed by Ai2 to test how well a
 SCATTER_DISCLAIMER = """
 Only agents that have cost data available will be shown in the scatter plot. If you don't see your agent, please ensure that you have provided cost data in your submission.
 """
-
-SUBMISSION_TEXT = """
-## Submissions
+PARETO_DISCLAIMER = """
+Agents names that are green are Pareto optimal, meaning they achieve the best performance for their cost. 
+"""
+LIT_DESCRIPTION = """
+Several of the evaluations in AstaBench probe an AI model's literature understanding skills — that is, its ability to find research papers based on a description, review questions on citation quality, retrieve information from the literature, and so on.
+"""
+PLACEHOLDER_DESCRIPTION = """
+THIS IS PLACEHOLDER TEXT. AstaBench is a benchmark suite designed to evaluate AI agents on their ability to perform complex tasks that require reasoning, planning, and execution. It includes a variety of benchmarks that test different aspects of agent performance, such as literature understanding, data analysis, and code execution.
 """
 
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"
@@ -66,17 +68,18 @@ def hf_uri_to_web_url(uri: str) -> str:
     return f"https://huggingface.co/datasets/{namespace}/{repo}/tree/main/{path}"
 
 css = """
-.submission-accordion {
-    border-style: solid;
-    border-width: 3px !important;
-    border-color: #ec4899;
+#intro-paragraph {
+    font-size: 18px;
+    max-width: 60%;
 }
-.submission-accordion span.svelte-1w6vloh { 
-    font-weight: bold !important;
-    font-size: 1.2em !important;
+#category-intro {
+    font-size: 18px;
+    max-width: 60%;
 }
 #logo-image { 
-    margin: auto;          
+    margin: 0;
+    margin-bottom: 30px; 
+    justify-content: flex-start;        
     max-width: 250px;       
     height: auto;           
 }
@@ -84,7 +87,6 @@ css = """
     height: auto !important;
     max-height: none !important;
 }
-
 .table-wrap {
     max-height: none !important;
     height: auto !important;
@@ -96,16 +98,11 @@ table.gr-table th, table.gr-table td {
     width: 1%;
     white-space: nowrap;
 }
-
+table.svelte-1e98i6s td {
+    vertical-align: top !important;
+}
 table.gr-table {
     font-size: 14px !important;
-}
-
-/* Example of making the "Agent" column (the 1st column) a bit wider if needed */
-table.gr-table th:nth-child(1),
-table.gr-table td:nth-child(1) {
-    min-width: 150px !important;
-    white-space: normal !important; /* Allow agent names to wrap if long */
 }
 .html-container {
     padding-top: 0 !important;
@@ -113,7 +110,43 @@ table.gr-table td:nth-child(1) {
 #scatter-disclaimer {
     color: #f0529c !important;
 }
+#pareto-disclaimer {
+    color: #f0529c !important;
+}
 thead.svelte-1e98i6s th {
     background: white !important;
+}
+.dark thead.svelte-1e98i6s th {
+    background: #091a1a !important;
+}
+.cell-wrap.svelte-v1pjjd {
+    font-family: 'Manrope';
+    }
+nav.svelte-ti537g.svelte-ti537g {
+    justify-content: flex-start;
+}
+#legend-markdown span {
+    margin-right: 15px !important; 
+}
+#leaderboard-accordion .label-wrap {
+    font-size: 1.4rem !important; 
+}
+.dark #leaderboard-accordion .label-wrap {
+    color: #0FCB8C !important; 
+}
+.dark block.svelte-1svsvh2 {
+    background: #032629 !important;
+}
+.sub-nav-bar {
+    margin-bottom: 20px; /* The space below the nav bar */
+}
+.sub-nav-bar a {
+    font-size: 16px;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+    padding-right: 15px;
+}
+.padding.svelte-phx28p {
+    padding: 0 !important;
 }
 """

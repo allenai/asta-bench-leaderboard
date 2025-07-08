@@ -2,10 +2,8 @@ import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
 import logging
-from typing import Optional, Any, Dict, List # Added List
-from zoneinfo import ZoneInfo # Assuming this might be used by SuiteConfig/EvalResult or _get_dataframe
-import json
-import os
+from typing import Optional
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -46,14 +44,18 @@ def _pretty_column_name(raw_col: str) -> str:
     """
     # Case 1: Handle fixed, special-case mappings first.
     fixed_mappings = {
+        'id': 'id',
         'Agent': 'Agent',
         'Agent description': 'Agent Description',
         'User/organization': 'Submitter',
         'Submission date': 'Date',
         'Overall': 'Overall Score',
         'Overall cost': 'Overall Cost',
-        'Logs': 'Logs'
+        'Logs': 'Logs',
+        'Openness': 'Openness',
+        'Agent tooling': 'Agent Tooling',
     }
+
     if raw_col in fixed_mappings:
         return fixed_mappings[raw_col]
 
@@ -146,7 +148,6 @@ class DataTransformer:
     def __init__(self, dataframe: pd.DataFrame, tag_map: dict[str, list[str]]):
         """
         Initializes the viewer.
-
         Args:
             dataframe (pd.DataFrame): The presentation-ready leaderboard data.
             tag_map (dict): A map of formal tag names to formal task names.
@@ -188,29 +189,53 @@ class DataTransformer:
         if primary_score_col in self.data.columns:
             df_sorted = self.data.sort_values(primary_score_col, ascending=False, na_position='last')
 
-        # --- 3. Build the List of Columns to Display ---
-        base_cols = ["Agent", "Submitter"]
-        new_cols = ["Openness", "Degree of Control"]
-        ending_cols = ["Date", "Logs"]
+        df_view = df_sorted.copy()
+        #preserve just agent name for scatterplot hover
+        df_view['agent_for_hover'] = df_view['Agent']
+        # 3. Combine "Agent" and "Submitter" into a single HTML-formatted column
+        #    We do this *before* defining the final column list.
+        if 'Agent' in df_view.columns and 'Submitter' in df_view.columns:
 
-        # Start with the primary metric score and cost
+            def combine_agent_submitter(row):
+                agent = row['Agent']
+                submitter = row['Submitter']
+
+                # Check if submitter exists and is not empty
+                if pd.notna(submitter) and submitter.strip() != '':
+                    # Create a two-line HTML string with styled submitter text
+                    return (
+                        f"<div>{agent}<br>"
+                        f"<span style='font-size: 0.9em; color: #667876;'>{submitter}</span>"
+                        f"</div>"
+                    )
+                else:
+                    # If no submitter, just return the agent name
+                    return agent
+
+            # Apply the function to create the new combined 'Agent' column
+            df_view['Agent'] = df_view.apply(combine_agent_submitter, axis=1)
+            # The 'Submitter' column is no longer needed
+            df_view = df_view.drop(columns=['Submitter'])
+
+        # 4. Build the List of Columns to Display (now simplified)
+        base_cols = ["id","Agent","agent_for_hover"]
+        new_cols = ["Openness", "Agent Tooling"]
+        ending_cols = ["Logs"]
+
         metrics_to_display = [primary_score_col, f"{primary_metric} Cost"]
-
-        # Add the score and cost for each item in our group
         for item in group_metrics:
             metrics_to_display.append(f"{item} Score")
             metrics_to_display.append(f"{item} Cost")
 
-        # Combine base columns with metric columns, ensuring uniqueness and order
-        final_cols_ordered = base_cols + list(dict.fromkeys(metrics_to_display))+ new_cols + ending_cols
+        final_cols_ordered = new_cols + base_cols +  list(dict.fromkeys(metrics_to_display)) + ending_cols
 
-        # Filter to only include columns that actually exist in our DataFrame
-        df_view = df_sorted.copy()
         for col in final_cols_ordered:
             if col not in df_view.columns:
                 df_view[col] = pd.NA
 
+        # The final selection will now use the new column structure
         df_view = df_view[final_cols_ordered].reset_index(drop=True)
+        cols = len(final_cols_ordered)
 
         # Calculated and add "Categories Attempted" column
         if primary_metric == "Overall":
@@ -220,29 +245,28 @@ class DataTransformer:
 
                 # Return the formatted string with the correct emoji
                 if count == 4:
-                    return f"4/4 ✅"
+                    return f"4/4"
                 if count == 0:
-                    return f"0/4 🚫"
-                return f"{count}/4 ⚠️"
+                    return f"0/4"
+                return f"{count}/4"
 
             # Apply the function row-wise to create the new column
             attempted_column = df_view.apply(calculate_attempted, axis=1)
             # Insert the new column at a nice position (e.g., after "Date")
-            df_view.insert(2, "Categories Attempted", attempted_column)
+            df_view.insert((cols - 1), "Categories Attempted", attempted_column)
         else:
             total_benchmarks = len(group_metrics)
             def calculate_benchmarks_attempted(row):
                 # Count how many benchmarks in this category have COST data reported
                 count = sum(1 for benchmark in group_metrics if pd.notna(row.get(f"{benchmark} Cost")))
                 if count == total_benchmarks:
-                    return f"{count}/{total_benchmarks} ✅"
+                    return f"{count}/{total_benchmarks} "
                 elif count == 0:
-                    return f"{count}/{total_benchmarks} 🚫"
+                    return f"{count}/{total_benchmarks} "
                 else:
-                    return f"{count}/{total_benchmarks}⚠️"
+                    return f"{count}/{total_benchmarks}"
             # Insert the new column, for example, after "Date"
-            df_view.insert(2, "Benchmarks Attempted", df_view.apply(calculate_benchmarks_attempted, axis=1))
-
+            df_view.insert((cols - 1), "Benchmarks Attempted", df_view.apply(calculate_benchmarks_attempted, axis=1))
 
         # --- 4. Generate the Scatter Plot for the Primary Metric ---
         plots: dict[str, go.Figure] = {}
@@ -254,7 +278,7 @@ class DataTransformer:
                     data=df_view,
                     x=primary_cost_col,
                     y=primary_score_col,
-                    agent_col="Agent"
+                    agent_col="agent_for_hover"
                 )
                 # Use a consistent key for easy retrieval later
                 plots['scatter_plot'] = fig
@@ -274,24 +298,37 @@ def _plot_scatter_plotly(
         data: pd.DataFrame,
         x: Optional[str],
         y: str,
-        agent_col: str = "Agent"
+        agent_col: str = 'agent_for_hover'
 ) -> go.Figure:
 
-    # --- Steps 1-4: Data Validation and Preparation ---
+    # --- Section 1: Define Mappings ---
+    color_map = {
+        "Closed": "red",
+        "API Available": "orange",
+        "Open Source": "green",
+        "Open Source + Open Weights": "blue"
+    }
+    category_order = list(color_map.keys())
+
+    shape_map = {
+        "Standard": "star",
+        "Custom with Standard Search": "diamond",
+        "Fully Custom": "circle"
+    }
+    default_shape = 'square'
+
     x_col_to_use = x
     y_col_to_use = y
 
-    if y_col_to_use not in data.columns:
-        logger.error(f"y-axis column '{y_col_to_use}' not found.")
-        return go.Figure()
-    if agent_col not in data.columns:
-        logger.warning(f"Agent column '{agent_col}' not found.")
+    required_cols = [y_col_to_use, agent_col, "Openness", "Agent Tooling"]
+    if not all(col in data.columns for col in required_cols):
+        logger.error(f"Missing one or more required columns for plotting: {required_cols}")
         return go.Figure()
 
     data_plot = data.copy()
     data_plot[y_col_to_use] = pd.to_numeric(data_plot[y_col_to_use], errors='coerce')
 
-    x_axis_label = x if x else "Cost (Data N/A)"
+    x_axis_label = f"{x} (USD)" if x else "Cost (Data N/A)"
     x_data_is_valid = False
     if x and x in data_plot.columns:
         try:
@@ -307,30 +344,27 @@ def _plot_scatter_plotly(
         x_col_to_use = dummy_x_col_name
         logger.info("Using dummy x-values for plotting.")
 
-    # --- Step 5: Clean Data and Initialize Figure ---
-    data_plot.dropna(subset=[y_col_to_use, x_col_to_use], inplace=True)
+    # Clean data based on all necessary columns
+    data_plot.dropna(subset=[y_col_to_use, x_col_to_use, "Openness", "Agent Tooling"], inplace=True)
+
+    # --- Section 3: Initialize Figure ---
     fig = go.Figure()
     if data_plot.empty:
-        logger.warning(f"No valid data to plot for y='{y_col_to_use}' and x='{x_col_to_use}'.")
+        logger.warning(f"No valid data to plot after cleaning.")
         return fig
 
-    # Step 6 - Calculate and Draw the Efficiency Frontier Line ---
+    # --- Section 4: Calculate and Draw Pareto Frontier (Restored from your original code) ---
     if x_data_is_valid:
-        # Sort by cost (ascending), then by score (descending) to break ties
         sorted_data = data_plot.sort_values(by=[x_col_to_use, y_col_to_use], ascending=[True, False])
-
         frontier_points = []
         max_score_so_far = float('-inf')
 
-        for index, row in sorted_data.iterrows():
+        for _, row in sorted_data.iterrows():
             score = row[y_col_to_use]
-            # If this point offers a better score than any we've seen before,
-            # it's part of the frontier.
-            if score > max_score_so_far:
+            if score >= max_score_so_far:
                 frontier_points.append({'x': row[x_col_to_use], 'y': score})
                 max_score_so_far = score
 
-        # Add the frontier line trace to the plot if we found any points
         if frontier_points:
             frontier_df = pd.DataFrame(frontier_points)
             fig.add_trace(go.Scatter(
@@ -339,22 +373,67 @@ def _plot_scatter_plotly(
                 mode='lines',
                 name='Efficiency Frontier',
                 line=dict(color='firebrick', width=2, dash='dash'),
-                hoverinfo='skip' # The line doesn't need a hover tooltip
+                hoverinfo='skip'
             ))
 
-    # --- Step 7: Plot Individual Agent Markers (No changes here) ---
-    for agent, group in data_plot.groupby(agent_col):
-        hover_x_display = "%{x:.2f}" if x_data_is_valid else "N/A"
+    # --- Section 5: Prepare for Marker Plotting ---
+    # Pre-generate hover text and shapes for each point
+    data_plot['hover_text'] = data_plot.apply(
+        lambda row: f"<b>{row[agent_col]}</b><br>{x_axis_label}: ${row[x_col_to_use]:.2f}<br>{y_col_to_use}: {row[y_col_to_use]:.2f}",
+        axis=1
+    )
+    data_plot['shape_symbol'] = data_plot['Agent Tooling'].map(shape_map).fillna(default_shape)
+
+    # --- Section 6: Plot Markers by "Openness" Category ---
+    for category in category_order:
+        group = data_plot[data_plot['Openness'] == category]
+        if group.empty:
+            continue
+
         fig.add_trace(go.Scatter(
             x=group[x_col_to_use],
             y=group[y_col_to_use],
             mode='markers',
-            name=str(agent),
-            hovertemplate=f"<b>{str(agent)}</b><br>{x_axis_label}: {hover_x_display}<br>{y_col_to_use}: %{{y:.2f}}""<extra></extra>",
-            marker=dict(size=10, opacity=0.8)
+            name=category,
+            showlegend=False,
+            text=group['hover_text'],
+            hoverinfo='text',
+            marker=dict(
+                color=color_map.get(category, 'grey'),
+                symbol=group['shape_symbol'],
+                size=10,
+                opacity=0.8,
+                line=dict(width=1, color='DarkSlateGrey')
+            )
+        ))
+    # ---- Add logic for making the legend -----------
+    for i, category in enumerate(category_order):
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None],
+            mode='markers',
+            name=category,
+            legendgroup="openness_group",
+            legendgrouptitle_text="Agent Openness" if i == 0 else None,
+            marker=dict(
+                color=color_map.get(category, 'grey'),
+                symbol='circle',
+                size=12
+            )
         ))
 
-    # --- Step 8: Configure Layout (No changes here) ---
+    # Part B: Dummy traces for the SHAPES ("Agent Tooling")
+    shape_items = list(shape_map.items())
+    for i, (shape_name, shape_symbol) in enumerate(shape_items):
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None],
+            mode='markers',
+            name=shape_name,
+            legendgroup="tooling_group",
+            legendgrouptitle_text="Agent Tooling" if i == 0 else None,
+            marker=dict(color='grey', symbol=shape_symbol, size=12)
+        ))
+
+    # --- Section 8: Configure Layout (Restored from your original code) ---
     xaxis_config = dict(title=x_axis_label)
     if not x_data_is_valid:
         xaxis_config['range'] = [DUMMY_X_VALUE_FOR_MISSING_COSTS - 1, DUMMY_X_VALUE_FOR_MISSING_COSTS + 1]
@@ -362,14 +441,31 @@ def _plot_scatter_plotly(
     else:
         xaxis_config['rangemode'] = "tozero"
 
+    logo_data_uri = svg_to_data_uri("assets/just-icon.svg")
+
     fig.update_layout(
+        template="plotly_white",
         title=f"{y_col_to_use} vs. {x_axis_label}",
         xaxis=xaxis_config,
         yaxis=dict(title=y_col_to_use, rangemode="tozero"),
-        legend_title_text=agent_col
+        legend=dict(
+            bgcolor='#FAF2E9',
+        )
+    )
+    fig.add_layout_image(
+        dict(
+            source=logo_data_uri,
+            xref="x domain", yref="y domain",
+            x=1.1, y=1.1,
+            sizex=0.2, sizey=0.2,
+            xanchor="left",
+            yanchor="bottom",
+            layer="above",
+        ),
     )
 
     return fig
+
 
 def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
     """
@@ -398,7 +494,7 @@ def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
         if pd.notna(cost_value) and isinstance(cost_value, (int, float)):
             return f"${cost_value:.2f}"
         elif pd.notna(score_value):
-            return f'<span style="color: {status_color};">Missing Cost</span>'  # Score exists, but cost is missing
+            return f'<span style="color: {status_color};">Missing</span>'  # Score exists, but cost is missing
         else:
             return f'<span style="color: {status_color};">Not Attempted</span>'  # Neither score nor cost exists
 
@@ -434,3 +530,43 @@ def format_score_column(df: pd.DataFrame, score_col_name: str) -> pd.DataFrame:
     # Apply the formatting and return the updated DataFrame
     return df.assign(**{score_col_name: df[score_col_name].apply(apply_formatting)})
 
+
+def get_pareto_df(data):
+    # This is a placeholder; use your actual function that handles dynamic column names
+    # A robust version might look for any column with "Cost" and "Score"
+    cost_cols = [c for c in data.columns if 'Cost' in c]
+    score_cols = [c for c in data.columns if 'Score' in c]
+    if not cost_cols or not score_cols:
+        return pd.DataFrame()
+
+    x_col, y_col = cost_cols[0], score_cols[0]
+
+    frontier_data = data.dropna(subset=[x_col, y_col]).copy()
+    frontier_data[y_col] = pd.to_numeric(frontier_data[y_col], errors='coerce')
+    frontier_data[x_col] = pd.to_numeric(frontier_data[x_col], errors='coerce')
+    frontier_data.dropna(subset=[x_col, y_col], inplace=True)
+    if frontier_data.empty:
+        return pd.DataFrame()
+
+    frontier_data = frontier_data.sort_values(by=[x_col, y_col], ascending=[True, False])
+
+    pareto_points = []
+    max_score_at_cost = -np.inf
+
+    for _, row in frontier_data.iterrows():
+        if row[y_col] >= max_score_at_cost:
+            pareto_points.append(row)
+            max_score_at_cost = row[y_col]
+
+    return pd.DataFrame(pareto_points)
+
+
+def svg_to_data_uri(path: str) -> str:
+    """Reads an SVG file and encodes it as a Data URI for Plotly."""
+    try:
+        with open(path, "rb") as f:
+            encoded_string = base64.b64encode(f.read()).decode()
+        return f"data:image/svg+xml;base64,{encoded_string}"
+    except FileNotFoundError:
+        logger.warning(f"SVG file not found at: {path}")
+        return None

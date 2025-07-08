@@ -1,13 +1,22 @@
 import gradio as gr
-from gradio.events import SelectData
 import pandas as pd
 import plotly.graph_objects as go
 import os
+import re
 
 from agenteval.leaderboard.view import LeaderboardViewer
 from huggingface_hub import HfApi
 
-from leaderboard_transformer import DataTransformer, transform_raw_dataframe, create_pretty_tag_map, INFORMAL_TO_FORMAL_NAME_MAP, _plot_scatter_plotly, format_cost_column, format_score_column
+from leaderboard_transformer import (
+    DataTransformer,
+    transform_raw_dataframe,
+    create_pretty_tag_map,
+    INFORMAL_TO_FORMAL_NAME_MAP,
+    _plot_scatter_plotly,
+    format_cost_column,
+    format_score_column,
+    get_pareto_df,
+)
 from content import (
     SCATTER_DISCLAIMER,
     format_error,
@@ -19,7 +28,7 @@ from content import (
 
 # --- Constants and Configuration  ---
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
-CONFIG_NAME = "1.0.0-dev1" # This corresponds to 'config' in LeaderboardViewer
+CONFIG_NAME = "1.0.0-dev2" # This corresponds to 'config' in LeaderboardViewer
 IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
 
 OWNER = "allenai"
@@ -41,6 +50,24 @@ MAX_UPLOAD_BYTES = 100 * 1024**2
 AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 
+# Global variables
+openness_emoji_map = {
+    "Closed": '🔴',
+    "API Available": '🟠',
+    "Open Source": '🟢',
+    "Open Source + Open Weights": '🔵'
+}
+control_emoji_map = {
+    "Standard": "⭐",
+    "Custom with Standard Search": "🔶",
+    "Fully Custom": "⚪️",
+}
+legend_markdown = """
+    <span>On pareto curve:📈</span>
+    <span>**Agent Openness**:</span>   <span>🔴 Closed</span>    <span>🟠 API Available</span>    <span>🟢 Open Source</span>    <span>🔵 Open Source + Open Weights</span>
+    <span>**Agent Tooling**:</span>   <span>⭐ Standard</span>    <span>🔶 Custom with Standard Search</span>    <span>⚪️ Fully Custom</span>
+    <span>**COMING SOON:** COLUMN DESCRIPTIONS</span>
+    """
 
 # --- Global State for Viewers (simple caching) ---
 CACHED_VIEWERS = {}
@@ -117,29 +144,48 @@ def create_leaderboard_display(
     # The function no longer loads data itself; it filters the data it receives.
     transformer = DataTransformer(full_df, tag_map)
     df_view, plots_dict = transformer.view(tag=category_name, use_plotly=True)
-    # format cost columns
+    pareto_df = get_pareto_df(df_view)
+    # Get the list of agents on the frontier. We'll use this list later.
+    if not pareto_df.empty and 'id' in pareto_df.columns:
+        pareto_agent_names = pareto_df['id'].tolist()
+    else:
+        pareto_agent_names = []
+    df_view['Pareto'] = df_view.apply(
+        lambda row: '📈' if row['id'] in pareto_agent_names else '',
+        axis=1
+    )
+    # Create mapping for Openness
+    original_openness = df_view['Openness']
+    df_view['Openness'] = df_view['Openness'].map(openness_emoji_map).fillna(original_openness)
+
+    # For this column, we'll use .apply() to handle the "Other" case cleanly.
+    df_view['Agent Tooling'] = df_view['Agent Tooling'].apply(
+        lambda ctrl: control_emoji_map.get(ctrl, f"{ctrl}" if pd.notna(ctrl) else "")
+    )
+
+
+    # Format cost columns
     for col in df_view.columns:
         if "Cost" in col:
             df_view = format_cost_column(df_view, col)
 
-    # 2. Fill NaN scores with 0
+    # Fill NaN scores with 0
     for col in df_view.columns:
         if "Score" in col:
             df_view = format_score_column(df_view, col)
     scatter_plot = plots_dict.get('scatter_plot', go.Figure())
 
-    # 2. Define the UI components with the filtered data.
-    df_headers = df_view.columns.tolist()
-    df_datatypes = ["markdown" if col == "Logs" or "Cost" in col or "Score" in col else "str" for col in df_headers]
 
-    dataframe_component = gr.DataFrame(
-        headers=df_headers,
-        value=df_view,
-        datatype=df_datatypes,
-        interactive=False,
-        wrap=True,
-        column_widths=[100, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 75, 75, 50, 50]
-    )
+    all_cols = df_view.columns.tolist()
+    # Remove 'Pareto' from the list and insert it at the beginning
+    all_cols.insert(0, all_cols.pop(all_cols.index('Pareto')))
+    df_view = df_view[all_cols]
+    # Drop internally used columns that are not needed in the display
+    columns_to_drop = ['id', 'agent_for_hover']
+    df_view = df_view.drop(columns=columns_to_drop, errors='ignore')
+
+    df_headers = df_view.columns.tolist()
+    df_datatypes = ["markdown" if col == "Logs" or col == "Agent" or "Cost" in col or "Score" in col else "str" for col in df_headers]
 
     plot_component = gr.Plot(
         value=scatter_plot,
@@ -147,8 +193,20 @@ def create_leaderboard_display(
     )
     gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
+    # Put table and key into an accordion
+    with gr.Accordion("See Table", open=False, elem_id="leaderboard-accordion"):
+        dataframe_component = gr.DataFrame(
+            headers=df_headers,
+            value=df_view,
+            datatype=df_datatypes,
+            interactive=False,
+            wrap=True,
+            column_widths=[30, 30, 30, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 50, 30]
+        )
+        gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
+
     # Return the components so they can be referenced elsewhere.
-    return dataframe_component, plot_component
+    return plot_component, dataframe_component,
 
 def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     """
@@ -178,8 +236,36 @@ def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
 
     # Fallback for unexpected types
     return pd.DataFrame(), {}
+# Create sub-nav bar for benchmarks
+def create_gradio_anchor_id(text: str) -> str:
+    """
+    Replicates the ID format created by gr.Markdown(header_links=True).
+    Example: "Paper Finder Validation" -> "h-paper-finder-validation"
+    """
+    text = text.lower()
+    text = re.sub(r'\s+', '-', text) # Replace spaces with hyphens
+    text = re.sub(r'[^\w-]', '', text) # Remove non-word characters
+    return f"h-{text}"
+def create_sub_navigation_bar(tag_map: dict, category_name: str):
+    """
+    Generates and renders the HTML for the anchor-link sub-navigation bar.
+    """
+    benchmark_names = tag_map.get(category_name, [])
+    if not benchmark_names:
+        return # Do nothing if there are no benchmarks
 
-# --- Detailed Benchmark Display ---
+    anchor_links = []
+    for name in benchmark_names:
+        # Use the helper function to create the correct ID format
+        target_id = create_gradio_anchor_id(name)
+        anchor_links.append(f"<a href='#{target_id}'>{name}</a>")
+
+    nav_bar_html = f"<div class='sub-nav-bar'>{'   '.join(anchor_links)}</div>"
+
+    # Use gr.HTML to render the links correctly
+    gr.HTML(nav_bar_html)
+
+# # --- Detailed Benchmark Display ---
 def create_benchmark_details_display(
         full_df: pd.DataFrame,
         tag_map: dict,
@@ -206,14 +292,14 @@ def create_benchmark_details_display(
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
         with gr.Blocks():
-            gr.Markdown(f"### {benchmark_name}")
+            gr.Markdown(f"### {benchmark_name}", header_links=True)
 
             # 3. Prepare the data for this specific benchmark's table and plot
             benchmark_score_col = f"{benchmark_name} Score"
             benchmark_cost_col = f"{benchmark_name} Cost"
 
             # Define the columns needed for the detailed table
-            table_cols = ['Agent', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs']
+            table_cols = ['Agent','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id']
 
             # Filter to only columns that actually exist in the full dataframe
             existing_table_cols = [col for col in table_cols if col in full_df.columns]
@@ -224,11 +310,29 @@ def create_benchmark_details_display(
 
             # Create a specific DataFrame for the table view
             benchmark_table_df = full_df[existing_table_cols].copy()
+            pareto_df = get_pareto_df(benchmark_table_df)
+            # Get the list of agents on the frontier. We'll use this list later.
+            if not pareto_df.empty and 'id' in pareto_df.columns:
+                pareto_agent_names = pareto_df['id'].tolist()
+            else:
+                pareto_agent_names = []
+            benchmark_table_df['Pareto'] = benchmark_table_df.apply(
+                lambda row: '📈' if row['id'] in pareto_agent_names else '',
+                axis=1
+            )
+
+            original_openness = benchmark_table_df['Openness']
+            benchmark_table_df['Openness'] = benchmark_table_df['Openness'].map(openness_emoji_map).fillna(original_openness)
+
+            # For this column, we'll use .apply() to handle the "Other" case cleanly.
+            benchmark_table_df['Agent Tooling'] = benchmark_table_df['Agent Tooling'].apply(
+                lambda ctrl: control_emoji_map.get(ctrl, f"{ctrl}" if pd.notna(ctrl) else "")
+            )
+
             # Calculated and add "Benchmark Attempted" column
             def check_benchmark_status(row):
                 has_score = pd.notna(row.get(benchmark_score_col))
                 has_cost = pd.notna(row.get(benchmark_cost_col))
-
                 if has_score and has_cost:
                     return "✅"
                 if has_score or has_cost:
@@ -246,14 +350,14 @@ def create_benchmark_details_display(
             benchmark_table_df = format_cost_column(benchmark_table_df, benchmark_cost_col)
             benchmark_table_df = format_score_column(benchmark_table_df, benchmark_score_col)
             desired_cols_in_order = [
+                'Pareto',
+                'Openness',
+                'Agent Tooling',
                 'Agent',
                 'Submitter',
                 'Attempted Benchmark',
                 benchmark_score_col,
                 benchmark_cost_col,
-                'Openness',
-                'Degree of Control',
-                'Date',
                 'Logs'
             ]
             for col in desired_cols_in_order:
@@ -261,25 +365,13 @@ def create_benchmark_details_display(
                     benchmark_table_df[col] = pd.NA # Add as an empty column
             benchmark_table_df = benchmark_table_df[desired_cols_in_order]
             # Rename columns for a cleaner table display, as requested
-            benchmark_table_df.rename(columns={
+            benchmark_table_df.rename({
                 benchmark_score_col: 'Score',
-                benchmark_cost_col: 'Cost'
+                benchmark_cost_col: 'Cost',
             }, inplace=True)
             # Ensure the 'Logs' column is formatted correctly
-            table_headers = benchmark_table_df.columns.tolist()
-            # If the column is 'Logs', render as markdown; otherwise, as a string.
-            df_datatypes = [
-                "markdown" if col in ["Logs", "Cost", "Score"] else "str"
-                for col in table_headers
-            ]
-
-            # Create the Gradio component, now with the correct datatypes
-            gr.DataFrame(
-                value=benchmark_table_df,
-                datatype=df_datatypes,
-                interactive=False,
-                wrap=True,
-            )
+            df_headers = benchmark_table_df.columns.tolist()
+            df_datatypes = ["markdown" if col == "Logs" or col == "Agent" or "Cost" in col or "Score" in col else "str" for col in df_headers]
 
             # Create the scatter plot using the full data for context, but plotting benchmark metrics
             # This shows all agents on the same axis for better comparison.
@@ -291,3 +383,14 @@ def create_benchmark_details_display(
             )
             gr.Plot(value=benchmark_plot)
             gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
+            # Put table and key into an accordion
+            with gr.Accordion("See Table", open=False, elem_id="leaderboard-accordion"):
+                gr.DataFrame(
+                    headers=df_headers,
+                    value=benchmark_table_df,
+                    datatype=df_datatypes,
+                    interactive=False,
+                    wrap=True,
+                )
+                gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
+
