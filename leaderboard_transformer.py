@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import logging
 from typing import Optional
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -448,11 +449,27 @@ def _plot_scatter_plotly(
     else:
         xaxis_config['rangemode'] = "tozero"
 
+    logo_data_uri = svg_to_data_uri("assets/just-icon.svg")
+
     fig.update_layout(
+        template="plotly_white",
         title=f"{y_col_to_use} vs. {x_axis_label}",
         xaxis=xaxis_config,
         yaxis=dict(title=y_col_to_use, rangemode="tozero"),
-        legend_title_text="Legend" # New general title
+        legend=dict(
+            bgcolor='#FAF2E9',
+        )
+    )
+    fig.add_layout_image(
+        dict(
+            source=logo_data_uri,
+            xref="x domain", yref="y domain",
+            x=1.1, y=1.1,
+            sizex=0.2, sizey=0.2,
+            xanchor="left",
+            yanchor="bottom",
+            layer="above",
+        ),
     )
 
     return fig
@@ -552,3 +569,12 @@ def get_pareto_df(data):
     return pd.DataFrame(pareto_points)
 
 
+def svg_to_data_uri(path: str) -> str:
+    """Reads an SVG file and encodes it as a Data URI for Plotly."""
+    try:
+        with open(path, "rb") as f:
+            encoded_string = base64.b64encode(f.read()).decode()
+        return f"data:image/svg+xml;base64,{encoded_string}"
+    except FileNotFoundError:
+        logger.warning(f"SVG file not found at: {path}")
+        return None
