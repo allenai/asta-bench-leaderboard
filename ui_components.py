@@ -156,8 +156,7 @@ def create_leaderboard_display(
     )
     # Create mapping for Openness
     original_openness = df_view['Openness']
-    df_view['Openness'] = df_view['Openness'].map(openness_emoji_map)
-    df_view['Openness'].fillna(original_openness, inplace=True)
+    df_view['Openness'] = df_view['Openness'].map(openness_emoji_map).fillna(original_openness)
 
     # For this column, we'll use .apply() to handle the "Other" case cleanly.
     df_view['Degree of Control'] = df_view['Degree of Control'].apply(
@@ -323,8 +322,7 @@ def create_benchmark_details_display(
             )
 
             original_openness = benchmark_table_df['Openness']
-            benchmark_table_df['Openness'] = benchmark_table_df['Openness'].map(openness_emoji_map)
-            benchmark_table_df['Openness'].fillna(original_openness, inplace=True)
+            benchmark_table_df['Openness'] = benchmark_table_df['Openness'].map(openness_emoji_map).fillna(original_openness)
 
             # For this column, we'll use .apply() to handle the "Other" case cleanly.
             benchmark_table_df['Degree of Control'] = benchmark_table_df['Degree of Control'].apply(
@@ -367,9 +365,9 @@ def create_benchmark_details_display(
                     benchmark_table_df[col] = pd.NA # Add as an empty column
             benchmark_table_df = benchmark_table_df[desired_cols_in_order]
             # Rename columns for a cleaner table display, as requested
-            benchmark_table_df.rename(columns={
+            benchmark_table_df.rename({
                 benchmark_score_col: 'Score',
-                benchmark_cost_col: 'Cost'
+                benchmark_cost_col: 'Cost',
             }, inplace=True)
             # Ensure the 'Logs' column is formatted correctly
             df_headers = benchmark_table_df.columns.tolist()
