@@ -28,6 +28,16 @@ This will start a local server that you can access in your web browser at `http:
 ## Hugging Face Integration
 This repo is already integrated with Hugging Face, please follow the steps below to push changes to the leaderboard on Hugging Face.
 First make sure to merge your changes to the `main` branch of this repository. (following the standard GitHub workflow of creating a branch, making changes, and then merging it back to `main`).
+First you need to add the Hugging Face remote repository if you haven't done so already. You can do this by running the following command:
+
+```bash
+git remote add huggingface https://huggingface.co/datasets/allenai/asta-bench-internal-results
+```
+you can verify that the remote has been added by running:
+
+```bash
+git remote -v
+```
 Then, to push the changes to the Hugging Face leaderboard, you can use the following command:
 
 ```bash
