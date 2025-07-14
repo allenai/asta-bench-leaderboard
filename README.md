@@ -33,7 +33,7 @@ First you need to add the Hugging Face remote repository if you haven't done so 
 ```bash
 git remote add huggingface https://huggingface.co/datasets/allenai/asta-bench-internal-results
 ```
-you can verify that the remote has been added by running:
+You can verify that the remote has been added by running:
 
 ```bash
 git remote -v
