@@ -15,6 +15,8 @@ with gr.Blocks() as demo:
     gr.Markdown(LIT_DESCRIPTION, elem_id="category-intro")
     if validation_tag_map:
         create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME)
+    if test_tag_map:
+        create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
 
     # --- This page now has two main sections: Validation and Test ---
     with gr.Tabs():

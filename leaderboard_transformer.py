@@ -14,7 +14,7 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "code": "Code Execution",
     "discovery": "Discovery",
 
-    # Long Raw Names
+    # Validation Names
     "arxivdigestables_validation": "Arxivdigestables Validation",
     "sqa_dev": "Sqa Dev",
     "litqa2_validation": "Litqa2 Validation",
@@ -24,6 +24,18 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "ds1000_validation": "DS1000 Validation",
     "e2e_discovery_validation": "E2E Discovery Validation",
     "super_validation": "Super Validation",
+    # Test Names
+    "paper_finder_test": "Paper Finder Test",
+    "paper_finder_litqa2_test": "Paper Finder Litqa2 Test",
+    "sqa_test": "Sqa Test",
+    "arxivdigestables_test": "Arxivdigestables Test",
+    "litqa2_test": "Litqa2 Test",
+    "discoverybench_test": "Discoverybench Test",
+    "core_bench_test": "Core Bench Test",
+    "ds1000_test": "DS1000 Test",
+    "e2e_discovery_test": "E2E Discovery Test",
+    "e2e_discovery_hard_test": "E2E Discovery Hard Test",
+    "super_test": "Super Test",
 }
 
 

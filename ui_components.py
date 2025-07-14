@@ -28,7 +28,7 @@ from content import (
 
 # --- Constants and Configuration  ---
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
-CONFIG_NAME = "1.0.0-dev2" # This corresponds to 'config' in LeaderboardViewer
+CONFIG_NAME = "1.0.0-dev1" # This corresponds to 'config' in LeaderboardViewer
 IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
 
 OWNER = "allenai"
@@ -213,7 +213,6 @@ def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     Loads and transforms the complete dataset for a given split.
     This function handles caching and returns the final "pretty" DataFrame and tag map.
     """
-    # This reuses your existing robust caching logic
     viewer_or_data, raw_tag_map = get_leaderboard_viewer_instance(split)
 
     if isinstance(viewer_or_data, (LeaderboardViewer, DummyViewer)):
