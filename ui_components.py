@@ -28,7 +28,7 @@ from content import (
 
 # --- Constants and Configuration  ---
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
-CONFIG_NAME = "1.0.0-dev1" # This corresponds to 'config' in LeaderboardViewer
+CONFIG_NAME = "1.0.0-dev2" # This corresponds to 'config' in LeaderboardViewer
 IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
 
 OWNER = "allenai"
@@ -290,7 +290,6 @@ def create_benchmark_details_display(
 
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
-        with gr.Blocks():
             gr.Markdown(f"### {benchmark_name}", header_links=True)
 
             # 3. Prepare the data for this specific benchmark's table and plot

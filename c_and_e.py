@@ -12,15 +12,16 @@ with gr.Blocks() as demo:
     validation_df, validation_tag_map = get_full_leaderboard_data("validation")
     test_df, test_tag_map = get_full_leaderboard_data("test")
     gr.Markdown(PLACEHOLDER_DESCRIPTION, elem_id="category-intro")
-    if validation_tag_map:
+    with gr.Column(elem_id="validation_nav_container", visible=True) as validation_nav_container:
         create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME)
-    if test_tag_map:
+
+    with gr.Column(elem_id="test_nav_container", visible=False) as test_nav_container:
         create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
 
 
     # --- This page now has two main sections: Validation and Test ---
     with gr.Tabs():
-        with gr.Tab("Results: Validation"):
+        with gr.Tab("Results: Validation") as validation_tab:
             # 1. Load all necessary data for the "validation" split ONCE.
             validation_df, validation_tag_map = get_full_leaderboard_data("validation")
 
@@ -42,7 +43,7 @@ with gr.Blocks() as demo:
             else:
                 gr.Markdown("No data available for validation split.")
 
-        with gr.Tab("Results: Test"):
+        with gr.Tab("Results: Test") as test_tab:
             # Repeat the process for the "test" split
             test_df, test_tag_map = get_full_leaderboard_data("test")
 
@@ -60,3 +61,23 @@ with gr.Blocks() as demo:
                 )
             else:
                 gr.Markdown("No data available for test split.")
+
+    show_validation_js = """
+    () => {
+        document.getElementById('validation_nav_container').style.display = 'block';
+        document.getElementById('test_nav_container').style.display = 'none';
+    }
+    """
+
+    # JavaScript to show the TEST nav, hide the VALIDATION nav, AND fix the plots.
+    show_test_js = """
+    () => {
+        document.getElementById('validation_nav_container').style.display = 'none';
+        document.getElementById('test_nav_container').style.display = 'block';
+        setTimeout(() => { window.dispatchEvent(new Event('resize')) }, 0);
+    }
+    """
+
+    # Assign the pure JS functions to the select events. No Python `fn` is needed.
+    validation_tab.select(fn=None, inputs=None, outputs=None, js=show_validation_js)
+    test_tab.select(fn=None, inputs=None, outputs=None, js=show_test_js)
