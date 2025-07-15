@@ -23,6 +23,7 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "core_bench_validation": "Core Bench Validation",
     "ds1000_validation": "DS1000 Validation",
     "e2e_discovery_validation": "E2E Discovery Validation",
+    "e2e_discovery_hard_validation": "E2E Discovery Hard Validation",
     "super_validation": "Super Validation",
     # Test Names
     "paper_finder_test": "Paper Finder Test",
