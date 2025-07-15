@@ -3,18 +3,17 @@ import pandas as pd
 
 # Import our UI factories and the data loader
 from ui_components import create_leaderboard_display, create_benchmark_details_display, get_full_leaderboard_data, create_sub_navigation_bar
-from content import PLACEHOLDER_DESCRIPTION
+from content import DISCOVERY_DESCRIPTION
 # Define the category for this page
 CATEGORY_NAME = "Discovery"
 
 with gr.Blocks() as demo:
-    gr.Markdown(f"## {CATEGORY_NAME} Aggregated")
+    gr.Markdown(f"## Astabench{CATEGORY_NAME} Leaderboard")
     validation_df, validation_tag_map = get_full_leaderboard_data("validation")
     test_df, test_tag_map = get_full_leaderboard_data("test")
-    gr.Markdown(PLACEHOLDER_DESCRIPTION, elem_id="category-intro")
+    gr.Markdown(DISCOVERY_DESCRIPTION, elem_id="category-intro")
     with gr.Column(elem_id="validation_nav_container", visible=True) as validation_nav_container:
         create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME)
-
     with gr.Column(elem_id="test_nav_container", visible=False) as test_nav_container:
         create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
     # --- This page now has two main sections: Validation and Test ---

@@ -20,10 +20,10 @@ with gr.Blocks(fill_width=True) as demo:
     # --- Leaderboard Display Section ---
     gr.Markdown("---")
     CATEGORY_NAME = "Overall"
-    gr.Markdown(f"## {CATEGORY_NAME} Categories Aggregated")
+    gr.Markdown(f"## Astabench {CATEGORY_NAME} Leaderboard")
 
     with gr.Tabs() as tabs:
-        with gr.Tab("Results: Validation"):
+        with gr.Tab("Results: Validation") as validation_tab:
             # 1. Load all necessary data for the "validation" split ONCE.
             validation_df, validation_tag_map = get_full_leaderboard_data("validation")
 
@@ -39,7 +39,7 @@ with gr.Blocks(fill_width=True) as demo:
             else:
                 gr.Markdown("No data available for validation split.")
 
-        with gr.Tab("Results: Test"):
+        with gr.Tab("Results: Test") as test_tab:
             test_df, test_tag_map = get_full_leaderboard_data("test")
             if not test_df.empty:
                 create_leaderboard_display(
@@ -54,6 +54,13 @@ with gr.Blocks(fill_width=True) as demo:
     with gr.Accordion("📙 Citation", open=False):
         gr.Textbox(value=CITATION_BUTTON_TEXT, label=CITATION_BUTTON_LABEL, elem_id="citation-button-main", interactive=False)
 
+
+    # JavaScript to show the TEST nav, hide the VALIDATION nav, AND fix the plots.
+    show_test_js = """
+        () => {setTimeout(() => { window.dispatchEvent(new Event('resize')) }, 0);}
+        """
+    # Assign the pure JS functions to the select events. No Python `fn` is needed.
+    test_tab.select(fn=None, inputs=None, outputs=None, js=show_test_js)
 
 if __name__ == "__main__":
     demo.launch()

@@ -23,6 +23,7 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "core_bench_validation": "Core Bench Validation",
     "ds1000_validation": "DS1000 Validation",
     "e2e_discovery_validation": "E2E Discovery Validation",
+    "e2e_discovery_hard_validation": "E2E Discovery Hard Validation",
     "super_validation": "Super Validation",
     # Test Names
     "paper_finder_test": "Paper Finder Test",
@@ -340,7 +341,7 @@ def _plot_scatter_plotly(
     data_plot = data.copy()
     data_plot[y_col_to_use] = pd.to_numeric(data_plot[y_col_to_use], errors='coerce')
 
-    x_axis_label = f"{x} (USD)" if x else "Cost (Data N/A)"
+    x_axis_label = f"{x} per task (USD)" if x else "Cost (Data N/A)"
     x_data_is_valid = False
     if x and x in data_plot.columns:
         try:
@@ -508,7 +509,7 @@ def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
         elif pd.notna(score_value):
             return f'<span style="color: {status_color};">Missing</span>'  # Score exists, but cost is missing
         else:
-            return f'<span style="color: {status_color};">Not Attempted</span>'  # Neither score nor cost exists
+            return f'<span style="color: {status_color};">Not Submitted</span>'  # Neither score nor cost exists
 
     # Apply the logic to the specified cost column and update the DataFrame
     df[cost_col_name] = df.apply(apply_formatting_logic, axis=1)

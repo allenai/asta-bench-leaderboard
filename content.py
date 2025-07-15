@@ -1,21 +1,93 @@
 TITLE = """<h1 align="left" id="space-title">AstaBench Leaderboard</h1>"""
 
 INTRO_PARAGRAPH = """
-AI agents are on the rise, promising everything from travel planning to scientific discovery. But evaluating them—especially for real-world research tasks—remains a messy, inconsistent process. Metrics vary, cost is often ignored, and scientific use cases are rarely the focus. <br>
+Newer benchmarks may test agentic AI and isolated aspects of scientific reasoning, but none rigorously measure agentic AI or capture the full range of skills research demands. Agents can appear effective by simply retrying tasks—often at high computational cost and with inconsistent results. Scientific AI needs evaluations that reflect the real complexity of research.
 <br>
-Enter AstaBench, a grand challenge benchmark developed by Ai2 to test how well agentic AI systems perform on scientific tasks that actually matter. As part of the Asta initiative, AstaBench spans ten multi-step benchmarks covering literature review, data analysis, code execution, and complex decision-making. It brings standardization and transparency to agent evaluation, with statistical confidence reporting, and a leaderboard that highlights tradeoffs between accuracy and computational cost.
+<br>
+AstaBench fills that gap: a suite of open benchmarks for evaluating scientific AI assistants on core scientific tasks that require novel reasoning. The suite includes over 8,000 tasks across 11 benchmarks, organized into four core categories: Literature Understanding, Code & Execution, Data Analysis, and End-to-End Discovery.
+<br>
+<br>
+The **AstaBench Leaderboard** below provides a high-level summary of agent performance and efficiency. It includes:
+<br>
+<br>
+- An **overall score**, computed as a macro average of the four category-level macro averages, ensuring each domain contributes equally—regardless of how many benchmarks each category includes. This provides a fair and balanced comparison across agents with varying capabilities.
+- An **overall average cost per task**, consistently aggregated across all categories, to reflect the real efficiency of each agent under comparable conditions.
+<br>
+To support domain-specific insight, AstaBench also provides per-category leaderboards:
+<br>
+<br>
+- Literature Understanding
+<br>
+- Code & Execution
+<br>
+- Data Analysis
+<br>
+- End-to-End Discovery
+<br>
+Each category page includes a summary table (average score and cost per problem for that domain), as well as per-benchmark leaderboards for detailed comparisons on specific tasks.
+<br>
+<br>
+🔍 Learn more in the AstaBench technical blog post
 """
 SCATTER_DISCLAIMER = """
-Only agents that have cost data available will be shown in the scatter plot. If you don't see your agent, please ensure that you have provided cost data in your submission.
+Note: Only agents with valid cost data are shown in the scatter plot, as both performance and efficiency are required for comparison. Agents without cost data still appear in the tables below.
 """
 PARETO_DISCLAIMER = """
 Agents names that are green are Pareto optimal, meaning they achieve the best performance for their cost. 
 """
 LIT_DESCRIPTION = """
-Several of the evaluations in AstaBench probe an AI model's literature understanding skills — that is, its ability to find research papers based on a description, review questions on citation quality, retrieve information from the literature, and so on.
+The **Literature Understanding** category evaluates how well agents comprehend and interact with scientific literature—testing their ability to find research papers, assess citation quality, extract information from text, and more.
+<br>
+The scores shown below reflect performance aggregated across five distinct benchmarks, each targeting a different aspect of literature-based reasoning:
+<br>
+- PaperFinding Bench – PLACEHOLDER DESCRIPTION
+<br>
+- ScholarQA Bench2 – PLACEHOLDER DESCRIPTION
+<br>
+- LitQA2-FT – PLACEHOLDER DESCRIPTION
+<br>
+- ArxivDIGES Tables-Clean – PLACEHOLDER DESCRIPTION
+<br>
+<br>
+Together, these tasks form a comprehensive evaluation of an agent’s ability to navigate, understand, and reason over scientific publications
 """
-PLACEHOLDER_DESCRIPTION = """
-THIS IS PLACEHOLDER TEXT. AstaBench is a benchmark suite designed to evaluate AI agents on their ability to perform complex tasks that require reasoning, planning, and execution. It includes a variety of benchmarks that test different aspects of agent performance, such as literature understanding, data analysis, and code execution.
+CODE_EXECUTION_DESCRIPTION = """
+The **Code & Execution** category in AstaBench includes tasks that evaluate an agent’s ability to write, modify, and run code in realistic research scenarios. Unlike literature tasks—which can sometimes be solved by a language model alone—these problems often require the agent to interact with tools: reading input files, executing code, and writing outputs to specific files in the required format.
+<br>
+<br>
+The scores in this category are aggregated from three distinct benchmarks, each targeting different facets of scientific coding and execution:
+<br>
+- CORE-Bench-Hard – PLACEHOLDER DESCRIPTION
+<br>
+- DS-1000 – PLACEHOLDER DESCRIPTION
+<br>
+- SUPER-Expert – PLACEHOLDER DESCRIPTION
+<br>
+<br>
+Together, these benchmarks evaluate whether an agent can function as a hands-on scientific assistant—not just by reasoning about code, but by running it in real-world contexts.
+"""
+DATA_ANALYSIS_DESCRIPTION = """
+The **Data Analysis** category evaluates agents on their ability to analyze structured datasets and generate meaningful scientific hypotheses. It currently includes a single benchmark:
+<br>
+ - DiscoveryBench
+<br>
+so the category-level scores are the same as the benchmark-level results.
+<br>
+<br>
+As additional benchmarks are added in the future, this category will expand to cover a broader range of data-driven reasoning tasks across scientific domains.
+"""
+DISCOVERY_DESCRIPTION = """
+The **End-to-End Discovery** category tests whether agents can carry out a complete scientific workflow—from hypothesis generation and experiment design to code execution, analysis, and report writing. These tasks require agents to integrate multiple capabilities, producing not just answers but full research artifacts.
+<br>
+<br>
+Scores in this category are aggregated from two benchmarks:
+<br>
+- E2E-Bench – PLACEHOLDER DESCRIPTION
+<br>
+- E2E-Bench-Hard – PLACEHOLDER DESCRIPTION
+<br>
+<br>
+This category provides the first standardized way to evaluate automated scientific discovery (ASD) agents across all stages of the research process.
 """
 
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"

@@ -8,7 +8,7 @@ from content import LIT_DESCRIPTION
 CATEGORY_NAME = "Literature Understanding"
 
 with gr.Blocks() as demo:
-    gr.Markdown(f"## {CATEGORY_NAME} Aggregated")
+    gr.Markdown(f"## Astabench{CATEGORY_NAME} Leaderboard")
 
     validation_df, validation_tag_map = get_full_leaderboard_data("validation")
     test_df, test_tag_map = get_full_leaderboard_data("test")

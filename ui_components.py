@@ -194,7 +194,7 @@ def create_leaderboard_display(
     gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
     # Put table and key into an accordion
-    with gr.Accordion("See Table", open=False, elem_id="leaderboard-accordion"):
+    with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):
         dataframe_component = gr.DataFrame(
             headers=df_headers,
             value=df_view,
@@ -244,7 +244,7 @@ def create_gradio_anchor_id(text: str) -> str:
     text = text.lower()
     text = re.sub(r'\s+', '-', text) # Replace spaces with hyphens
     text = re.sub(r'[^\w-]', '', text) # Remove non-word characters
-    return f"h-{text}"
+    return f"h-{text}-leaderboard"
 def create_sub_navigation_bar(tag_map: dict, category_name: str):
     """
     Generates and renders the HTML for the anchor-link sub-navigation bar.
@@ -290,7 +290,7 @@ def create_benchmark_details_display(
 
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
-            gr.Markdown(f"### {benchmark_name}", header_links=True)
+            gr.Markdown(f"### {benchmark_name} Leaderboard", header_links=True)
 
             # 3. Prepare the data for this specific benchmark's table and plot
             benchmark_score_col = f"{benchmark_name} Score"
@@ -382,7 +382,7 @@ def create_benchmark_details_display(
             gr.Plot(value=benchmark_plot)
             gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
             # Put table and key into an accordion
-            with gr.Accordion("See Table", open=False, elem_id="leaderboard-accordion"):
+            with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):
                 gr.DataFrame(
                     headers=df_headers,
                     value=benchmark_table_df,
