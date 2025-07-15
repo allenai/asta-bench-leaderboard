@@ -508,7 +508,7 @@ def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
         elif pd.notna(score_value):
             return f'<span style="color: {status_color};">Missing</span>'  # Score exists, but cost is missing
         else:
-            return f'<span style="color: {status_color};">Not Attempted</span>'  # Neither score nor cost exists
+            return f'<span style="color: {status_color};">Not Submitted</span>'  # Neither score nor cost exists
 
     # Apply the logic to the specified cost column and update the DataFrame
     df[cost_col_name] = df.apply(apply_formatting_logic, axis=1)
