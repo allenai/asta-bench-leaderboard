@@ -79,16 +79,16 @@ demo = gr.Blocks(theme=theme, css=css)
 with demo:
     render_logo()
     main_page.demo.render()
-with demo.route("Literature Understanding"):
+with demo.route("Literature Understanding", "/literature-understanding"):
     render_logo()
     literature_understanding.demo.render()
-with demo.route("Code & Execution"):
+with demo.route("Code & Execution", "/code-execution"):
     render_logo()
     c_and_e.demo.render()
-with demo.route("Data Analysis"):
+with demo.route("Data Analysis", "/data-analysis"):
     render_logo()
     data_analysis.demo.render()
-with demo.route("Discovery"):
+with demo.route("Discovery", "/discovery"):
     render_logo()
     e2e.demo.render()
 with demo.route(" 🚀 Submit an Agent"):
