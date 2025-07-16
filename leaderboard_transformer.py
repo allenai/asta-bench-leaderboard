@@ -19,6 +19,7 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "sqa_dev": "Sqa Dev",
     "litqa2_validation": "Litqa2 Validation",
     "paper_finder_validation": "Paper Finder Validation",
+    "paper_finder_litqa2_validation": "Paper Finder Litqa2 Validation",
     "discoverybench_validation": "Discoverybench Validation",
     "core_bench_validation": "Core Bench Validation",
     "ds1000_validation": "DS1000 Validation",
