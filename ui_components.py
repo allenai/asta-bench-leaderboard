@@ -24,6 +24,7 @@ from content import (
     format_warning,
     hf_uri_to_web_url,
     hyperlink,
+    legend_tooltips
 )
 
 # --- Constants and Configuration  ---
@@ -63,10 +64,10 @@ control_emoji_map = {
     "Fully Custom": "⚪️",
 }
 legend_markdown = """
-    <span>On pareto curve:📈</span>
-    <span>**Agent Openness**:</span>   <span>🔴 Closed</span>    <span>🟠 API Available</span>    <span>🟢 Open Source</span>    <span>🔵 Open Source + Open Weights</span>
-    <span>**Agent Tooling**:</span>   <span>⭐ Standard</span>    <span>🔶 Custom with Standard Search</span>    <span>⚪️ Fully Custom</span>
-    <span>**COMING SOON:** COLUMN DESCRIPTIONS</span>
+    <span>**Pareto**📈</span>
+    <span>**Agent Openness**</span>   <span>🔴 Closed</span>    <span>🟠 API Available</span>    <span>🟢 Open Source</span>    <span>🔵 Open Source + Open Weights</span>
+    <span>**Agent Tooling**</span>   <span>⭐ Standard</span>    <span>🔶 Custom with Standard Search</span>    <span>⚪️ Fully Custom</span>
+    <span>**COMING SOON** COLUMN DESCRIPTIONS</span>
     """
 
 # --- Global State for Viewers (simple caching) ---
@@ -183,6 +184,13 @@ def create_leaderboard_display(
     # Drop internally used columns that are not needed in the display
     columns_to_drop = ['id', 'agent_for_hover']
     df_view = df_view.drop(columns=columns_to_drop, errors='ignore')
+    header_rename_map = {
+        "Pareto": "",
+        "Openness": "",
+        "Agent Tooling": ""
+    }
+    # 2. Create the final list of headers for display.
+    df_view = df_view.rename(columns=header_rename_map)
 
     df_headers = df_view.columns.tolist()
     df_datatypes = ["markdown" if col == "Logs" or col == "Agent" or "Cost" in col or "Score" in col else "str" for col in df_headers]
@@ -195,18 +203,19 @@ def create_leaderboard_display(
 
     # Put table and key into an accordion
     with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):
+        gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
         dataframe_component = gr.DataFrame(
             headers=df_headers,
             value=df_view,
             datatype=df_datatypes,
             interactive=False,
             wrap=True,
-            column_widths=[30, 30, 30, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 50, 30]
+            column_widths=[30, 30, 30, 150],
+            elem_classes=["wrap-header-df"]
         )
-        gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
 
     # Return the components so they can be referenced elsewhere.
-    return plot_component, dataframe_component,
+    return plot_component, dataframe_component
 
 def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     """
@@ -389,6 +398,7 @@ def create_benchmark_details_display(
                     datatype=df_datatypes,
                     interactive=False,
                     wrap=True,
+                    elem_classes=["wrap-header-df"]
                 )
-                gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
+                # gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
 

@@ -100,7 +100,11 @@ CITATION_BUTTON_TEXT = r"""@article{asta-bench,
     primaryClass={cs.AI},
     secondaryClass={cs.CL}
 }"""
-
+legend_tooltips = {
+    "pareto": "The Pareto frontier represents optimal agents where you cannot improve score without increasing cost.",
+    "openness": "Describes the accessibility of the agent's core model (e.g., Open, Closed, API).",
+    "tooling": "Describes the tools an agent uses (e.g., Standard, Custom)."
+}
 
 def format_error(msg):
     return f"<p style='color: red; font-size: 20px; text-align: center;'>{msg}</p>"
@@ -202,6 +206,8 @@ nav.svelte-ti537g.svelte-ti537g {
 }
 #leaderboard-accordion .label-wrap {
     font-size: 1.4rem !important; 
+    z-index: 10 !important;
+    position: relative !important;
 }
 .dark #leaderboard-accordion .label-wrap {
     color: #0FCB8C !important; 
@@ -220,5 +226,17 @@ nav.svelte-ti537g.svelte-ti537g {
 }
 .padding.svelte-phx28p {
     padding: 0 !important;
+}
+.wrap-header-df th span{
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.2 !important;
+    vertical-align: top !important;
+    font-size: 12px !important;
+    
+}
+.wrap-header-df th {
+    height: auto !important;
 }
 """
