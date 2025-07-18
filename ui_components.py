@@ -321,7 +321,7 @@ def create_leaderboard_display(
             datatype=df_datatypes,
             interactive=False,
             wrap=True,
-            column_widths=[30, 30, 30, 250],
+            column_widths=[30, 30, 30, 200],
             elem_classes=["wrap-header-df"]
         )
 
@@ -512,7 +512,14 @@ def create_benchmark_details_display(
                     df_datatypes.append("html")
                 else:
                     df_datatypes.append("str")
-
+            # Remove Pareto, Openness, and Agent Tooling from the headers
+            header_rename_map = {
+                "Pareto": "",
+                "Openness": "",
+                "Agent Tooling": ""
+            }
+            # 2. Create the final list of headers for display.
+            benchmark_table_df = benchmark_table_df.rename(columns=header_rename_map)
             # Create the scatter plot using the full data for context, but plotting benchmark metrics
             # This shows all agents on the same axis for better comparison.
             benchmark_plot = _plot_scatter_plotly(
@@ -532,6 +539,7 @@ def create_benchmark_details_display(
                     datatype=df_datatypes,
                     interactive=False,
                     wrap=True,
+                    column_widths=[40, 40, 40, 350],
                     elem_classes=["wrap-header-df"]
                 )
 
