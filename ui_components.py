@@ -175,6 +175,21 @@ legend_markdown = f"""
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{tooling_html}</div>
     </div>
 
+    <div><b>Column Descriptions</b><span class="tooltip-icon" data-tooltip="• Pareto: Indicates if agent is on the Pareto frontier
+        • Openness: Level of accessibility to model and implementation 
+        • Agent Tooling: Approach used by the agent
+        • Agent: Name of the AI agent
+        • Overall Score: Performance across all benchmarks
+        • Overall Cost: Cost per task in USD
+        • Literature Understanding Score: Performance on scientific literature tasks
+        • Literature Understanding Cost: Cost per literature understanding task in USD
+        • Data Analysis Score: Performance on data analysis tasks
+        • Code Execution Score: Performance on coding tasks
+        • Code Execution Cost: Cost per code execution task in USD
+        • Discovery Score: Performance on information discovery tasks
+        • Discovery Cost: Cost per discovery task in USD
+        • Categories Attempted: Number of benchmark categories the agent participated in
+        • Logs: Link to detailed evaluation logs">ⓘ</span></div>
 </div>
 """
 

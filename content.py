@@ -287,4 +287,38 @@ html:not(.dark) #legend-markdown .light-mode-icon,
 #legend-markdown .light-mode-icon, #legend-markdown .dark-mode-icon {
     display: none;
 }
+
+/* Column description tooltip styles */
+#legend-markdown,
+#leaderboard-accordion {
+    overflow: visible !important;
+}
+
+.tooltip-icon {
+    display: inline-block;
+    margin-left: 6px;
+    cursor: help;
+    position: relative;
+}
+
+.tooltip-icon::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    background-color: #333;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: pre-line;
+    width: 500px;
+    text-align: left;
+    pointer-events: none;
+}
+
+.tooltip-icon:hover::after {
+    opacity: 1;
+}
 """
