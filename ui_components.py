@@ -158,42 +158,8 @@ tooling_html = " ".join(tooling_html_items)
 
 # Your final legend_markdown string (the structure of this does not change)
 legend_markdown = f"""
-<style>
-    #legend-markdown,
-    #leaderboard-accordion {{
-        overflow: visible !important;
-    }}
-
-    .tooltip-icon {{
-        display: inline-block;
-        margin-left: 6px;
-        cursor: help;
-        position: relative;
-    }}
-
-    .tooltip-icon::after {{
-        content: attr(data-tooltip);
-        position: absolute;
-        bottom: 125%;
-        background-color: #333;
-        color: #fff;
-        padding: 12px 16px;
-        border-radius: 4px;
-        font-size: 12px;
-        opacity: 0;
-        transition: opacity 0.2s;
-        white-space: pre-line;
-        width: 500px;
-        text-align: left;
-        pointer-events: none;
-    }}
-
-    .tooltip-icon:hover::after {{
-        opacity: 1;
-    }}
-</style>
-
 <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; font-size: 14px; padding-bottom: 8px;">
+
     <div> <!-- Container for the Pareto section -->
         <b>Pareto</b>
         <div style="padding-top: 4px;"><span>📈 On frontier</span></div>
@@ -223,7 +189,7 @@ legend_markdown = f"""
         • Discovery Score: Performance on information discovery tasks
         • Discovery Cost: Cost per discovery task in USD
         • Categories Attempted: Number of benchmark categories the agent participated in
-        • Logs: Link to detailed evaluation logs">ℹ️</span></div>
+        • Logs: Link to detailed evaluation logs">ⓘ</span></div>
 </div>
 """
 
