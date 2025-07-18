@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import os
 import re
+import base64
 
 from agenteval.leaderboard.view import LeaderboardViewer
 from huggingface_hub import HfApi
@@ -50,24 +51,132 @@ MAX_UPLOAD_BYTES = 100 * 1024**2
 AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 
-# Global variables
-openness_emoji_map = {
-    "Closed": '🔴',
-    "API Available": '🟠',
-    "Open Source": '🟢',
-    "Open Source + Open Weights": '🔵'
-}
-control_emoji_map = {
-    "Standard": "⭐",
-    "Custom with Standard Search": "🔶",
-    "Fully Custom": "⚪️",
-}
-legend_markdown = """
-    <span>On pareto curve:📈</span>
-    <span>**Agent Openness**:</span>   <span>🔴 Closed</span>    <span>🟠 API Available</span>    <span>🟢 Open Source</span>    <span>🔵 Open Source + Open Weights</span>
-    <span>**Agent Tooling**:</span>   <span>⭐ Standard</span>    <span>🔶 Custom with Standard Search</span>    <span>⚪️ Fully Custom</span>
-    <span>**COMING SOON:** COLUMN DESCRIPTIONS</span>
+# --- NEW: A global cache to store encoded SVG data ---
+SVG_DATA_URI_CACHE = {}
+
+def get_svg_as_data_uri(file_path: str) -> str:
     """
+    Reads an SVG file, encodes it in Base64, and returns a Data URI.
+    Uses a cache to avoid re-reading files from disk.
+    """
+    # Return from cache if we have already processed this file
+    if file_path in SVG_DATA_URI_CACHE:
+        return SVG_DATA_URI_CACHE[file_path]
+
+    try:
+        # Read the file in binary mode, encode it, and format as a Data URI
+        with open(file_path, "rb") as svg_file:
+            encoded_string = base64.b64encode(svg_file.read()).decode('utf-8')
+        data_uri = f"data:image/svg+xml;base64,{encoded_string}"
+
+        # Store in cache for future use
+        SVG_DATA_URI_CACHE[file_path] = data_uri
+        return data_uri
+    except FileNotFoundError:
+        # If the file doesn't exist, print a warning and return an empty string
+        print(f"Warning: SVG file not found at '{file_path}'")
+        return ""
+
+def create_svg_html(value, svg_map):
+    """
+    Generates the absolute simplest HTML for an icon, without any extra text.
+    This version is compatible with gr.DataFrame.
+    """
+    # If the value isn't in our map, return an empty string so the cell is blank.
+    if pd.isna(value) or value not in svg_map:
+        return ""
+
+    path_info = svg_map[value]
+
+    # For light/dark-aware icons (like Tooling)
+    if isinstance(path_info, dict):
+        light_theme_icon_uri = get_svg_as_data_uri(path_info['dark'])
+        dark_theme_icon_uri = get_svg_as_data_uri(path_info['light'])
+
+        # Generate the HTML for the two icons side-by-side, with NO text.
+        img1 = f'<img src="{light_theme_icon_uri}" class="light-mode-icon" alt="{value}" title="{value}">'
+        img2 = f'<img src="{dark_theme_icon_uri}" class="dark-mode-icon" alt="{value}" title="{value}">'
+        return f'{img1}{img2}'
+
+    # For single icons that don't change with theme (like Openness)
+    elif isinstance(path_info, str):
+        src = get_svg_as_data_uri(path_info)
+        # Generate the HTML for the single icon, with NO text.
+        return f'<img src="{src}" style="width: 16px; height: 16px; vertical-align: middle;" alt="{value}" title="{value}">'
+
+    # Fallback in case of an unexpected data type
+    return ""
+
+# Global variables
+OPENNESS_SVG_MAP = {
+    "Closed": "assets/ui.svg", "API Available": "assets/api.svg", "Open Source": "assets/open-source.svg", "Open Source + Open Weights": "assets/open-weights.svg"
+}
+TOOLING_SVG_MAP = {
+    "Standard": {"light": "assets/star-light.svg", "dark": "assets/star-dark.svg"},
+    "Custom with Standard Search": {"light": "assets/diamond-light.svg", "dark": "assets/diamond-dark.svg"},
+    "Fully Custom": {"light": "assets/circle-light.svg", "dark": "assets/circle-dark.svg"},
+}
+
+# Dynamically generate the correct HTML for the legend parts
+openness_html = " ".join([create_svg_html(name, OPENNESS_SVG_MAP) for name in OPENNESS_SVG_MAP])
+tooling_html = " ".join([create_svg_html(name, TOOLING_SVG_MAP) for name in TOOLING_SVG_MAP])
+# Create HTML for the "Openness" legend items
+openness_html_items = []
+for name, path in OPENNESS_SVG_MAP.items():
+    uri = get_svg_as_data_uri(path)
+    # Each item is now its own flexbox container to guarantee alignment
+    openness_html_items.append(
+        f'<div style="display: flex; align-items: center; white-space: nowrap;">'
+        f'<img src="{uri}" alt="{name}" title="{name}" style="width:16px; height:16px; margin-right: 4px; flex-shrink: 0;">'
+        f'<span>{name}</span>'
+        f'</div>'
+    )
+openness_html = " ".join(openness_html_items)
+
+# Create HTML for the "Tooling" legend items
+tooling_html_items = []
+for name, paths in TOOLING_SVG_MAP.items():
+    light_theme_icon_uri = get_svg_as_data_uri(paths['dark'])
+    dark_theme_icon_uri = get_svg_as_data_uri(paths['light'])
+
+    # The two swapping icons need to be stacked with absolute positioning
+    img1 = f'<img src="{light_theme_icon_uri}" class="light-mode-icon" alt="{name}" title="{name}" style="position: absolute; top: 0; left: 0;">'
+    img2 = f'<img src="{dark_theme_icon_uri}" class="dark-mode-icon" alt="{name}" title="{name}" style="position: absolute; top: 0; left: 0;">'
+
+    # Their container needs a defined size and relative positioning
+    icon_container = f'<div style="width: 16px; height: 16px; position: relative; flex-shrink: 0;">{img1}{img2}</div>'
+
+    # This item is also a flexbox container
+    tooling_html_items.append(
+        f'<div style="display: flex; align-items: center; white-space: nowrap;">'
+        f'{icon_container}'
+        f'<span style="margin-left: 4px;">{name}</span>'
+        f'</div>'
+    )
+tooling_html = " ".join(tooling_html_items)
+
+
+# Your final legend_markdown string (the structure of this does not change)
+legend_markdown = f"""
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; font-size: 14px; padding-bottom: 8px;">
+
+    <div> <!-- Container for the Pareto section -->
+        <b>Pareto</b>
+        <div style="padding-top: 4px;"><span>📈 On frontier</span></div>
+    </div>
+
+    <div> <!-- Container for the Openness section -->
+        <b>Agent Openness</b>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{openness_html}</div>
+    </div>
+
+    <div> <!-- Container for the Tooling section -->
+        <b>Agent Tooling</b>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{tooling_html}</div>
+    </div>
+
+</div>
+"""
 
 # --- Global State for Viewers (simple caching) ---
 CACHED_VIEWERS = {}
@@ -154,14 +263,9 @@ def create_leaderboard_display(
         lambda row: '📈' if row['id'] in pareto_agent_names else '',
         axis=1
     )
-    # Create mapping for Openness
-    original_openness = df_view['Openness']
-    df_view['Openness'] = df_view['Openness'].map(openness_emoji_map).fillna(original_openness)
-
-    # For this column, we'll use .apply() to handle the "Other" case cleanly.
-    df_view['Agent Tooling'] = df_view['Agent Tooling'].apply(
-        lambda ctrl: control_emoji_map.get(ctrl, f"{ctrl}" if pd.notna(ctrl) else "")
-    )
+    # Create mapping for Openness / tooling
+    df_view['Openness'] = df_view['Openness'].apply(lambda x: create_svg_html(x, OPENNESS_SVG_MAP))
+    df_view['Agent Tooling'] = df_view['Agent Tooling'].apply(lambda x: create_svg_html(x, TOOLING_SVG_MAP))
 
 
     # Format cost columns
@@ -185,7 +289,22 @@ def create_leaderboard_display(
     df_view = df_view.drop(columns=columns_to_drop, errors='ignore')
 
     df_headers = df_view.columns.tolist()
-    df_datatypes = ["markdown" if col == "Logs" or col == "Agent" or "Cost" in col or "Score" in col else "str" for col in df_headers]
+    df_datatypes = []
+    for col in df_headers:
+        if col in ["Logs", "Agent"] or "Cost" in col or "Score" in col:
+            df_datatypes.append("markdown")
+        elif col in ["Openness", "Agent Tooling"]:
+            df_datatypes.append("html")
+        else:
+            df_datatypes.append("str")
+
+    header_rename_map = {
+        "Pareto": "",
+        "Openness": "",
+        "Agent Tooling": ""
+    }
+    # 2. Create the final list of headers for display.
+    df_view = df_view.rename(columns=header_rename_map)
 
     plot_component = gr.Plot(
         value=scatter_plot,
@@ -195,18 +314,19 @@ def create_leaderboard_display(
 
     # Put table and key into an accordion
     with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):
+        gr.HTML(value=legend_markdown, elem_id="legend-markdown")
         dataframe_component = gr.DataFrame(
             headers=df_headers,
             value=df_view,
             datatype=df_datatypes,
             interactive=False,
             wrap=True,
-            column_widths=[30, 30, 30, 100, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 50, 30]
+            column_widths=[30, 30, 30, 250],
+            elem_classes=["wrap-header-df"]
         )
-        gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
 
     # Return the components so they can be referenced elsewhere.
-    return plot_component, dataframe_component,
+    return plot_component, dataframe_component
 
 def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     """
@@ -339,13 +459,8 @@ def create_benchmark_details_display(
                 axis=1
             )
 
-            original_openness = benchmark_table_df['Openness']
-            benchmark_table_df['Openness'] = benchmark_table_df['Openness'].map(openness_emoji_map).fillna(original_openness)
-
-            # For this column, we'll use .apply() to handle the "Other" case cleanly.
-            benchmark_table_df['Agent Tooling'] = benchmark_table_df['Agent Tooling'].apply(
-                lambda ctrl: control_emoji_map.get(ctrl, f"{ctrl}" if pd.notna(ctrl) else "")
-            )
+            benchmark_table_df['Openness'] = benchmark_table_df['Openness'].apply(lambda x: create_svg_html(x, OPENNESS_SVG_MAP))
+            benchmark_table_df['Agent Tooling'] = benchmark_table_df['Agent Tooling'].apply(lambda x: create_svg_html(x, TOOLING_SVG_MAP))
 
             # Calculated and add "Benchmark Attempted" column
             def check_benchmark_status(row):
@@ -389,7 +504,14 @@ def create_benchmark_details_display(
             }, inplace=True)
             # Ensure the 'Logs' column is formatted correctly
             df_headers = benchmark_table_df.columns.tolist()
-            df_datatypes = ["markdown" if col == "Logs" or col == "Agent" or "Cost" in col or "Score" in col else "str" for col in df_headers]
+            df_datatypes = []
+            for col in df_headers:
+                if "Logs" in col or "Cost" in col or "Score" in col:
+                    df_datatypes.append("markdown")
+                elif col in ["Openness", "Agent Tooling"]:
+                    df_datatypes.append("html")
+                else:
+                    df_datatypes.append("str")
 
             # Create the scatter plot using the full data for context, but plotting benchmark metrics
             # This shows all agents on the same axis for better comparison.
@@ -403,12 +525,14 @@ def create_benchmark_details_display(
             gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
             # Put table and key into an accordion
             with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):
+                gr.HTML(value=legend_markdown, elem_id="legend-markdown")
                 gr.DataFrame(
                     headers=df_headers,
                     value=benchmark_table_df,
                     datatype=df_datatypes,
                     interactive=False,
                     wrap=True,
+                    elem_classes=["wrap-header-df"]
                 )
-                gr.Markdown(value=legend_markdown, elem_id="legend-markdown")
+
 

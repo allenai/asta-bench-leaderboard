@@ -100,7 +100,11 @@ CITATION_BUTTON_TEXT = r"""@article{asta-bench,
     primaryClass={cs.AI},
     secondaryClass={cs.CL}
 }"""
-
+# legend_tooltips = {
+#     "pareto": "The Pareto frontier represents optimal agents where you cannot improve score without increasing cost.",
+#     "openness": "Describes the accessibility of the agent's core model (e.g., Open, Closed, API).",
+#     "tooling": "Describes the tools an agent uses (e.g., Standard, Custom)."
+# }
 
 def format_error(msg):
     return f"<p style='color: red; font-size: 20px; text-align: center;'>{msg}</p>"
@@ -202,6 +206,8 @@ nav.svelte-ti537g.svelte-ti537g {
 }
 #leaderboard-accordion .label-wrap {
     font-size: 1.4rem !important; 
+    z-index: 10 !important;
+    position: relative !important;
 }
 .dark #leaderboard-accordion .label-wrap {
     color: #0FCB8C !important; 
@@ -235,5 +241,50 @@ nav.svelte-ti537g.svelte-ti537g {
 }
 .sub-nav-link-button:hover {
     text-decoration: underline;
+}
+.wrap-header-df th span{
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.2 !important;
+    vertical-align: top !important;
+    font-size: 12px !important;
+    
+}
+.wrap-header-df th {
+    height: auto !important;
+}
+.wrap-header-df .cell-wrap img {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+/* By default, hide BOTH theme-aware icons inside a DataFrame cell */
+.wrap-header-df .cell-wrap .light-mode-icon,
+.wrap-header-df .cell-wrap .dark-mode-icon {
+    display: none !important;
+}
+
+/* Light Theme Rule: Show the light-mode icon */
+html:not(.dark) .wrap-header-df .cell-wrap .light-mode-icon {
+    display: inline-block !important;
+}
+
+/* Dark Theme Rule: Show the dark-mode icon */
+.dark .wrap-header-df .cell-wrap .dark-mode-icon {
+    display: inline-block !important;
+}
+#legend-markdown img {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+html:not(.dark) #legend-markdown .light-mode-icon,
+.dark #legend-markdown .dark-mode-icon {
+    display: inline-block;
+}
+#legend-markdown .light-mode-icon, #legend-markdown .dark-mode-icon {
+    display: none;
 }
 """
