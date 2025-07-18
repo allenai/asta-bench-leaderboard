@@ -367,22 +367,42 @@ def create_gradio_anchor_id(text: str) -> str:
     return f"h-{text}-leaderboard"
 def create_sub_navigation_bar(tag_map: dict, category_name: str):
     """
-    Generates and renders the HTML for the anchor-link sub-navigation bar.
+    Builds the entire sub-navigation bar as a single, self-contained HTML component.
+    This bypasses Gradio's layout components, giving us full control.
     """
     benchmark_names = tag_map.get(category_name, [])
     if not benchmark_names:
-        return # Do nothing if there are no benchmarks
+        # Return an empty HTML component to prevent errors
+        return gr.HTML()
 
-    anchor_links = []
+    # Start building the list of HTML button elements as strings
+    html_buttons = []
     for name in benchmark_names:
-        # Use the helper function to create the correct ID format
         target_id = create_gradio_anchor_id(name)
-        anchor_links.append(f"<a href='#{target_id}'>{name}</a>")
 
-    nav_bar_html = f"<div class='sub-nav-bar'>{'   '.join(anchor_links)}</div>"
+        # Create a standard HTML button.
+        # The onclick attribute calls our global JS function directly.
+        # Note the mix of double and single quotes.
+        button_str = f"""
+            <button
+                class="sub-nav-link-button"
+                onclick="scroll_to_element('{target_id}')"
+            >
+                {name}
+            </button>
+        """
+        html_buttons.append(button_str)
 
-    # Use gr.HTML to render the links correctly
-    gr.HTML(nav_bar_html)
+    # Join the button strings and wrap them in a single div container
+    # This container will be our flexbox row.
+    full_html = f"""
+        <div class="sub-nav-bar-container">
+            {''.join(html_buttons)}
+        </div>
+    """
+
+    # Return the entire navigation bar as one single Gradio HTML component
+    return gr.HTML(full_html)
 
 # # --- Detailed Benchmark Display ---
 def create_benchmark_details_display(

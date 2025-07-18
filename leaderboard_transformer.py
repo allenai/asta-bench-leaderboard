@@ -19,6 +19,7 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "sqa_dev": "Sqa Dev",
     "litqa2_validation": "Litqa2 Validation",
     "paper_finder_validation": "Paper Finder Validation",
+    "paper_finder_litqa2_validation": "Paper Finder Litqa2 Validation",
     "discoverybench_validation": "Discoverybench Validation",
     "core_bench_validation": "Core Bench Validation",
     "ds1000_validation": "DS1000 Validation",
@@ -203,12 +204,13 @@ class DataTransformer:
             df_sorted = self.data.sort_values(primary_score_col, ascending=False, na_position='last')
 
         df_view = df_sorted.copy()
-        #preserve just agent name for scatterplot hover
-        df_view['agent_for_hover'] = df_view['Agent']
+
         # 3. Combine "Agent" and "Submitter" into a single HTML-formatted column
         #    We do this *before* defining the final column list.
         if 'Agent' in df_view.columns and 'Submitter' in df_view.columns:
-
+            #preserve just agent name for scatterplot hover
+            df_view['agent_for_hover'] = df_view['Agent']
+            
             def combine_agent_submitter(row):
                 agent = row['Agent']
                 submitter = row['Submitter']

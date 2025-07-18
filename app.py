@@ -16,6 +16,21 @@ PROJECT_NAME = "asta-bench" + ("-internal" if IS_INTERNAL else "")
 LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
 api = HfApi()
 LOGO_PATH = "assets/logo.svg"
+#    This function will be available on ALL pages of your app.
+scroll_script = """
+<script>
+function scroll_to_element(id) {
+    console.log("Global scroll_to_element called for ID:", id);
+    const element = document.querySelector('#' + id);
+    if (element) {
+        console.log("Element found:", element);
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        console.error("Error: Element with ID '" + id + "' not found in the document.");
+    }
+}
+</script>
+"""
 
 
 
@@ -75,7 +90,7 @@ def render_logo():
         elem_id="logo-image"
     )
 # --- Gradio App Definition ---
-demo = gr.Blocks(theme=theme, css=css)
+demo = gr.Blocks(theme=theme, css=css, head=scroll_script)
 with demo:
     render_logo()
     main_page.demo.render()
