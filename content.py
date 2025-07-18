@@ -100,11 +100,11 @@ CITATION_BUTTON_TEXT = r"""@article{asta-bench,
     primaryClass={cs.AI},
     secondaryClass={cs.CL}
 }"""
-legend_tooltips = {
-    "pareto": "The Pareto frontier represents optimal agents where you cannot improve score without increasing cost.",
-    "openness": "Describes the accessibility of the agent's core model (e.g., Open, Closed, API).",
-    "tooling": "Describes the tools an agent uses (e.g., Standard, Custom)."
-}
+# legend_tooltips = {
+#     "pareto": "The Pareto frontier represents optimal agents where you cannot improve score without increasing cost.",
+#     "openness": "Describes the accessibility of the agent's core model (e.g., Open, Closed, API).",
+#     "tooling": "Describes the tools an agent uses (e.g., Standard, Custom)."
+# }
 
 def format_error(msg):
     return f"<p style='color: red; font-size: 20px; text-align: center;'>{msg}</p>"

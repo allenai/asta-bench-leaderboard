@@ -25,7 +25,6 @@ from content import (
     format_warning,
     hf_uri_to_web_url,
     hyperlink,
-    legend_tooltips
 )
 
 # --- Constants and Configuration  ---
