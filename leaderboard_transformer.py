@@ -414,7 +414,7 @@ def _plot_scatter_plotly(
             text=group['hover_text'],
             hoverinfo='text',
             marker=dict(
-                color=color_map.get(category, 'grey'),
+                color=color_map.get(category, 'black'),
                 symbol=group['shape_symbol'],
                 size=10,
                 opacity=0.8,
@@ -445,7 +445,7 @@ def _plot_scatter_plotly(
             name=shape_name,
             legendgroup="tooling_group",
             legendgrouptitle_text="Agent Tooling" if i == 0 else None,
-            marker=dict(color='grey', symbol=shape_symbol, size=12)
+            marker=dict(color='black', symbol=shape_symbol, size=12)
         ))
 
     # --- Section 8: Configure Layout (Restored from your original code) ---

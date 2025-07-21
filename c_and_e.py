@@ -12,15 +12,33 @@ with gr.Blocks() as demo:
     validation_df, validation_tag_map = get_full_leaderboard_data("validation")
     test_df, test_tag_map = get_full_leaderboard_data("test")
     gr.Markdown(CODE_EXECUTION_DESCRIPTION, elem_id="category-intro")
-    with gr.Column(elem_id="validation_nav_container", visible=True) as validation_nav_container:
+    with gr.Column(elem_id="validation_nav_container", visible=False) as validation_nav_container:
         create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME)
-    with gr.Column(elem_id="test_nav_container", visible=False) as test_nav_container:
+    with gr.Column(elem_id="test_nav_container", visible=True) as test_nav_container:
         create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
 
 
     # --- This page now has two main sections: Validation and Test ---
     with gr.Tabs():
-        with gr.Tab("Results: Validation") as validation_tab:
+        with gr.Tab("Results: Test Set") as test_tab:
+            # Repeat the process for the "test" split
+            test_df, test_tag_map = get_full_leaderboard_data("test")
+
+            if not test_df.empty:
+                create_leaderboard_display(
+                    full_df=test_df,
+                    tag_map=test_tag_map,
+                    category_name=CATEGORY_NAME,
+                    split_name="test"
+                )
+                create_benchmark_details_display(
+                    full_df=test_df,
+                    tag_map=test_tag_map,
+                    category_name=CATEGORY_NAME
+                )
+            else:
+                gr.Markdown("No data available for test split.")
+        with gr.Tab("Results: Validation Set") as validation_tab:
             # 1. Load all necessary data for the "validation" split ONCE.
             validation_df, validation_tag_map = get_full_leaderboard_data("validation")
 
@@ -42,29 +60,11 @@ with gr.Blocks() as demo:
             else:
                 gr.Markdown("No data available for validation split.")
 
-        with gr.Tab("Results: Test") as test_tab:
-            # Repeat the process for the "test" split
-            test_df, test_tag_map = get_full_leaderboard_data("test")
-
-            if not test_df.empty:
-                create_leaderboard_display(
-                    full_df=test_df,
-                    tag_map=test_tag_map,
-                    category_name=CATEGORY_NAME,
-                    split_name="test"
-                )
-                create_benchmark_details_display(
-                    full_df=test_df,
-                    tag_map=test_tag_map,
-                    category_name=CATEGORY_NAME
-                )
-            else:
-                gr.Markdown("No data available for test split.")
-
     show_validation_js = """
     () => {
         document.getElementById('validation_nav_container').style.display = 'block';
         document.getElementById('test_nav_container').style.display = 'none';
+        setTimeout(() => { window.dispatchEvent(new Event('resize')) }, 0);
     }
     """
 
@@ -73,7 +73,6 @@ with gr.Blocks() as demo:
     () => {
         document.getElementById('validation_nav_container').style.display = 'none';
         document.getElementById('test_nav_container').style.display = 'block';
-        setTimeout(() => { window.dispatchEvent(new Event('resize')) }, 0);
     }
     """
 
