@@ -159,26 +159,34 @@ tooling_html = " ".join(tooling_html_items)
 # Your final legend_markdown string (the structure of this does not change)
 legend_markdown = f"""
 <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; font-size: 14px; padding-bottom: 8px;">
-
+        
     <div> <!-- Container for the Pareto section -->
-        <b>Pareto</b>
+        <b>Pareto</b><span class="tooltip-icon" data-tooltip="
+        •Pareto: Indicates if agent is on the Pareto frontier
+        ">ⓘ</span>
         <div style="padding-top: 4px;"><span>📈 On frontier</span></div>
     </div>
 
     <div> <!-- Container for the Openness section -->
-        <b>Agent Openness</b>
+        <b>Agent Openness</b><span class="tooltip-icon" data-tooltip="
+        •Closed: No API or code available
+        •API Available: API available, but no code
+        •Open Source: Code available, but no weights
+        •Open Source + Open Weights: Code and weights available
+        ">ⓘ</span>
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{openness_html}</div>
     </div>
 
     <div> <!-- Container for the Tooling section -->
-        <b>Agent Tooling</b>
+        <b>Agent Tooling</b><span class="tooltip-icon" data-tooltip="
+        • Standard: Standard Approach used by the agent
+        • Custom with Standard Search: Standard search used by the agent
+        • Fully Custom: Fully custom tools used by the agent
+        ">ⓘ</span>
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{tooling_html}</div>
     </div>
-
-    <div><b>Column Descriptions</b><span class="tooltip-icon" data-tooltip="• Pareto: Indicates if agent is on the Pareto frontier
-        • Openness: Level of accessibility to model and implementation 
-        • Agent Tooling: Approach used by the agent
-        • Agent: Name of the AI agent
+    
+     <div><b>Column Descriptions</b><span class="tooltip-icon" data-tooltip="
         • Overall Score: Performance across all benchmarks
         • Overall Cost: Cost per task in USD
         • Literature Understanding Score: Performance on scientific literature tasks

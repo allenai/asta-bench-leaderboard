@@ -305,17 +305,21 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     content: attr(data-tooltip);
     position: absolute;
     bottom: 125%;
-    background-color: #333;
+    background-color: #105257;
     color: #fff;
-    padding: 12px 16px;
+    padding: 0px 10px 10px;
     border-radius: 4px;
     font-size: 12px;
     opacity: 0;
     transition: opacity 0.2s;
     white-space: pre-line;
-    width: 500px;
+    width: max-content;
+    max-width: 350px; /* Limit width for better readability */
     text-align: left;
     pointer-events: none;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000; /* Ensure it appears above other elements */
 }
 
 .tooltip-icon:hover::after {
