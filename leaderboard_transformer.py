@@ -233,9 +233,6 @@ class DataTransformer:
             df_view['Agent'] = df_view.apply(combine_agent_submitter, axis=1)
             # The 'Submitter' column is no longer needed
             df_view = df_view.drop(columns=['Submitter'])
-            #Make pretty and format the LLM Base column
-            # df_view['LLM Base'] = df_view['LLM Base'].apply(clean_llm_base_list)
-            # df_view['LLM Base'] = df_view['LLM Base'].apply(format_llm_base_with_html)
 
         # 4. Build the List of Columns to Display (now simplified)
         base_cols = ["id","Agent","LLM Base", "agent_for_hover"]
