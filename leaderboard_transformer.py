@@ -4,6 +4,7 @@ import pandas as pd
 import logging
 from typing import Optional
 import base64
+import html
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ def _pretty_column_name(raw_col: str) -> str:
         'Logs': 'Logs',
         'Openness': 'Openness',
         'Agent tooling': 'Agent Tooling',
+        'LLM base': 'LLM Base',
     }
 
     if raw_col in fixed_mappings:
@@ -233,7 +235,7 @@ class DataTransformer:
             df_view = df_view.drop(columns=['Submitter'])
 
         # 4. Build the List of Columns to Display (now simplified)
-        base_cols = ["id","Agent","agent_for_hover"]
+        base_cols = ["id","Agent","LLM Base", "agent_for_hover"]
         new_cols = ["Openness", "Agent Tooling"]
         ending_cols = ["Logs"]
 
@@ -585,3 +587,5 @@ def svg_to_data_uri(path: str) -> str:
     except FileNotFoundError:
         logger.warning(f"SVG file not found at: {path}")
         return None
+
+

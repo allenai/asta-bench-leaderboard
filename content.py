@@ -319,10 +319,14 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     pointer-events: none;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1000; /* Ensure it appears above other elements */
+    z-index: 1000; 
 }
-
 .tooltip-icon:hover::after {
     opacity: 1;
+}
+/* --- inside table tooltips --- */
+.native-tooltip-icon {
+    cursor: help;
+    text-decoration: underline dotted 1px;
 }
 """
