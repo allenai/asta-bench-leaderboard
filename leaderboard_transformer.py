@@ -4,6 +4,7 @@ import pandas as pd
 import logging
 from typing import Optional
 import base64
+import html
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ def _pretty_column_name(raw_col: str) -> str:
         'Logs': 'Logs',
         'Openness': 'Openness',
         'Agent tooling': 'Agent Tooling',
+        'LLM base': 'LLM Base',
     }
 
     if raw_col in fixed_mappings:
@@ -231,9 +233,11 @@ class DataTransformer:
             df_view['Agent'] = df_view.apply(combine_agent_submitter, axis=1)
             # The 'Submitter' column is no longer needed
             df_view = df_view.drop(columns=['Submitter'])
+            #format the LLM Base column
+            df_view['LLM Base'] = df_view['LLM Base'].apply(format_llm_base_from_list)
 
         # 4. Build the List of Columns to Display (now simplified)
-        base_cols = ["id","Agent","agent_for_hover"]
+        base_cols = ["id","Agent","LLM Base", "agent_for_hover"]
         new_cols = ["Openness", "Agent Tooling"]
         ending_cols = ["Logs"]
 
@@ -585,3 +589,42 @@ def svg_to_data_uri(path: str) -> str:
     except FileNotFoundError:
         logger.warning(f"SVG file not found at: {path}")
         return None
+
+def format_llm_base_from_list(model_list):
+    """
+    Checks for multiple LLM models in a list, escapes the content for HTML safety,
+    and formats it with a tooltip if needed.
+    """
+    # Check if the input is actually a list
+    if not isinstance(model_list, list):
+        return model_list # Return non-list items (like NaN) as is
+
+    # 2. Filter the list to remove any empty or whitespace-only strings
+    #    and ensure all items are strings.
+    clean_model_list = [str(model).strip() for model in model_list if str(model).strip()]
+
+    # If the cleaned list has more than one model...
+    if len(clean_model_list) > 1:
+        # Join the model names with a newline for a clean list in the tooltip
+        tooltip_content = '\n'.join(clean_model_list)
+
+        # 3. CRITICAL STEP: Escape the content for HTML safety
+        safe_tooltip_text = html.escape(tooltip_content, quote=True)
+
+        # Create the final HTML string with the escaped text
+        return f'Multiple<span class="table-tooltip-icon" data-tooltip="{safe_tooltip_text}">ⓘ</span>'
+
+    # If there is only one model in the cleaned list...
+    elif len(clean_model_list) == 1:
+        return clean_model_list[0]
+
+    # If the list was empty or contained only empty strings...
+    else:
+        # Check the original list to decide what to return. If the original was not a list
+        # but something like NaN, this was already handled at the top.
+        # So we now only handle the case of an originally empty list [].
+        if isinstance(model_list, list):
+            return ""
+        else:
+            return model_list
+

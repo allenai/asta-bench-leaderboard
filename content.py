@@ -319,10 +319,46 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     pointer-events: none;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1000; /* Ensure it appears above other elements */
+    z-index: 1000; 
 }
-
 .tooltip-icon:hover::after {
     opacity: 1;
 }
+/* --- inside table tooltips --- */
+.gradio-dataframe table td { 
+    overflow: visible !important; 
+    position: relative !important;
+}
+.table-tooltip-icon {
+    display: inline-block;
+    margin-left: 6px;
+    cursor: help;
+    position: relative;
+}
+.table-tooltip-icon::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: translateX(-50%);
+    background-color: #105257;
+    color: #fff;
+    padding: 10px; 
+    border-radius: 0px;
+    font-size: 10px;
+    text-align: left;
+    white-space: pre-line; 
+    width: max-content;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none; 
+    transition: opacity 0.2s;
+    z-index: 1000;
+}
+.table-tooltip-icon:hover::after {
+    opacity: 1;
+}
+
 """

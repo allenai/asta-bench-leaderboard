@@ -316,7 +316,7 @@ def create_leaderboard_display(
     for col in df_headers:
         if col in ["Logs", "Agent"] or "Cost" in col or "Score" in col:
             df_datatypes.append("markdown")
-        elif col in ["Openness", "Agent Tooling"]:
+        elif col in ["Openness", "Agent Tooling","LLM Base"]:
             df_datatypes.append("html")
         else:
             df_datatypes.append("str")
@@ -344,7 +344,7 @@ def create_leaderboard_display(
             datatype=df_datatypes,
             interactive=False,
             wrap=True,
-            column_widths=[30, 30, 30, 200],
+            column_widths=[30, 30, 30, 200, 200],
             elem_classes=["wrap-header-df"]
         )
 
