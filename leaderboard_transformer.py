@@ -234,8 +234,8 @@ class DataTransformer:
             # The 'Submitter' column is no longer needed
             df_view = df_view.drop(columns=['Submitter'])
             #Make pretty and format the LLM Base column
-            df_view['LLM Base'] = df_view['LLM Base'].apply(clean_llm_base_list)
-            df_view['LLM Base'] = df_view['LLM Base'].apply(format_llm_base_with_html)
+            # df_view['LLM Base'] = df_view['LLM Base'].apply(clean_llm_base_list)
+            # df_view['LLM Base'] = df_view['LLM Base'].apply(format_llm_base_with_html)
 
         # 4. Build the List of Columns to Display (now simplified)
         base_cols = ["id","Agent","LLM Base", "agent_for_hover"]
@@ -591,35 +591,4 @@ def svg_to_data_uri(path: str) -> str:
         logger.warning(f"SVG file not found at: {path}")
         return None
 
-def clean_llm_base_list(model_list):
-    """
-    Cleans a list of model strings by keeping only the text after the last '/'.
-    For example: "models/gemini-2.5-flash-preview-05-20" becomes "gemini-2.5-flash-preview-05-20".
-    """
-    # Return the original value if it's not a list, to avoid errors.
-    if not isinstance(model_list, list):
-        return model_list
-
-    # Use a list comprehension for a clean and efficient transformation.
-    return [str(item).split('/')[-1] for item in model_list]
-
-def format_llm_base_with_html(value):
-    """
-    Formats the 'LLM Base' cell value.
-    If the value is a list with more than 1 element, it returns an
-      HTML <span> with the full list in a hover-over tooltip.
-    If it's a single-element list, it returns just that element.
-    Otherwise, it returns the original value.
-    """
-    if isinstance(value, list):
-        if len(value) > 1:
-            # Join the list items with a newline character for a clean tooltip
-            tooltip_text = "\n".join(map(str, value))
-            # Return an HTML span with the title attribute for the tooltip
-            return f'<span style="cursor: help;" title="{tooltip_text}">Multiple ⓘ</span>'
-        if len(value) == 1:
-            # If only one item, just return that item
-            return value[0]
-    # Return the value as-is if it's not a list or is an empty list
-    return value
 

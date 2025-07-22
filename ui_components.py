@@ -301,7 +301,9 @@ def create_leaderboard_display(
         if "Score" in col:
             df_view = format_score_column(df_view, col)
     scatter_plot = plots_dict.get('scatter_plot', go.Figure())
-
+    #Make pretty and format the LLM Base column
+    df_view['LLM Base'] = df_view['LLM Base'].apply(clean_llm_base_list)
+    df_view['LLM Base'] = df_view['LLM Base'].apply(format_llm_base_with_html)
 
     all_cols = df_view.columns.tolist()
     # Remove 'Pareto' from the list and insert it at the beginning
@@ -350,6 +352,150 @@ def create_leaderboard_display(
 
     # Return the components so they can be referenced elsewhere.
     return plot_component, dataframe_component
+
+# # --- Detailed Benchmark Display ---
+def create_benchmark_details_display(
+        full_df: pd.DataFrame,
+        tag_map: dict,
+        category_name: str
+):
+    """
+    Generates a detailed breakdown for each benchmark within a given category.
+    For each benchmark, it creates a title, a filtered table, and a scatter plot.
+    Args:
+        full_df (pd.DataFrame): The complete, "pretty" dataframe for the entire split.
+        tag_map (dict): The "pretty" tag map to find the list of benchmarks.
+        category_name (str): The main category to display details for (e.g., "Literature Understanding").
+    """
+    # 1. Get the list of benchmarks for the selected category
+    benchmark_names = tag_map.get(category_name, [])
+
+    if not benchmark_names:
+        gr.Markdown(f"No detailed benchmarks found for the category: {category_name}")
+        return
+
+    gr.Markdown("---")
+    gr.Markdown("## Detailed Benchmark Results")
+
+    # 2. Loop through each benchmark and create its UI components
+    for benchmark_name in benchmark_names:
+        gr.Markdown(f"### {benchmark_name} Leaderboard", header_links=True)
+
+        # 3. Prepare the data for this specific benchmark's table and plot
+        benchmark_score_col = f"{benchmark_name} Score"
+        benchmark_cost_col = f"{benchmark_name} Cost"
+
+        # Define the columns needed for the detailed table
+        table_cols = ['Agent','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'LLM Base']
+
+        # Filter to only columns that actually exist in the full dataframe
+        existing_table_cols = [col for col in table_cols if col in full_df.columns]
+
+        if benchmark_score_col not in existing_table_cols:
+            gr.Markdown(f"Score data for {benchmark_name} not available.")
+            continue # Skip to the next benchmark if score is missing
+
+        # Create a specific DataFrame for the table view
+        benchmark_table_df = full_df[existing_table_cols].copy()
+        pareto_df = get_pareto_df(benchmark_table_df)
+        # Get the list of agents on the frontier. We'll use this list later.
+        if not pareto_df.empty and 'id' in pareto_df.columns:
+            pareto_agent_names = pareto_df['id'].tolist()
+        else:
+            pareto_agent_names = []
+        benchmark_table_df['Pareto'] = benchmark_table_df.apply(
+            lambda row: '📈' if row['id'] in pareto_agent_names else '',
+            axis=1
+        )
+
+        benchmark_table_df['Openness'] = benchmark_table_df['Openness'].apply(lambda x: create_svg_html(x, OPENNESS_SVG_MAP))
+        benchmark_table_df['Agent Tooling'] = benchmark_table_df['Agent Tooling'].apply(lambda x: create_svg_html(x, TOOLING_SVG_MAP))
+
+        #Make pretty and format the LLM Base column
+        benchmark_table_df['LLM Base'] = benchmark_table_df['LLM Base'].apply(clean_llm_base_list)
+        benchmark_table_df['LLM Base'] = benchmark_table_df['LLM Base'].apply(format_llm_base_with_html)
+
+        # Calculated and add "Benchmark Attempted" column
+        def check_benchmark_status(row):
+            has_score = pd.notna(row.get(benchmark_score_col))
+            has_cost = pd.notna(row.get(benchmark_cost_col))
+            if has_score and has_cost:
+                return "✅"
+            if has_score or has_cost:
+                return "⚠️"
+            return "🚫 "
+
+        # Apply the function to create the new column
+        benchmark_table_df['Attempted Benchmark'] = benchmark_table_df.apply(check_benchmark_status, axis=1)
+        # Sort the DataFrame
+        if benchmark_score_col in benchmark_table_df.columns:
+            benchmark_table_df = benchmark_table_df.sort_values(
+                by=benchmark_score_col, ascending=False, na_position='last'
+            )
+        # 1. Format the cost and score columns
+        benchmark_table_df = format_cost_column(benchmark_table_df, benchmark_cost_col)
+        benchmark_table_df = format_score_column(benchmark_table_df, benchmark_score_col)
+        desired_cols_in_order = [
+            'Pareto',
+            'Openness',
+            'Agent Tooling',
+            'Agent',
+            'Submitter',
+            'LLM Base',
+            'Attempted Benchmark',
+            benchmark_score_col,
+            benchmark_cost_col,
+            'Logs'
+        ]
+        for col in desired_cols_in_order:
+            if col not in benchmark_table_df.columns:
+                benchmark_table_df[col] = pd.NA # Add as an empty column
+        benchmark_table_df = benchmark_table_df[desired_cols_in_order]
+        # Rename columns for a cleaner table display, as requested
+        benchmark_table_df.rename({
+            benchmark_score_col: 'Score',
+            benchmark_cost_col: 'Cost',
+        }, inplace=True)
+        # Ensure the 'Logs' column is formatted correctly
+        df_headers = benchmark_table_df.columns.tolist()
+        df_datatypes = []
+        for col in df_headers:
+            if "Logs" in col or "Cost" in col or "Score" in col:
+                df_datatypes.append("markdown")
+            elif col in ["Openness", "Agent Tooling", "LLM Base"]:
+                df_datatypes.append("html")
+            else:
+                df_datatypes.append("str")
+        # Remove Pareto, Openness, and Agent Tooling from the headers
+        header_rename_map = {
+            "Pareto": "",
+            "Openness": "",
+            "Agent Tooling": ""
+        }
+        # 2. Create the final list of headers for display.
+        benchmark_table_df = benchmark_table_df.rename(columns=header_rename_map)
+        # Create the scatter plot using the full data for context, but plotting benchmark metrics
+        # This shows all agents on the same axis for better comparison.
+        benchmark_plot = _plot_scatter_plotly(
+            data=full_df,
+            x=benchmark_cost_col,
+            y=benchmark_score_col,
+            agent_col="Agent"
+        )
+        gr.Plot(value=benchmark_plot)
+        gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
+        # Put table and key into an accordion
+        with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):
+            gr.HTML(value=legend_markdown, elem_id="legend-markdown")
+            gr.DataFrame(
+                headers=df_headers,
+                value=benchmark_table_df,
+                datatype=df_datatypes,
+                interactive=False,
+                wrap=True,
+                column_widths=[40, 40, 40, 200, 150, 175, 85],
+                elem_classes=["wrap-header-df"]
+            )
 
 def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     """
@@ -427,143 +573,34 @@ def create_sub_navigation_bar(tag_map: dict, category_name: str):
     # Return the entire navigation bar as one single Gradio HTML component
     return gr.HTML(full_html)
 
-# # --- Detailed Benchmark Display ---
-def create_benchmark_details_display(
-        full_df: pd.DataFrame,
-        tag_map: dict,
-        category_name: str
-):
+def clean_llm_base_list(model_list):
     """
-    Generates a detailed breakdown for each benchmark within a given category.
-    For each benchmark, it creates a title, a filtered table, and a scatter plot.
-    Args:
-        full_df (pd.DataFrame): The complete, "pretty" dataframe for the entire split.
-        tag_map (dict): The "pretty" tag map to find the list of benchmarks.
-        category_name (str): The main category to display details for (e.g., "Literature Understanding").
+    Cleans a list of model strings by keeping only the text after the last '/'.
+    For example: "models/gemini-2.5-flash-preview-05-20" becomes "gemini-2.5-flash-preview-05-20".
     """
-    # 1. Get the list of benchmarks for the selected category
-    benchmark_names = tag_map.get(category_name, [])
+    # Return the original value if it's not a list, to avoid errors.
+    if not isinstance(model_list, list):
+        return model_list
 
-    if not benchmark_names:
-        gr.Markdown(f"No detailed benchmarks found for the category: {category_name}")
-        return
+    # Use a list comprehension for a clean and efficient transformation.
+    return [str(item).split('/')[-1] for item in model_list]
 
-    gr.Markdown("---")
-    gr.Markdown("## Detailed Benchmark Results")
-
-    # 2. Loop through each benchmark and create its UI components
-    for benchmark_name in benchmark_names:
-            gr.Markdown(f"### {benchmark_name} Leaderboard", header_links=True)
-
-            # 3. Prepare the data for this specific benchmark's table and plot
-            benchmark_score_col = f"{benchmark_name} Score"
-            benchmark_cost_col = f"{benchmark_name} Cost"
-
-            # Define the columns needed for the detailed table
-            table_cols = ['Agent','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id']
-
-            # Filter to only columns that actually exist in the full dataframe
-            existing_table_cols = [col for col in table_cols if col in full_df.columns]
-
-            if benchmark_score_col not in existing_table_cols:
-                gr.Markdown(f"Score data for {benchmark_name} not available.")
-                continue # Skip to the next benchmark if score is missing
-
-            # Create a specific DataFrame for the table view
-            benchmark_table_df = full_df[existing_table_cols].copy()
-            pareto_df = get_pareto_df(benchmark_table_df)
-            # Get the list of agents on the frontier. We'll use this list later.
-            if not pareto_df.empty and 'id' in pareto_df.columns:
-                pareto_agent_names = pareto_df['id'].tolist()
-            else:
-                pareto_agent_names = []
-            benchmark_table_df['Pareto'] = benchmark_table_df.apply(
-                lambda row: '📈' if row['id'] in pareto_agent_names else '',
-                axis=1
-            )
-
-            benchmark_table_df['Openness'] = benchmark_table_df['Openness'].apply(lambda x: create_svg_html(x, OPENNESS_SVG_MAP))
-            benchmark_table_df['Agent Tooling'] = benchmark_table_df['Agent Tooling'].apply(lambda x: create_svg_html(x, TOOLING_SVG_MAP))
-
-            # Calculated and add "Benchmark Attempted" column
-            def check_benchmark_status(row):
-                has_score = pd.notna(row.get(benchmark_score_col))
-                has_cost = pd.notna(row.get(benchmark_cost_col))
-                if has_score and has_cost:
-                    return "✅"
-                if has_score or has_cost:
-                    return "⚠️"
-                return "🚫 "
-
-            # Apply the function to create the new column
-            benchmark_table_df['Attempted Benchmark'] = benchmark_table_df.apply(check_benchmark_status, axis=1)
-            # Sort the DataFrame
-            if benchmark_score_col in benchmark_table_df.columns:
-                benchmark_table_df = benchmark_table_df.sort_values(
-                    by=benchmark_score_col, ascending=False, na_position='last'
-                )
-            # 1. Format the cost and score columns
-            benchmark_table_df = format_cost_column(benchmark_table_df, benchmark_cost_col)
-            benchmark_table_df = format_score_column(benchmark_table_df, benchmark_score_col)
-            desired_cols_in_order = [
-                'Pareto',
-                'Openness',
-                'Agent Tooling',
-                'Agent',
-                'Submitter',
-                'Attempted Benchmark',
-                benchmark_score_col,
-                benchmark_cost_col,
-                'Logs'
-            ]
-            for col in desired_cols_in_order:
-                if col not in benchmark_table_df.columns:
-                    benchmark_table_df[col] = pd.NA # Add as an empty column
-            benchmark_table_df = benchmark_table_df[desired_cols_in_order]
-            # Rename columns for a cleaner table display, as requested
-            benchmark_table_df.rename({
-                benchmark_score_col: 'Score',
-                benchmark_cost_col: 'Cost',
-            }, inplace=True)
-            # Ensure the 'Logs' column is formatted correctly
-            df_headers = benchmark_table_df.columns.tolist()
-            df_datatypes = []
-            for col in df_headers:
-                if "Logs" in col or "Cost" in col or "Score" in col:
-                    df_datatypes.append("markdown")
-                elif col in ["Openness", "Agent Tooling"]:
-                    df_datatypes.append("html")
-                else:
-                    df_datatypes.append("str")
-            # Remove Pareto, Openness, and Agent Tooling from the headers
-            header_rename_map = {
-                "Pareto": "",
-                "Openness": "",
-                "Agent Tooling": ""
-            }
-            # 2. Create the final list of headers for display.
-            benchmark_table_df = benchmark_table_df.rename(columns=header_rename_map)
-            # Create the scatter plot using the full data for context, but plotting benchmark metrics
-            # This shows all agents on the same axis for better comparison.
-            benchmark_plot = _plot_scatter_plotly(
-                data=full_df,
-                x=benchmark_cost_col,
-                y=benchmark_score_col,
-                agent_col="Agent"
-            )
-            gr.Plot(value=benchmark_plot)
-            gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
-            # Put table and key into an accordion
-            with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):
-                gr.HTML(value=legend_markdown, elem_id="legend-markdown")
-                gr.DataFrame(
-                    headers=df_headers,
-                    value=benchmark_table_df,
-                    datatype=df_datatypes,
-                    interactive=False,
-                    wrap=True,
-                    column_widths=[40, 40, 40, 350],
-                    elem_classes=["wrap-header-df"]
-                )
-
-
+def format_llm_base_with_html(value):
+    """
+    Formats the 'LLM Base' cell value.
+    If the value is a list with more than 1 element, it returns an
+      HTML <span> with the full list in a hover-over tooltip.
+    If it's a single-element list, it returns just that element.
+    Otherwise, it returns the original value.
+    """
+    if isinstance(value, list):
+        if len(value) > 1:
+            # Join the list items with a newline character for a clean tooltip
+            tooltip_text = "\n".join(map(str, value))
+            # Return an HTML span with the title attribute for the tooltip
+            return f'<span style="cursor: help;" title="{tooltip_text}">Multiple ⓘ</span>'
+        if len(value) == 1:
+            # If only one item, just return that item
+            return value[0]
+    # Return the value as-is if it's not a list or is an empty list
+    return value
