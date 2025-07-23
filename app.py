@@ -4,7 +4,7 @@ import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
-import literature_understanding, main_page, c_and_e, data_analysis, e2e, submission
+import literature_understanding, main_page, c_and_e, data_analysis, e2e, submission, about
 
 from content import css
 
@@ -106,6 +106,9 @@ with demo.route("Data Analysis", "/data-analysis"):
 with demo.route("Discovery", "/discovery"):
     render_logo()
     e2e.demo.render()
+with demo.route("About", "/about"):
+    render_logo()
+    about.demo.render()
 with demo.route(" 🚀 Submit an Agent"):
     render_logo()
     submission.demo.render()
