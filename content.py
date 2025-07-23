@@ -148,6 +148,10 @@ css = """
     font-size: 18px;
     max-width: 60%;
 }
+#about-content {
+    font-size: 18px;
+    max-width: 60%;
+}
 #category-intro {
     font-size: 18px;
     max-width: 60%;
