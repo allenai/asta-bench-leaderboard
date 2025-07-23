@@ -44,7 +44,7 @@ _Scores_
 - Partial completions are included (even with poor performance)
 
 _Cost_
-- Costs are reported in USD per task, based on values at the time of submisttion
+- Costs are reported in USD per task, based on values at the time of submission
 - Benchmarks without cost data are excluded from cost averages
 - In scatter plots, agents without cost are plotted far right and clearly marked
 Note: Cost values reflect pricing and infrastructure conditions at the time of each submission. We recognize that compute costs may change over time, and are actively working on methods to normalize cost data across submissions for fairer longitudinal comparisons.
