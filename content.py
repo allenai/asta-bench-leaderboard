@@ -24,6 +24,7 @@ To support domain-specific insight, AstaBench also provides per-category leaderb
 <br>
 - End-to-End Discovery
 <br>
+<br>
 Each category page includes a summary table (average score and cost per problem for that domain), as well as per-benchmark leaderboards for detailed comparisons on specific tasks.
 <br>
 <br>
