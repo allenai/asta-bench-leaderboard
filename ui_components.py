@@ -333,7 +333,7 @@ def create_leaderboard_display(
 
     plot_component = gr.Plot(
         value=scatter_plot,
-        label=f"Score vs. Cost ({category_name})"
+        show_label=False
     )
     gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
@@ -482,7 +482,7 @@ def create_benchmark_details_display(
             y=benchmark_score_col,
             agent_col="Agent"
         )
-        gr.Plot(value=benchmark_plot)
+        gr.Plot(value=benchmark_plot, show_label=False)
         gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
         # Put table and key into an accordion
         with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):

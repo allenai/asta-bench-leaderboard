@@ -100,11 +100,6 @@ CITATION_BUTTON_TEXT = r"""@article{asta-bench,
     primaryClass={cs.AI},
     secondaryClass={cs.CL}
 }"""
-# legend_tooltips = {
-#     "pareto": "The Pareto frontier represents optimal agents where you cannot improve score without increasing cost.",
-#     "openness": "Describes the accessibility of the agent's core model (e.g., Open, Closed, API).",
-#     "tooling": "Describes the tools an agent uses (e.g., Standard, Custom)."
-# }
 
 def format_error(msg):
     return f"<p style='color: red; font-size: 20px; text-align: center;'>{msg}</p>"
@@ -142,6 +137,7 @@ def hf_uri_to_web_url(uri: str) -> str:
 
     namespace, repo, path = parts
     return f"https://huggingface.co/datasets/{namespace}/{repo}/tree/main/{path}"
+
 
 css = """
 #intro-paragraph {
@@ -297,14 +293,12 @@ html:not(.dark) #legend-markdown .light-mode-icon,
 #leaderboard-accordion {
     overflow: visible !important;
 }
-
 .tooltip-icon {
     display: inline-block;
     margin-left: 6px;
     cursor: help;
     position: relative;
 }
-
 .tooltip-icon::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -332,5 +326,49 @@ html:not(.dark) #legend-markdown .light-mode-icon,
 .native-tooltip-icon {
     cursor: help;
     text-decoration: underline dotted 1px;
+}
+/* Main Nav bar styling */
+.nav-holder nav {
+    display: grid !important;
+    grid-template-columns: auto auto auto auto 1fr auto auto !important;
+    gap: 10px 20px !important; /* Vertical and horizontal spacing */
+    width: 100% !important;
+}
+.nav-holder nav a[href*="/"] {
+    grid-row: 1 !important;
+    grid-column: 1 !important;
+    justify-self: start !important;
+    width: fit-content !important;
+}
+.nav-holder nav a[href*="about"] {
+    grid-row: 1 !important;
+    grid-column: 6 !important;
+}
+.nav-holder nav a[href*="submit"] {
+    grid-row: 1 !important;
+    grid-column: 7 !important;
+}
+.nav-holder nav a[href*="literature-understanding"] {
+    grid-row: 3 !important;
+    grid-column: 1 !important;
+}
+.nav-holder nav a[href*="code-execution"] {
+    grid-row: 3 !important;
+    grid-column: 2 !important;
+}
+.nav-holder nav a[href*="data-analysis"] {
+    grid-row: 3 !important;
+    grid-column: 3 !important;
+}
+.nav-holder nav a[href*="discovery"] {
+    grid-row: 3 !important;
+    grid-column: 4 !important;
+}
+.nav-holder nav::after {
+    content: ''; /* Required for pseudo-elements to appear */
+    background-color: #C9C9C3;
+    height: 1px; 
+    grid-row: 2 !important;
+    grid-column: 1 / -1 !important;
 }
 """
