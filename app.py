@@ -1,6 +1,7 @@
 # app.py
 import gradio as gr
 import os
+import urllib.parse
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
@@ -89,9 +90,51 @@ def render_logo():
         show_fullscreen_button=False,
         elem_id="logo-image"
     )
+try:
+    with open(LOGO_PATH, "r") as f:
+        svg_content = f.read()
+    encoded_svg = urllib.parse.quote(svg_content)
+    home_icon_data_uri = f"data:image/svg+xml,{encoded_svg}"
+except FileNotFoundError:
+    print(f"Warning: Home icon file not found at {LOGO_PATH}.")
+    home_icon_data_uri = "none"
+
+# --- This part creates the JavaScript redirect. It is correct. ---
+redirect_script = """
+<script>
+    if (window.location.pathname === '/') { window.location.replace('/home'); }
+</script>
+"""
+
+# --- This is the final CSS ---
+final_css = css + f"""
+/* --- Find the "Home" button and replace its text with an icon --- */
+.nav-holder nav a[href*="/home"] {{
+    grid-row: 1 !important;
+    grid-column: 1 !important;
+    justify-self: start !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    /* 2. Hide the original "Home" text */
+    font-size: 0 !important;
+    text-indent: -9999px;
+
+    /* 3. Apply the icon as the background */
+    background-image: url("{home_icon_data_uri}") !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+
+    width: 240px !important;    
+    height: 50px !important;   
+    padding: 0 !important;
+}}
+"""
 # --- Gradio App Definition ---
-demo = gr.Blocks(theme=theme, css=css, head=scroll_script)
-with demo:
+demo = gr.Blocks(theme=theme, css=final_css, head=scroll_script + redirect_script)
+with demo.route("Home", "/home"):
     render_logo()
     main_page.demo.render()
 with demo.route("Literature Understanding", "/literature-understanding"):
@@ -131,10 +174,10 @@ if __name__ == "__main__":
     if LOCAL_DEBUG:
         print("Launching in LOCAL_DEBUG mode.")
         def get_initial_global_tag_choices(): return ["Overall", "TagA"]
-        demo.launch(debug=True)
+        demo.launch(debug=True, allowed_paths=["assets"])
     else:
         print("Launching in Space mode.")
         # For Spaces, share=False is typical unless specific tunneling is needed.
         # debug=True can be set to False for a "production" Space.
-        demo.launch(server_name="0.0.0.0", server_port=7860, debug=True, share=False)
+        demo.launch(server_name="0.0.0.0", server_port=7860, debug=True, share=False, allowed_paths=["assets"])
 

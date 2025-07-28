@@ -335,12 +335,6 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     gap: 10px 20px !important; /* Vertical and horizontal spacing */
     width: 100% !important;
 }
-.nav-holder nav a[href*="/"] {
-    grid-row: 1 !important;
-    grid-column: 1 !important;
-    justify-self: start !important;
-    width: fit-content !important;
-}
 .nav-holder nav a[href*="about"] {
     grid-row: 1 !important;
     grid-column: 6 !important;
