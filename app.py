@@ -5,9 +5,15 @@ import urllib.parse
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
-import literature_understanding, main_page, c_and_e, data_analysis, e2e, submission, about
 
 from content import css
+from main_page import build_page as build_main_page
+from literature_understanding import build_page as build_lit_page
+from c_and_e import build_page as build_c_and_e_page
+from data_analysis import build_page as build_data_analysis_page
+from e2e import build_page as build_e2e_page
+from submission import build_page as build_submission_page
+from about import build_page as build_about_page
 
 # --- Constants and Configuration  ---
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
@@ -80,16 +86,6 @@ theme = gr.themes.Base(
     block_background_fill_dark="#032629",
     block_background_fill="#FAF2E9",
 )
-def render_logo():
-    return gr.Image(
-        value=LOGO_PATH,
-        show_label=False,
-        interactive=False,
-        container=False,
-        show_download_button=False,
-        show_fullscreen_button=False,
-        elem_id="logo-image"
-    )
 try:
     with open(LOGO_PATH, "r") as f:
         svg_content = f.read()
@@ -109,6 +105,9 @@ redirect_script = """
 # --- This is the final CSS ---
 final_css = css + f"""
 /* --- Find the "Home" button and replace its text with an icon --- */
+.nav-holder nav a[href$="/"] {{
+    display: none !important;
+}}
 .nav-holder nav a[href*="/home"] {{
     grid-row: 1 !important;
     grid-column: 1 !important;
@@ -130,32 +129,32 @@ final_css = css + f"""
     width: 240px !important;    
     height: 50px !important;   
     padding: 0 !important;
+    border: none !important;
+    outline: none !important;
 }}
 """
 # --- Gradio App Definition ---
 demo = gr.Blocks(theme=theme, css=final_css, head=scroll_script + redirect_script)
 with demo.route("Home", "/home"):
-    render_logo()
-    main_page.demo.render()
-with demo.route("Literature Understanding", "/literature-understanding"):
-    render_logo()
-    literature_understanding.demo.render()
-with demo.route("Code & Execution", "/code-execution"):
-    render_logo()
-    c_and_e.demo.render()
-with demo.route("Data Analysis", "/data-analysis"):
-    render_logo()
-    data_analysis.demo.render()
-with demo.route("Discovery", "/discovery"):
-    render_logo()
-    e2e.demo.render()
-with demo.route("About", "/about"):
-    render_logo()
-    about.demo.render()
-with demo.route(" 🚀 Submit an Agent"):
-    render_logo()
-    submission.demo.render()
+    build_main_page()
 
+with demo.route("Literature Understanding", "/literature-understanding"):
+    build_lit_page()
+
+with demo.route("Code & Execution", "/code-execution"):
+    build_c_and_e_page()
+
+with demo.route("Data Analysis", "/data-analysis"):
+    build_data_analysis_page()
+
+with demo.route("Discovery", "/discovery"):
+    build_e2e_page()
+
+with demo.route("About", "/about"):
+    build_about_page()
+
+with demo.route("🚀 Submit an Agent", "/submit"):
+    build_submission_page()
 # --- Scheduler and Launch
 def restart_space_job():
     print("Scheduler: Attempting to restart space.")

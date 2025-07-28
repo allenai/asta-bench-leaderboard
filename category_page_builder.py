@@ -7,13 +7,13 @@ from ui_components import create_leaderboard_display, create_benchmark_details_d
 def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
     validation_df, validation_tag_map = get_full_leaderboard_data("validation")
     test_df, test_tag_map = get_full_leaderboard_data("test")
-    gr.Markdown(PAGE_DESCRIPTION, elem_id="category-intro")
     with gr.Column(elem_id="validation_nav_container", visible=False) as validation_nav_container:
         create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME)
 
     with gr.Column(elem_id="test_nav_container", visible=True) as test_nav_container:
         create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
-
+    gr.Markdown(f"## Astabench{CATEGORY_NAME} Leaderboard")
+    gr.Markdown(PAGE_DESCRIPTION, elem_id="category-intro")
     # --- This page now has two main sections: Validation and Test ---
     with gr.Tabs():
         with gr.Tab("Results: Test Set") as test_tab:

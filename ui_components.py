@@ -566,6 +566,7 @@ def create_sub_navigation_bar(tag_map: dict, category_name: str):
     # This container will be our flexbox row.
     full_html = f"""
         <div class="sub-nav-bar-container">
+            <span class="sub-nav-label">Benchmarks:</span>
             {''.join(html_buttons)}
         </div>
     """
