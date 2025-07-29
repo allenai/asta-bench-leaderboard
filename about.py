@@ -1,7 +1,7 @@
 import gradio as gr
 
 
-with gr.Blocks() as demo:
+def build_page():
     gr.Markdown(
         """
 ## About AstaBench

@@ -283,7 +283,7 @@ def add_new_eval(
 
 
 # --- Submission Accordion ---
-with gr.Blocks() as demo:
+def build_page():
     gr.Markdown(f"## 🚀 Submit a new agent for evaluation", elem_id="markdown-text")
     with gr.Row():
         with gr.Column():

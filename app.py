@@ -1,12 +1,19 @@
 # app.py
 import gradio as gr
 import os
+import urllib.parse
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
-import literature_understanding, main_page, c_and_e, data_analysis, e2e, submission, about
 
 from content import css
+from main_page import build_page as build_main_page
+from literature_understanding import build_page as build_lit_page
+from c_and_e import build_page as build_c_and_e_page
+from data_analysis import build_page as build_data_analysis_page
+from e2e import build_page as build_e2e_page
+from submission import build_page as build_submission_page
+from about import build_page as build_about_page
 
 # --- Constants and Configuration  ---
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
@@ -43,6 +50,8 @@ theme = gr.themes.Base(
     font_mono=[gr.themes.GoogleFont('Roboto Mono'), 'ui-monospace', 'monospace', 'monospace'],
 ).set(
     body_text_color='*neutral_950',
+    body_text_color_subdued='*neutral_950',
+    body_text_color_subdued_dark='*neutral_50',
     body_text_color_dark='*neutral_50',
     background_fill_primary='*neutral_50',
     background_fill_primary_dark='*neutral_900',
@@ -79,40 +88,75 @@ theme = gr.themes.Base(
     block_background_fill_dark="#032629",
     block_background_fill="#FAF2E9",
 )
-def render_logo():
-    return gr.Image(
-        value=LOGO_PATH,
-        show_label=False,
-        interactive=False,
-        container=False,
-        show_download_button=False,
-        show_fullscreen_button=False,
-        elem_id="logo-image"
-    )
-# --- Gradio App Definition ---
-demo = gr.Blocks(theme=theme, css=css, head=scroll_script)
-with demo:
-    render_logo()
-    main_page.demo.render()
-with demo.route("Literature Understanding", "/literature-understanding"):
-    render_logo()
-    literature_understanding.demo.render()
-with demo.route("Code & Execution", "/code-execution"):
-    render_logo()
-    c_and_e.demo.render()
-with demo.route("Data Analysis", "/data-analysis"):
-    render_logo()
-    data_analysis.demo.render()
-with demo.route("Discovery", "/discovery"):
-    render_logo()
-    e2e.demo.render()
-with demo.route("About", "/about"):
-    render_logo()
-    about.demo.render()
-with demo.route(" 🚀 Submit an Agent"):
-    render_logo()
-    submission.demo.render()
+try:
+    with open(LOGO_PATH, "r") as f:
+        svg_content = f.read()
+    encoded_svg = urllib.parse.quote(svg_content)
+    home_icon_data_uri = f"data:image/svg+xml,{encoded_svg}"
+except FileNotFoundError:
+    print(f"Warning: Home icon file not found at {LOGO_PATH}.")
+    home_icon_data_uri = "none"
 
+# --- This part creates the JavaScript redirect. It is correct. ---
+redirect_script = """
+<script>
+    if (window.location.pathname === '/') { window.location.replace('/home'); }
+</script>
+"""
+
+# --- This is the final CSS ---
+final_css = css + f"""
+/* --- Find the "Home" button and replace its text with an icon --- */
+.nav-holder nav a[href$="/"] {{
+    display: none !important;
+}}
+.nav-holder nav a[href*="/home"] {{
+    grid-row: 1 !important;
+    grid-column: 1 !important;
+    justify-self: start !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    /* 2. Hide the original "Home" text */
+    font-size: 0 !important;
+    text-indent: -9999px;
+
+    /* 3. Apply the icon as the background */
+    background-image: url("{home_icon_data_uri}") !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+
+    width: 240px !important;    
+    height: 50px !important;   
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+}}
+"""
+# --- Gradio App Definition ---
+demo = gr.Blocks(theme=theme, css=final_css, head=scroll_script + redirect_script)
+with demo.route("Home", "/home"):
+    build_main_page()
+
+with demo.route("Literature Understanding", "/literature-understanding"):
+    build_lit_page()
+
+with demo.route("Code & Execution", "/code-execution"):
+    build_c_and_e_page()
+
+with demo.route("Data Analysis", "/data-analysis"):
+    build_data_analysis_page()
+
+with demo.route("Discovery", "/discovery"):
+    build_e2e_page()
+
+with demo.route("About", "/about"):
+    build_about_page()
+
+with demo.route("🚀 Submit an Agent", "/submit"):
+    build_submission_page()
 # --- Scheduler and Launch
 def restart_space_job():
     print("Scheduler: Attempting to restart space.")
@@ -131,10 +175,10 @@ if __name__ == "__main__":
     if LOCAL_DEBUG:
         print("Launching in LOCAL_DEBUG mode.")
         def get_initial_global_tag_choices(): return ["Overall", "TagA"]
-        demo.launch(debug=True)
+        demo.launch(debug=True, allowed_paths=["assets"])
     else:
         print("Launching in Space mode.")
         # For Spaces, share=False is typical unless specific tunneling is needed.
         # debug=True can be set to False for a "production" Space.
-        demo.launch(server_name="0.0.0.0", server_port=7860, debug=True, share=False)
+        demo.launch(server_name="0.0.0.0", server_port=7860, debug=True, share=False, allowed_paths=["assets"])
 

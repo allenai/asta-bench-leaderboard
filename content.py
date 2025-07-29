@@ -144,10 +144,12 @@ css = """
 #intro-paragraph {
     font-size: 18px;
     max-width: 60%;
+    padding-left: 25px;
 }
 #about-content {
     font-size: 18px;
     max-width: 60%;
+    padding-left: 25px;
 }
 #category-intro {
     font-size: 18px;
@@ -159,6 +161,9 @@ css = """
     justify-content: flex-start;        
     max-width: 250px;       
     height: auto;           
+}
+#page-content-wrapper{
+    padding-left: 25px;
 }
 .table-component{
     height: auto !important;
@@ -242,6 +247,12 @@ nav.svelte-ti537g.svelte-ti537g {
 }
 .sub-nav-link-button:hover {
     text-decoration: underline;
+}
+.sub-nav-label {
+    font-weight: bold;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
 }
 .wrap-header-df th span{
     white-space: normal !important;
@@ -335,12 +346,6 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     gap: 10px 20px !important; /* Vertical and horizontal spacing */
     width: 100% !important;
 }
-.nav-holder nav a[href*="/"] {
-    grid-row: 1 !important;
-    grid-column: 1 !important;
-    justify-self: start !important;
-    width: fit-content !important;
-}
 .nav-holder nav a[href*="about"] {
     grid-row: 1 !important;
     grid-column: 6 !important;
@@ -352,18 +357,26 @@ html:not(.dark) #legend-markdown .light-mode-icon,
 .nav-holder nav a[href*="literature-understanding"] {
     grid-row: 3 !important;
     grid-column: 1 !important;
+    width: fit-content !important;
+    justify-self: center !important;
 }
 .nav-holder nav a[href*="code-execution"] {
     grid-row: 3 !important;
     grid-column: 2 !important;
+    padding-right: 20px !important;
+    justify-self: center !important; 
 }
 .nav-holder nav a[href*="data-analysis"] {
     grid-row: 3 !important;
     grid-column: 3 !important;
+    padding-right: 20px !important;
+    justify-self: center !important;
 }
 .nav-holder nav a[href*="discovery"] {
     grid-row: 3 !important;
     grid-column: 4 !important;
+    padding-right: 20px !important;
+    justify-self: center !important;
 }
 .nav-holder nav::after {
     content: ''; /* Required for pseudo-elements to appear */

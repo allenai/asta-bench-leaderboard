@@ -15,7 +15,7 @@ from content import (
 CACHED_VIEWERS = {}
 CACHED_TAG_MAPS = {}
 
-with gr.Blocks(fill_width=True) as demo:
+def build_page():
     gr.Markdown(INTRO_PARAGRAPH, elem_id="intro-paragraph")
     # --- Leaderboard Display Section ---
     gr.Markdown("---")

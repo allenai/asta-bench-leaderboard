@@ -5,6 +5,5 @@ from category_page_builder import build_category_page
 # Define the category for this page
 CATEGORY_NAME = "Code Execution"
 
-with gr.Blocks() as demo:
-    gr.Markdown(f"## Astabench {CATEGORY_NAME} Leaderboard")
+def build_page():
     build_category_page(CATEGORY_NAME, CODE_EXECUTION_DESCRIPTION)
