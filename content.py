@@ -144,10 +144,12 @@ css = """
 #intro-paragraph {
     font-size: 18px;
     max-width: 60%;
+    padding-left: 25px;
 }
 #about-content {
     font-size: 18px;
     max-width: 60%;
+    padding-left: 25px;
 }
 #category-intro {
     font-size: 18px;
@@ -159,6 +161,9 @@ css = """
     justify-content: flex-start;        
     max-width: 250px;       
     height: auto;           
+}
+#page-content-wrapper{
+    padding-left: 25px;
 }
 .table-component{
     height: auto !important;

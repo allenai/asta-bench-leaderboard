@@ -50,6 +50,8 @@ theme = gr.themes.Base(
     font_mono=[gr.themes.GoogleFont('Roboto Mono'), 'ui-monospace', 'monospace', 'monospace'],
 ).set(
     body_text_color='*neutral_950',
+    body_text_color_subdued='*neutral_950',
+    body_text_color_subdued_dark='*neutral_50',
     body_text_color_dark='*neutral_50',
     background_fill_primary='*neutral_50',
     background_fill_primary_dark='*neutral_900',
