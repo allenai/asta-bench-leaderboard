@@ -295,7 +295,8 @@ class DataTransformer:
                     data=df_view,
                     x=primary_cost_col,
                     y=primary_score_col,
-                    agent_col="agent_for_hover"
+                    agent_col="agent_for_hover",
+                    name=primary_metric
                 )
                 # Use a consistent key for easy retrieval later
                 plots['scatter_plot'] = fig
@@ -315,10 +316,11 @@ def _plot_scatter_plotly(
         data: pd.DataFrame,
         x: Optional[str],
         y: str,
-        agent_col: str = 'agent_for_hover'
+        agent_col: str = 'agent_for_hover',
+        name: Optional[str] = None
 ) -> go.Figure:
 
-    # --- Section 1: Define Mappings ---
+    # --- Section 1: Define Mappings (No changes here) ---
     color_map = {
         "Closed": "red",
         "API Available": "orange",
@@ -326,7 +328,6 @@ def _plot_scatter_plotly(
         "Open Source + Open Weights": "blue"
     }
     category_order = list(color_map.keys())
-
     shape_map = {
         "Standard": "star",
         "Custom with Standard Search": "diamond",
@@ -337,6 +338,7 @@ def _plot_scatter_plotly(
     x_col_to_use = x
     y_col_to_use = y
 
+    # --- Section 2: Data Preparation (SIGNIFICANT CHANGES HERE) ---
     required_cols = [y_col_to_use, agent_col, "Openness", "Agent Tooling"]
     if not all(col in data.columns for col in required_cols):
         logger.error(f"Missing one or more required columns for plotting: {required_cols}")
@@ -346,32 +348,50 @@ def _plot_scatter_plotly(
     data_plot[y_col_to_use] = pd.to_numeric(data_plot[y_col_to_use], errors='coerce')
 
     x_axis_label = f"{x} per task (USD)" if x else "Cost (Data N/A)"
-    x_data_is_valid = False
-    if x and x in data_plot.columns:
-        try:
-            data_plot[x_col_to_use] = pd.to_numeric(data_plot[x_col_to_use], errors='coerce')
-            if data_plot[x_col_to_use].notna().any():
-                x_data_is_valid = True
-        except Exception as e:
-            logger.warning(f"Error converting x-column '{x_col_to_use}' to numeric: {e}")
+    max_reported_cost = 0
+    divider_line_x = 0
 
-    if not x_data_is_valid:
-        dummy_x_col_name = "__dummy_x_for_plotting__"
-        data_plot[dummy_x_col_name] = DUMMY_X_VALUE_FOR_MISSING_COSTS
-        x_col_to_use = dummy_x_col_name
-        logger.info("Using dummy x-values for plotting.")
+    if x and x in data_plot.columns:
+        data_plot[x_col_to_use] = pd.to_numeric(data_plot[x_col_to_use], errors='coerce')
+
+        # --- NEW LOGIC: Separate data into two groups ---
+        valid_cost_data = data_plot[data_plot[x_col_to_use].notna()].copy()
+        missing_cost_data = data_plot[data_plot[x_col_to_use].isna()].copy()
+
+        if not valid_cost_data.empty:
+            max_reported_cost = valid_cost_data[x_col_to_use].max()
+            # --- NEW LOGIC: Calculate where to place the missing data and the divider line ---
+            divider_line_x = max_reported_cost + (max_reported_cost/10)
+            new_x_for_missing = max_reported_cost + (max_reported_cost/5)
+
+            if not missing_cost_data.empty:
+                missing_cost_data[x_col_to_use] = new_x_for_missing
+                # --- NEW LOGIC: Combine the two groups back together ---
+                data_plot = pd.concat([valid_cost_data, missing_cost_data])
+            else:
+                data_plot = valid_cost_data # No missing data, just use the valid set
+        else:
+            # --- NEW LOGIC: Handle the case where ALL costs are missing ---
+            if not missing_cost_data.empty:
+                missing_cost_data[x_col_to_use] = 0 # Plot them at x=0
+                data_plot = missing_cost_data
+            else:
+                data_plot = pd.DataFrame() # No data at all
+    else:
+        # Handle case where x column is not provided at all
+        data_plot[x_col_to_use] = 0
 
     # Clean data based on all necessary columns
     data_plot.dropna(subset=[y_col_to_use, x_col_to_use, "Openness", "Agent Tooling"], inplace=True)
 
-    # --- Section 3: Initialize Figure ---
+    # --- Section 3: Initialize Figure (No changes here) ---
     fig = go.Figure()
     if data_plot.empty:
         logger.warning(f"No valid data to plot after cleaning.")
         return fig
 
-    # --- Section 4: Calculate and Draw Pareto Frontier (Restored from your original code) ---
-    if x_data_is_valid:
+    # --- Section 4: Calculate and Draw Pareto Frontier ---
+    if x_col_to_use and y_col_to_use:
         sorted_data = data_plot.sort_values(by=[x_col_to_use, y_col_to_use], ascending=[True, False])
         frontier_points = []
         max_score_so_far = float('-inf')
@@ -451,19 +471,26 @@ def _plot_scatter_plotly(
         ))
 
     # --- Section 8: Configure Layout (Restored from your original code) ---
-    xaxis_config = dict(title=x_axis_label)
-    if not x_data_is_valid:
-        xaxis_config['range'] = [DUMMY_X_VALUE_FOR_MISSING_COSTS - 1, DUMMY_X_VALUE_FOR_MISSING_COSTS + 1]
-        xaxis_config['tickvals'] = [DUMMY_X_VALUE_FOR_MISSING_COSTS]
-    else:
-        xaxis_config['rangemode'] = "tozero"
+    xaxis_config = dict(title=x_axis_label, rangemode="tozero")
+    if divider_line_x > 0:
+        fig.add_vline(
+            x=divider_line_x,
+            line_width=2,
+            line_dash="dash",
+            line_color="grey",
+            annotation_text="Missing Cost Data",
+            annotation_position="top right"
+        )
+
+        # --- NEW LOGIC: Adjust x-axis range to make room for the new points ---
+        xaxis_config['range'] = [0, (max_reported_cost + (max_reported_cost / 4))]
 
     logo_data_uri = svg_to_data_uri("assets/just-icon.svg")
 
     fig.update_layout(
         template="plotly_white",
-        title=f"{y_col_to_use} vs. {x_axis_label}",
-        xaxis=xaxis_config,
+        title=f"Astabench {name} Leaderboard",
+        xaxis=xaxis_config, # Use the updated config
         yaxis=dict(title=y_col_to_use, rangemode="tozero"),
         legend=dict(
             bgcolor='#FAF2E9',

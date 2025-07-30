@@ -109,7 +109,7 @@ def create_svg_html(value, svg_map):
 
 # Global variables
 OPENNESS_SVG_MAP = {
-    "Closed": "assets/ui.svg", "API Available": "assets/api.svg", "Open Source": "assets/open-source.svg", "Open Source + Open Weights": "assets/open-weights.svg"
+    "Open Source + Open Weights": "assets/open-weights.svg", "Open Source": "assets/open-source.svg", "API Available": "assets/api.svg", "Closed": "assets/ui.svg"
 }
 TOOLING_SVG_MAP = {
     "Standard": {"light": "assets/star-light.svg", "dark": "assets/star-dark.svg"},
@@ -164,7 +164,7 @@ legend_markdown = f"""
         <b>Pareto</b><span class="tooltip-icon" data-tooltip="
         •Pareto: Indicates if agent is on the Pareto frontier
         ">ⓘ</span>
-        <div style="padding-top: 4px;"><span>📈 On frontier</span></div>
+        <div style="padding-top: 4px;"><span>🏆 On frontier</span></div>
     </div>
 
     <div> <!-- Container for the Openness section -->
@@ -283,7 +283,7 @@ def create_leaderboard_display(
     else:
         pareto_agent_names = []
     df_view['Pareto'] = df_view.apply(
-        lambda row: '📈' if row['id'] in pareto_agent_names else '',
+        lambda row: '🏆' if row['id'] in pareto_agent_names else '',
         axis=1
     )
     # Create mapping for Openness / tooling
@@ -338,7 +338,7 @@ def create_leaderboard_display(
     gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
     # Put table and key into an accordion
-    with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):
+    with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
         gr.HTML(value=legend_markdown, elem_id="legend-markdown")
         dataframe_component = gr.DataFrame(
             headers=df_headers,
@@ -404,7 +404,7 @@ def create_benchmark_details_display(
         else:
             pareto_agent_names = []
         benchmark_table_df['Pareto'] = benchmark_table_df.apply(
-            lambda row: '📈' if row['id'] in pareto_agent_names else '',
+            lambda row: ' 🏆' if row['id'] in pareto_agent_names else '',
             axis=1
         )
 
@@ -480,12 +480,13 @@ def create_benchmark_details_display(
             data=full_df,
             x=benchmark_cost_col,
             y=benchmark_score_col,
-            agent_col="Agent"
+            agent_col="Agent",
+            name=benchmark_name
         )
         gr.Plot(value=benchmark_plot, show_label=False)
         gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
         # Put table and key into an accordion
-        with gr.Accordion("Details", open=True, elem_id="leaderboard-accordion"):
+        with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
             gr.HTML(value=legend_markdown, elem_id="legend-markdown")
             gr.DataFrame(
                 headers=df_headers,
