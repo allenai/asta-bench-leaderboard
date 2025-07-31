@@ -337,6 +337,8 @@ def _plot_scatter_plotly(
 
     x_col_to_use = x
     y_col_to_use = y
+    # data['LLM Base'] = data['LLM Base'].apply(clean_llm_base_list)
+    llm_base = data["LLM Base"] if "LLM Base" in data.columns else "LLM Base"
 
     # --- Section 2: Data Preparation---
     required_cols = [y_col_to_use, agent_col, "Openness", "Agent Tooling"]
@@ -416,7 +418,12 @@ def _plot_scatter_plotly(
     # --- Section 5: Prepare for Marker Plotting ---
     # Pre-generate hover text and shapes for each point
     data_plot['hover_text'] = data_plot.apply(
-        lambda row: f"<b>{row[agent_col]}</b><br>{x_axis_label}: ${row[x_col_to_use]:.2f}<br>{y_col_to_use}: {row[y_col_to_use]:.2f}",
+        lambda row: (
+            f"<b>{row[agent_col]}</b><br>" 
+            f"<b>{x_axis_label}:</b> ${row[x_col_to_use]:.2f}<br>" 
+            f"<b>{y_col_to_use}:</b> {row[y_col_to_use]:.2f}<br>"
+            f"<b>LLM Base:</b> {', '.join(row['LLM Base']) if isinstance(row['LLM Base'], list) else row['LLM Base']}"
+        ),
         axis=1
     )
     data_plot['shape_symbol'] = data_plot['Agent Tooling'].map(shape_map).fillna(default_shape)
@@ -494,6 +501,12 @@ def _plot_scatter_plotly(
         yaxis=dict(title="Score", rangemode="tozero"),
         legend=dict(
             bgcolor='#FAF2E9',
+        ),
+        hoverlabel=dict(
+            bgcolor="#105257",
+            font_size=12,
+            font_family="Manrope",
+            font_color="white",
         )
     )
     fig.add_layout_image(
