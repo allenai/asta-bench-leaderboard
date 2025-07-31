@@ -234,7 +234,7 @@ class DataTransformer:
             # The 'Submitter' column is no longer needed
             df_view = df_view.drop(columns=['Submitter'])
 
-        # 4. Build the List of Columns to Display (now simplified)
+        # 4. Build the List of Columns to Display
         base_cols = ["id","Agent","LLM Base", "agent_for_hover"]
         new_cols = ["Openness", "Agent Tooling"]
         ending_cols = ["Logs"]
@@ -320,7 +320,7 @@ def _plot_scatter_plotly(
         name: Optional[str] = None
 ) -> go.Figure:
 
-    # --- Section 1: Define Mappings (No changes here) ---
+    # --- Section 1: Define Mappings ---
     color_map = {
         "Closed": "red",
         "API Available": "orange",
@@ -338,7 +338,7 @@ def _plot_scatter_plotly(
     x_col_to_use = x
     y_col_to_use = y
 
-    # --- Section 2: Data Preparation (SIGNIFICANT CHANGES HERE) ---
+    # --- Section 2: Data Preparation---
     required_cols = [y_col_to_use, agent_col, "Openness", "Agent Tooling"]
     if not all(col in data.columns for col in required_cols):
         logger.error(f"Missing one or more required columns for plotting: {required_cols}")
@@ -354,29 +354,29 @@ def _plot_scatter_plotly(
     if x and x in data_plot.columns:
         data_plot[x_col_to_use] = pd.to_numeric(data_plot[x_col_to_use], errors='coerce')
 
-        # --- NEW LOGIC: Separate data into two groups ---
+        # --- Separate data into two groups ---
         valid_cost_data = data_plot[data_plot[x_col_to_use].notna()].copy()
         missing_cost_data = data_plot[data_plot[x_col_to_use].isna()].copy()
 
         if not valid_cost_data.empty:
             max_reported_cost = valid_cost_data[x_col_to_use].max()
-            # --- NEW LOGIC: Calculate where to place the missing data and the divider line ---
+            # ---Calculate where to place the missing data and the divider line ---
             divider_line_x = max_reported_cost + (max_reported_cost/10)
             new_x_for_missing = max_reported_cost + (max_reported_cost/5)
 
             if not missing_cost_data.empty:
                 missing_cost_data[x_col_to_use] = new_x_for_missing
-                # --- NEW LOGIC: Combine the two groups back together ---
+                # --- Combine the two groups back together ---
                 data_plot = pd.concat([valid_cost_data, missing_cost_data])
             else:
                 data_plot = valid_cost_data # No missing data, just use the valid set
         else:
-            # --- NEW LOGIC: Handle the case where ALL costs are missing ---
+            # ---Handle the case where ALL costs are missing ---
             if not missing_cost_data.empty:
-                missing_cost_data[x_col_to_use] = 0 # Plot them at x=0
+                missing_cost_data[x_col_to_use] = 0
                 data_plot = missing_cost_data
             else:
-                data_plot = pd.DataFrame() # No data at all
+                data_plot = pd.DataFrame()
     else:
         # Handle case where x column is not provided at all
         data_plot[x_col_to_use] = 0
@@ -384,7 +384,7 @@ def _plot_scatter_plotly(
     # Clean data based on all necessary columns
     data_plot.dropna(subset=[y_col_to_use, x_col_to_use, "Openness", "Agent Tooling"], inplace=True)
 
-    # --- Section 3: Initialize Figure (No changes here) ---
+    # --- Section 3: Initialize Figure ---
     fig = go.Figure()
     if data_plot.empty:
         logger.warning(f"No valid data to plot after cleaning.")
@@ -482,7 +482,7 @@ def _plot_scatter_plotly(
             annotation_position="top right"
         )
 
-        # --- NEW LOGIC: Adjust x-axis range to make room for the new points ---
+        # ---Adjust x-axis range to make room for the new points ---
         xaxis_config['range'] = [0, (max_reported_cost + (max_reported_cost / 4))]
 
     logo_data_uri = svg_to_data_uri("assets/just-icon.svg")
