@@ -416,13 +416,42 @@ def _plot_scatter_plotly(
             ))
 
     # --- Section 5: Prepare for Marker Plotting ---
+    def format_hover_text(row, agent_col, x_axis_label, x_col, y_col):
+        """
+        Builds the complete HTML string for the plot's hover tooltip.
+        Formats the 'LLM Base' column as a bulleted list if it is a list.
+        """
+        # Start with the standard information
+        parts = [
+            f"<b>{row[agent_col]}</b><br>",
+            f"<b>{x_axis_label}:</b> ${row[x_col]:.2f}<br>",
+            f"<b>{y_col}:</b> {row[y_col]:.2f}<br>"
+        ]
+
+        # --- THIS IS THE KEY LOGIC ---
+        # Now, handle the 'LLM Base' column
+        llm_base_value = row['LLM Base']
+        if isinstance(llm_base_value, list) and llm_base_value: # Check if it's a non-empty list
+            # Add the label with a line break
+            parts.append("<b>LLM Base:</b><br>")
+            # Create a new string for each item, prefixed with a bullet and ending with a line break
+            # We use ''.join() because each item already has its own line break.
+            list_items_html = ''.join([f"  • {item}<br>" for item in llm_base_value])
+            parts.append(list_items_html)
+        else:
+            # If it's not a list or is empty, display it on a single line
+            parts.append(f"<b>LLM Base:</b> {llm_base_value}")
+
+        # Join all the parts together into the final HTML string
+        return ''.join(parts)
     # Pre-generate hover text and shapes for each point
     data_plot['hover_text'] = data_plot.apply(
-        lambda row: (
-            f"<b>{row[agent_col]}</b><br>" 
-            f"<b>{x_axis_label}:</b> ${row[x_col_to_use]:.2f}<br>" 
-            f"<b>{y_col_to_use}:</b> {row[y_col_to_use]:.2f}<br>"
-            f"<b>LLM Base:</b> {', '.join(row['LLM Base']) if isinstance(row['LLM Base'], list) else row['LLM Base']}"
+        lambda row: format_hover_text(
+            row,
+            agent_col=agent_col,
+            x_axis_label=x_axis_label,
+            x_col=x_col_to_use,
+            y_col=y_col_to_use
         ),
         axis=1
     )
