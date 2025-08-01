@@ -329,7 +329,7 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     pointer-events: none;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1000; 
+    z-index: 1000 !important; 
 }
 .tooltip-icon:hover::after {
     opacity: 1;
@@ -385,4 +385,73 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     grid-row: 2 !important;
     grid-column: 1 / -1 !important;
 }
+/*------ Submission Page CSS ------*/
+.custom-label-container {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.form-label-with-tooltip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #ffffff; 
+    font-weight: 500;
+    background-color: #032629;
+    margin-bottom: -8px;
+}
+#custom-form-group {
+    border: 1px solid #9fead1 !important; 
+    border-radius: 8px !important;
+    padding: 16px 16px 0px 16px !important; 
+    background-color: #032629;
+    overflow: visible !important;        
+}
+.form-label-with-tooltip .form-tooltip-icon:hover::after {
+  opacity: 1;
+  visibility: visible !important;
+    z-index: 1000 !important; 
+}
+.form-tooltip-icon {
+  position: relative;
+  z-index: 200;
+  display: inline-block;
+  cursor: help;
+  color: #ffffff;
+}
+.form-tooltip-icon:hover::after {
+    opacity: 1;
+    visibility: visible !important;
+}
+.tooltip-box {
+  position: absolute;
+  z-index: 9999;
+  bottom: 150%;
+  left: 50%;
+  transform: translateX(-50%);
+
+  /* Styling */
+  background-color: #105257;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 6px;
+  width: max-content;
+  max-width: 320px;
+  text-align: left;
+  line-height: 1.5; 
+  /* Hiding and transition */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+  pointer-events: none;
+}
+
+.form-tooltip-icon:hover .tooltip-box {
+  opacity: 1;
+  visibility: visible;
+}
+
 """

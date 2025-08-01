@@ -139,22 +139,16 @@ final_css = css + f"""
 demo = gr.Blocks(theme=theme, css=final_css, head=scroll_script + redirect_script)
 with demo.route("Home", "/home"):
     build_main_page()
-
 with demo.route("Literature Understanding", "/literature-understanding"):
     build_lit_page()
-
 with demo.route("Code & Execution", "/code-execution"):
     build_c_and_e_page()
-
 with demo.route("Data Analysis", "/data-analysis"):
     build_data_analysis_page()
-
 with demo.route("Discovery", "/discovery"):
     build_e2e_page()
-
 with demo.route("About", "/about"):
     build_about_page()
-
 with demo.route("🚀 Submit an Agent", "/submit"):
     build_submission_page()
 # --- Scheduler and Launch

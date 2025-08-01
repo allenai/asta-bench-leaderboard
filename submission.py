@@ -280,7 +280,20 @@ def add_new_eval(
         f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split. "
         "Please refresh the leaderboard in a few moments. It may take some time for changes to propagate."
     )
-
+openness_label_html = """
+                <div class="form-label-with-tooltip">
+                    Openness of Agent
+                    <span class="form-tooltip-icon">
+                        ⓘ
+                        <span class="tooltip-box">
+• Closed: No API or code available<br>
+• API Available: API available, but no code<br>
+• Open Source: Code available, but no weights<br>
+• Open Source + Open Weights: Code and weights available
+                        </span>
+                    </span>
+                </div>
+                """
 
 # --- Submission Accordion ---
 def build_page():
@@ -291,7 +304,9 @@ def build_page():
             agent_name_tb = gr.Textbox(label="Agent Name")
             agent_desc_tb = gr.Textbox(label="Agent Description")
             agent_url_tb = gr.Textbox(label="URL to Agent Information")
-            openness_radio = gr.Radio(["Open Source","Open Source Open Weights", "API Available", "Closed"], value=None, label="Openness of Agent")
+            with gr.Group(elem_id="custom-form-group"):
+                gr.HTML(value=openness_label_html, elem_id="openness-label-html")
+                openness_radio = gr.Radio(["Open Source","Open Source Open Weights", "API Available", "Closed"], value=None, show_label=False)
             degree_of_control_radio = gr.Radio(["Standard","Custom with Standard Search", "Fully Custom"], value=None, label="Agent Tooling")
         with gr.Column():
             username_tb = gr.Textbox(label="Organization or User Name (Defaults to HF username)")

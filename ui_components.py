@@ -156,7 +156,6 @@ for name, paths in TOOLING_SVG_MAP.items():
 tooling_html = " ".join(tooling_html_items)
 
 
-# Your final legend_markdown string (the structure of this does not change)
 legend_markdown = f"""
 <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; font-size: 14px; padding-bottom: 8px;">
         

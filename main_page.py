@@ -60,5 +60,3 @@ def build_page():
     # Assign the pure JS functions to the select events. No Python `fn` is needed.
     validation_tab.select(fn=None, inputs=None, outputs=None, js=show_validation_js)
 
-if __name__ == "__main__":
-    demo.launch()
