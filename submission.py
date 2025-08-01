@@ -16,7 +16,7 @@ from agenteval import (
     upload_folder_to_hf,
     upload_summary_to_hf,
 )
-from agenteval.models import EvalResult
+from agenteval.leaderboard.models import LeaderboardSubmission
 from agenteval.leaderboard.upload import sanitize_path_component
 from datasets import Dataset, DatasetDict, VerificationMode, load_dataset
 from datasets.data_files import EmptyDatasetError
@@ -58,7 +58,7 @@ os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 CACHED_VIEWERS = {}
 CACHED_TAG_MAPS = {}
 
-# --- Submission Logic (largely unchanged from original, ensure EvalResult and other deps are fine) ---
+# --- Submission Logic (largely unchanged from original, ensure LeaderboardSubmission and other deps are fine) ---
 def try_load_dataset_submission(*args, **kwargs) -> DatasetDict: # Renamed to avoid conflict if LV has one
     try:
         return load_dataset(*args, **kwargs)
@@ -224,7 +224,7 @@ def add_new_eval(
         if not json_path.exists():
             return format_error(f"Missing manifest {AGENTEVAL_MANIFEST_NAME} in submission.")
 
-        eval_result_obj = EvalResult.model_validate_json(json_path.read_text(encoding="utf-8"))
+        eval_result_obj = LeaderboardSubmission.model_validate_json(json_path.read_text(encoding="utf-8"))
         if eval_result_obj.suite_config.version != CONFIG_NAME:
             return format_error(f"Suite version mismatch: expected {CONFIG_NAME}, got {eval_result_obj.suite_config.version}.")
         if eval_result_obj.split != val_or_test:
@@ -250,7 +250,7 @@ def add_new_eval(
     else: print("mock uploaded scored submission", flush=True)
 
 
-    # Update EvalResult with submission details
+    # Update LeaderboardSubmission with submission details
     eval_result_obj.submission.agent_name = agent_name
     eval_result_obj.submission.agent_description = agent_description
     eval_result_obj.submission.agent_url = agent_url
