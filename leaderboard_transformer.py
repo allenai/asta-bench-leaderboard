@@ -421,27 +421,18 @@ def _plot_scatter_plotly(
         Builds the complete HTML string for the plot's hover tooltip.
         Formats the 'LLM Base' column as a bulleted list if it is a list.
         """
-        # Start with the standard information
         parts = [
             f"<b>{row[agent_col]}</b><br>",
-            f"<b>{x_axis_label}:</b> ${row[x_col]:.2f}<br>",
-            f"<b>{y_col}:</b> {row[y_col]:.2f}<br>"
         ]
-
-        # --- THIS IS THE KEY LOGIC ---
-        # Now, handle the 'LLM Base' column
+        parts.append(f"{x_axis_label}: <b>${row[x_col]:.2f}</b><br>")
+        parts.append(f"Score: <b>{row[y_col]:.2f}</b><br>")
         llm_base_value = row['LLM Base']
-        if isinstance(llm_base_value, list) and llm_base_value: # Check if it's a non-empty list
-            # Add the label with a line break
-            parts.append("<b>LLM Base:</b><br>")
-            # Create a new string for each item, prefixed with a bullet and ending with a line break
-            # We use ''.join() because each item already has its own line break.
-            list_items_html = ''.join([f"  • {item}<br>" for item in llm_base_value])
+        if isinstance(llm_base_value, list) and llm_base_value:
+            parts.append("LLM Base:<br>")
+            list_items_html = ''.join([f"  • <b>{item}</b><br>" for item in llm_base_value])
             parts.append(list_items_html)
         else:
-            # If it's not a list or is empty, display it on a single line
-            parts.append(f"<b>LLM Base:</b> {llm_base_value}")
-
+            parts.append(f"LLM Base: <b>{llm_base_value}</b>")
         # Join all the parts together into the final HTML string
         return ''.join(parts)
     # Pre-generate hover text and shapes for each point
