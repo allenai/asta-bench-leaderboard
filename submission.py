@@ -281,6 +281,32 @@ def add_new_eval(
         "Please refresh the leaderboard in a few moments. It may take some time for changes to propagate."
     )
 
+openness_label_html = """
+<div class="form-label-with-tooltip">
+    Openness of Agent
+    <span class="tooltip-icon" data-tooltip="
+        • Closed: No API or code available
+        • API Available: API available, but no code
+        • Open Source: Code available, but no weights
+        • Open Source + Open Weights: Code and weights available"
+    >
+        ⓘ
+    </span>
+</div>
+"""
+
+agent_tooling_label_html = """
+<div class="form-label-with-tooltip">
+    Agent Tooling
+    <span class="tooltip-icon" data-tooltip="
+        • Standard: Only uses tools explicitly provided in state.tools
+        • Equivalent: Uses custom tools with identical or more restricted capabilities
+        • Fully Custom: Uses tools beyond constraints of Standard or Equivalent"
+    >
+        ⓘ
+    </span>
+</div>
+"""
 
 # --- Submission Accordion ---
 def build_page():
@@ -291,8 +317,11 @@ def build_page():
             agent_name_tb = gr.Textbox(label="Agent Name")
             agent_desc_tb = gr.Textbox(label="Agent Description")
             agent_url_tb = gr.Textbox(label="URL to Agent Information")
-            openness_radio = gr.Radio(["Open Source","Open Source Open Weights", "API Available", "Closed"], value=None, label="Openness of Agent")
-            degree_of_control_radio = gr.Radio(["Standard","Custom with Standard Search", "Fully Custom"], value=None, label="Agent Tooling")
+            with gr.Group(elem_id="custom-form-group"):
+                gr.HTML(value=openness_label_html, elem_id="openness-label-html")
+                openness_radio = gr.Radio(["Open Source","Open Source Open Weights", "API Available", "Closed"], value=None, label="")
+                gr.HTML(value=agent_tooling_label_html, elem_id="agent-tooling-label-html")
+                degree_of_control_radio = gr.Radio(["Standard","Equivalent", "Fully Custom"], value=None, label="")
         with gr.Column():
             username_tb = gr.Textbox(label="Organization or User Name (Defaults to HF username)")
             mail_tb = gr.Textbox(label="Contact Email (Private, for submission issues)")

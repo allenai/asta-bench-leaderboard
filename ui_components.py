@@ -162,7 +162,7 @@ legend_markdown = f"""
         
     <div> <!-- Container for the Pareto section -->
         <b>Pareto</b><span class="tooltip-icon" data-tooltip="
-        •Pareto: Indicates if agent is on the Pareto frontier
+        Indicates if agent is on the Pareto frontier
         ">ⓘ</span>
         <div style="padding-top: 4px;"><span>🏆 On frontier</span></div>
     </div>
