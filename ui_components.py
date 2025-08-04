@@ -17,6 +17,7 @@ from leaderboard_transformer import (
     format_cost_column,
     format_score_column,
     get_pareto_df,
+    clean_llm_base_list,
 )
 from content import (
     SCATTER_DISCLAIMER,
@@ -574,18 +575,6 @@ def create_sub_navigation_bar(tag_map: dict, category_name: str):
 
     # Return the entire navigation bar as one single Gradio HTML component
     return gr.HTML(full_html)
-
-def clean_llm_base_list(model_list):
-    """
-    Cleans a list of model strings by keeping only the text after the last '/'.
-    For example: "models/gemini-2.5-flash-preview-05-20" becomes "gemini-2.5-flash-preview-05-20".
-    """
-    # Return the original value if it's not a list, to avoid errors.
-    if not isinstance(model_list, list):
-        return model_list
-
-    # Use a list comprehension for a clean and efficient transformation.
-    return [str(item).split('/')[-1] for item in model_list]
 
 def format_llm_base_with_html(value):
     """

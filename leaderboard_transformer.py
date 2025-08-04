@@ -421,18 +421,30 @@ def _plot_scatter_plotly(
         Builds the complete HTML string for the plot's hover tooltip.
         Formats the 'LLM Base' column as a bulleted list if it is a list.
         """
-        parts = [
-            f"<b>{row[agent_col]}</b><br>",
-        ]
-        parts.append(f"{x_axis_label}: <b>${row[x_col]:.2f}</b><br>")
-        parts.append(f"Score: <b>{row[y_col]:.2f}</b><br>")
+        h_pad = "   "
+        parts = ["<br>"]
+        parts.append(f"{h_pad}<b>{row[agent_col]}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}{x_axis_label}: <b>${row[x_col]:.2f}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}Score: <b>{row[y_col]:.2f}</b>{h_pad}") # No <br> on the last item of this section
+
+        # Add extra vertical space (line spacing) before the next section
+        parts.append("<br>")
+        # Clean and format LLM Base column
         llm_base_value = row['LLM Base']
+        llm_base_value = clean_llm_base_list(llm_base_value)
         if isinstance(llm_base_value, list) and llm_base_value:
-            parts.append("LLM Base:<br>")
-            list_items_html = ''.join([f"  • <b>{item}</b><br>" for item in llm_base_value])
-            parts.append(list_items_html)
+            parts.append(f"{h_pad}LLM Base:{h_pad}<br>")
+            # Create a list of padded bullet points
+            list_items = [f"{h_pad}  • <b>{item}</b>{h_pad}" for item in llm_base_value]
+            # Join them with line breaks
+            parts.append('<br>'.join(list_items))
         else:
-            parts.append(f"LLM Base: <b>{llm_base_value}</b>")
+            # Handle the non-list case with padding
+            parts.append(f"{h_pad}LLM Base: <b>{llm_base_value}</b>{h_pad}")
+
+        # Add a final line break for bottom "padding"
+        parts.append("<br>")
+
         # Join all the parts together into the final HTML string
         return ''.join(parts)
     # Pre-generate hover text and shapes for each point
@@ -526,7 +538,7 @@ def _plot_scatter_plotly(
             bgcolor="#105257",
             font_size=12,
             font_family="Manrope",
-            font_color="white",
+            font_color="#d3dedc",
         )
     )
     fig.add_layout_image(
@@ -648,4 +660,14 @@ def svg_to_data_uri(path: str) -> str:
         logger.warning(f"SVG file not found at: {path}")
         return None
 
+def clean_llm_base_list(model_list):
+    """
+    Cleans a list of model strings by keeping only the text after the last '/'.
+    For example: "models/gemini-2.5-flash-preview-05-20" becomes "gemini-2.5-flash-preview-05-20".
+    """
+    # Return the original value if it's not a list, to avoid errors.
+    if not isinstance(model_list, list):
+        return model_list
 
+    # Use a list comprehension for a clean and efficient transformation.
+    return [str(item).split('/')[-1] for item in model_list]
