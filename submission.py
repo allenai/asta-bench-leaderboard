@@ -298,8 +298,7 @@ openness_label_html = """
 agent_tooling_label_html = """
 <div class="form-label-with-tooltip">
     Agent Tooling
-    <span class="tooltip-icon" data-tooltip="
-        • Standard: Only uses tools explicitly provided in state.tools
+    <span class="tooltip-icon" data-tooltip="• Standard: Only uses tools explicitly provided in state.tools
         • Equivalent: Uses custom tools with identical or more restricted capabilities
         • Fully Custom: Uses tools beyond constraints of Standard or Equivalent"
     >
