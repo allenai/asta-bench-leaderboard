@@ -300,11 +300,28 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     display: none;
 }
 
-/* Column description tooltip styles */
+/*------ Openness label tooltip styles ------*/
+.styler,
+#openness-label-html,
+#agent-tooling-label-html {
+    overflow: visible !important;
+}
+/*------ Table cell tooltip styles ------*/
+.wrap.default.full,
+span.wrap[tabindex="0"][role="button"][data-editable="false"] {
+  overflow: visible !important;
+}
+.table-container button,
+.table-container table {
+    overflow: visible !important;
+}
+/*------ Table column description tooltip styles ------*/
 #legend-markdown,
 #leaderboard-accordion {
     overflow: visible !important;
 }
+
+/*------ Global tooltip styles ------*/
 .tooltip-icon {
     display: inline-block;
     margin-left: 6px;
@@ -317,7 +334,7 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     bottom: 125%;
     background-color: #105257;
     color: #fff;
-    padding: 0px 10px 15px;
+    padding: 10px;
     border-radius: 4px;
     font-size: 12px;
     opacity: 0;
@@ -416,10 +433,4 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     background: none;
 }
 
-/*------ This specific styles allows openness label tooltips to be visible ------*/
-.styler,
-#openness-label-html,
-#agent-tooling-label-html {
-    overflow: visible !important;
-}
 """
