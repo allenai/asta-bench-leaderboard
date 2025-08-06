@@ -300,11 +300,28 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     display: none;
 }
 
-/* Column description tooltip styles */
+/*------ Openness label tooltip styles ------*/
+.styler,
+#openness-label-html,
+#agent-tooling-label-html {
+    overflow: visible !important;
+}
+/*------ Table cell tooltip styles ------*/
+.wrap.default.full,
+span.wrap[tabindex="0"][role="button"][data-editable="false"] {
+  overflow: visible !important;
+}
+.table-container button,
+.table-container table {
+    overflow: visible !important;
+}
+/*------ Table column description tooltip styles ------*/
 #legend-markdown,
 #leaderboard-accordion {
     overflow: visible !important;
 }
+
+/*------ Global tooltip styles ------*/
 .tooltip-icon {
     display: inline-block;
     margin-left: 6px;
@@ -317,19 +334,24 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     bottom: 125%;
     background-color: #105257;
     color: #fff;
-    padding: 0px 10px 10px;
+    padding: 10px;
     border-radius: 4px;
     font-size: 12px;
     opacity: 0;
     transition: opacity 0.2s;
     white-space: pre-line;
     width: max-content;
-    max-width: 350px; /* Limit width for better readability */
     text-align: left;
     pointer-events: none;
+    max-width: 300px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1000; 
+    z-index: 1000;
+}
+@media (max-width: 768px) {
+    .tooltip-icon::after {
+        max-width: 250px;
+    }
 }
 .tooltip-icon:hover::after {
     opacity: 1;
@@ -404,5 +426,30 @@ html:not(.dark) #legend-markdown .light-mode-icon,
 .dark #scroll-up-button {
     color: #faf2e9;
     background-color: #032629;
+}
+/*------ Submission Page CSS ------*/
+#custom-form-group {
+    border: 1px solid #000 !important; 
+    border-radius: 4px !important;
+    padding: 16px 16px 0px 0px !important;
+    overflow: visible !important;    
+}
+
+#openness-label-html,
+#agent-tooling-label-html {
+    padding-left: 12px;
+}
+
+#custom-form-group fieldset {
+    padding-top: 0px !important;
+}
+
+#agent-tooling-label-html {
+    padding-top: 6px;
+}
+
+#custom-form-group,
+.styler {
+    background: none;
 }
 """

@@ -162,7 +162,7 @@ legend_markdown = f"""
         
     <div> <!-- Container for the Pareto section -->
         <b>Pareto</b><span class="tooltip-icon" data-tooltip="
-        •Pareto: Indicates if agent is on the Pareto frontier
+        Indicates if agent is on the Pareto frontier
         ">ⓘ</span>
         <div style="padding-top: 4px;"><span>🏆 On frontier</span></div>
     </div>
@@ -186,8 +186,7 @@ legend_markdown = f"""
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{tooling_html}</div>
     </div>
     
-     <div><b>Column Descriptions</b><span class="tooltip-icon" data-tooltip="
-        • Overall Score: Performance across all benchmarks
+     <div><b>Column Descriptions</b><span class="tooltip-icon" data-tooltip="• Overall Score: Performance across all benchmarks
         • Overall Cost: Cost per task in USD
         • Literature Understanding Score: Performance on scientific literature tasks
         • Literature Understanding Cost: Cost per literature understanding task in USD
@@ -607,7 +606,7 @@ def format_llm_base_with_html(value):
             # Join the list items with a newline character for a clean tooltip
             tooltip_text = "\n".join(map(str, value))
             # Return an HTML span with the title attribute for the tooltip
-            return f'<span style="cursor: help;" title="{tooltip_text}">Multiple ⓘ</span>'
+            return f'<span class="tooltip-icon" style="cursor: help;" data-tooltip="{tooltip_text}">{value[0]} (+ {len(value) - 1}) ⓘ</span>'
         if len(value) == 1:
             # If only one item, just return that item
             return value[0]
