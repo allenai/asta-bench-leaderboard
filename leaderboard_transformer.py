@@ -337,7 +337,6 @@ def _plot_scatter_plotly(
 
     x_col_to_use = x
     y_col_to_use = y
-    # data['LLM Base'] = data['LLM Base'].apply(clean_llm_base_list)
     llm_base = data["LLM Base"] if "LLM Base" in data.columns else "LLM Base"
 
     # --- Section 2: Data Preparation---
@@ -419,13 +418,15 @@ def _plot_scatter_plotly(
     def format_hover_text(row, agent_col, x_axis_label, x_col, y_col):
         """
         Builds the complete HTML string for the plot's hover tooltip.
-        Formats the 'LLM Base' column as a bulleted list if it is a list.
+        Formats the 'LLM Base' column as a bulleted list if multiple.
         """
         h_pad = "   "
         parts = ["<br>"]
         parts.append(f"{h_pad}<b>{row[agent_col]}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}Score: <b>{row[y_col]:.2f}</b>{h_pad}<br>")
         parts.append(f"{h_pad}{x_axis_label}: <b>${row[x_col]:.2f}</b>{h_pad}<br>")
-        parts.append(f"{h_pad}Score: <b>{row[y_col]:.2f}</b>{h_pad}") # No <br> on the last item of this section
+        parts.append(f"{h_pad}Openness: <b>{row['Openness']}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}Tooling: <b>{row['Agent Tooling']}</b>{h_pad}")
 
         # Add extra vertical space (line spacing) before the next section
         parts.append("<br>")
@@ -441,10 +442,8 @@ def _plot_scatter_plotly(
         else:
             # Handle the non-list case with padding
             parts.append(f"{h_pad}LLM Base: <b>{llm_base_value}</b>{h_pad}")
-
         # Add a final line break for bottom "padding"
         parts.append("<br>")
-
         # Join all the parts together into the final HTML string
         return ''.join(parts)
     # Pre-generate hover text and shapes for each point
