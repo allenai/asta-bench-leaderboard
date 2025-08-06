@@ -385,4 +385,24 @@ html:not(.dark) #legend-markdown .light-mode-icon,
     grid-row: 2 !important;
     grid-column: 1 / -1 !important;
 }
+.benchmark-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 20px !important;
+}
+#scroll-up-button {
+    flex-grow: 0;
+    display: flex;
+    color: #032629;
+    background-color: #faf2e9;
+    align-items: flex-end;
+    height: 57px;
+    padding: 0px;
+    padding-bottom: 2px;
+    min-width: 50px;
+}
+.dark #scroll-up-button {
+    color: #faf2e9;
+    background-color: #032629;
+}
 """

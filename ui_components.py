@@ -376,10 +376,17 @@ def create_benchmark_details_display(
 
     gr.Markdown("---")
     gr.Markdown("## Detailed Benchmark Results")
-
+    scroll_to_top_js = "() => { window.scrollTo({top: 0, behavior: 'smooth'}); }"
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
-        gr.Markdown(f"### {benchmark_name} Leaderboard", header_links=True)
+        with gr.Row(elem_classes=["benchmark-header"]):
+            gr.Markdown(f"### {benchmark_name} Leaderboard", header_links=True)
+            scroll_up_button = gr.Button(
+                value="⬆",
+                elem_id="scroll-up-button",
+            )
+            # When the button is clicked, it runs our JavaScript function. No Python needed.
+            scroll_up_button.click(fn=None, js=scroll_to_top_js)
 
         # 3. Prepare the data for this specific benchmark's table and plot
         benchmark_score_col = f"{benchmark_name} Score"
