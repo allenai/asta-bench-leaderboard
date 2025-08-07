@@ -334,12 +334,6 @@ def create_leaderboard_display(
     )
     gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
-    # Floating feedback button
-    floating_feedback_button_html = """
-        <a id="floating-feedback-button" href="https://docs.google.com/forms/d/e/1FAIpQLSfJdVkD62aPYh8XehN2FrSeHUWt488Ejc-QdtuZn5NZ3eNoxA/viewform">Have feedback?</a>
-    """
-    gr.HTML(floating_feedback_button_html)
-
     # Put table and key into an accordion
     with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
         gr.HTML(value=legend_markdown, elem_id="legend-markdown")

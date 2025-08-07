@@ -104,6 +104,17 @@ redirect_script = """
 </script>
 """
 
+sticky_feedback_button_script = """
+<script>
+  const btn = document.createElement('a');
+  btn.id = 'floating-feedback-button';
+  btn.href = 'https://docs.google.com/forms/d/e/1FAIpQLSfJdVkD62aPYh8XehN2FrSeHUWt488Ejc-QdtuZn5NZ3eNoxA/viewform';
+  btn.target = '_blank';
+  btn.rel = 'noopener noreferrer';
+  btn.textContent = 'Have feedback?';
+  document.body.appendChild(btn);
+</script>
+"""
 # --- This is the final CSS ---
 final_css = css + f"""
 /* --- Find the "Home" button and replace its text with an icon --- */
@@ -136,7 +147,7 @@ final_css = css + f"""
 }}
 """
 # --- Gradio App Definition ---
-demo = gr.Blocks(theme=theme, css=final_css, head=scroll_script + redirect_script)
+demo = gr.Blocks(theme=theme, css=final_css, head=scroll_script + redirect_script + sticky_feedback_button_script)
 with demo.route("Home", "/home"):
     build_main_page()
 
