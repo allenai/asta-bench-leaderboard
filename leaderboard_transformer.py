@@ -16,33 +16,46 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "discovery": "Discovery",
 
     # Validation Names
-    "arxivdigestables_validation": "Arxivdigestables Validation",
-    "sqa_dev": "Sqa Dev",
-    "litqa2_validation": "Litqa2 Validation",
-    "paper_finder_validation": "Paper Finder Validation",
-    "paper_finder_litqa2_validation": "Paper Finder Litqa2 Validation",
-    "discoverybench_validation": "Discoverybench Validation",
-    "core_bench_validation": "Core Bench Validation",
-    "ds1000_validation": "DS1000 Validation",
-    "e2e_discovery_validation": "E2E Discovery Validation",
-    "e2e_discovery_hard_validation": "E2E Discovery Hard Validation",
-    "super_validation": "Super Validation",
+    "arxivdigestables_validation": "ArxivDIGES Tables",
+    "sqa_dev": "ScholarQA-CS2",
+    "litqa2_validation": "LitQA2-FullText",
+    "paper_finder_validation": "PaperFindingBench",
+    "paper_finder_litqa2_validation": "LitQA2-FullText-Search",
+    "discoverybench_validation": "DiscoveryBench",
+    "core_bench_validation": "CORE-Bench-Hard",
+    "ds1000_validation": "DS-1000",
+    "e2e_discovery_validation": "E2E-Bench",
+    "e2e_discovery_hard_validation": "E2E-Bench-Hard",
+    "super_validation": "SUPER",
     # Test Names
-    "paper_finder_test": "Paper Finder Test",
-    "paper_finder_litqa2_test": "Paper Finder Litqa2 Test",
-    "sqa_test": "Sqa Test",
-    "arxivdigestables_test": "Arxivdigestables Test",
-    "litqa2_test": "Litqa2 Test",
-    "discoverybench_test": "Discoverybench Test",
-    "core_bench_test": "Core Bench Test",
-    "ds1000_test": "DS1000 Test",
-    "e2e_discovery_test": "E2E Discovery Test",
-    "e2e_discovery_hard_test": "E2E Discovery Hard Test",
-    "super_test": "Super Test",
+    "paper_finder_test": "PaperFindingBench",
+    "paper_finder_litqa2_test": "LitQA2-FullText-Search",
+    "sqa_test": "ScholarQA-CS2",
+    "arxivdigestables_test": "ArxivDIGES Tables",
+    "litqa2_test": "LitQA2-FullText",
+    "discoverybench_test": "DiscoveryBench",
+    "core_bench_test": "CORE-Bench-Hard",
+    "ds1000_test": "DS-1000",
+    "e2e_discovery_test": "E2E-Bench",
+    "e2e_discovery_hard_test": "E2E-Bench-Hard",
+    "super_test": "SUPER",
+}
+ORDER_MAP = {
+    'Literature Understanding': [
+        'PaperFindingBench',
+        'LitQA2-FullText-Search',
+        'ScholarQA-CS2',
+        'LitQA2-FullText',
+        'ArxivDIGES Tables'
+    ],
+    'Code Execution': [
+        'CORE-Bench-Hard',
+        'SUPER',
+        'DS-1000'
+    ],
+    # Add other keys for 'Data Analysis' and 'Discovery' when/if we add more benchmarks in those categories
 }
 
-
-### 2. The Updated Helper Functions ###
 
 def _safe_round(value, digits=2):
     """Rounds a number if it's a valid float/int, otherwise returns it as is."""
@@ -88,7 +101,6 @@ def _pretty_column_name(raw_col: str) -> str:
 
             # Capitalize the metric part correctly (e.g., 'score' -> 'Score')
             pretty_metric = metric_part.capitalize()
-
             return f"{formal_name} {pretty_metric}"
 
     # Case 3: If no specific rule applies, just make it title case.
@@ -97,28 +109,30 @@ def _pretty_column_name(raw_col: str) -> str:
 
 def create_pretty_tag_map(raw_tag_map: dict, name_map: dict) -> dict:
     """
-    Converts a tag map with raw names into a tag map with pretty, formal names.
-
-    Args:
-        raw_tag_map: The map with raw keys and values (e.g., {'lit': ['litqa2_validation']}).
-        name_map: The INFORMAL_TO_FORMAL_NAME_MAP used for translation.
-
-    Returns:
-        A new dictionary with pretty names (e.g., {'Literature Understanding': ['Litqa2 Validation']}).
+    Converts a tag map with raw names into a tag map with pretty, formal names,
+    applying a specific, non-alphabetic sort order to the values.
     """
     pretty_map = {}
-    # A reverse map to find raw keys from formal names if needed, though not used here
-    # This is just for understanding; the main logic uses the forward map.
-
     # Helper to get pretty name with a fallback
     def get_pretty(raw_name):
-        return name_map.get(raw_name, raw_name.replace("_", " ").title())
+        return name_map.get(raw_name, raw_name.replace("_", " "))
 
     for raw_key, raw_value_list in raw_tag_map.items():
         pretty_key = get_pretty(raw_key)
         pretty_value_list = [get_pretty(raw_val) for raw_val in raw_value_list]
-        pretty_map[pretty_key] = sorted(list(set(pretty_value_list)))
 
+        # Get the unique values first
+        unique_values = list(set(pretty_value_list))
+        # Get the custom order for the current key. Fall back to an empty list.
+        custom_order = ORDER_MAP.get(pretty_key, [])
+        def sort_key(value):
+            if value in custom_order:
+                return 0, custom_order.index(value)
+            else:
+                return 1, value
+        pretty_map[pretty_key] = sorted(unique_values, key=sort_key)
+
+    print(f"Created pretty tag map: {pretty_map}")
     return pretty_map
 
 
