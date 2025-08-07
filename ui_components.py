@@ -379,7 +379,18 @@ def create_benchmark_details_display(
 
     gr.Markdown("---")
     gr.Markdown("## Detailed Benchmark Results")
-    scroll_to_top_js = "() => { window.scrollTo({top: 0, behavior: 'smooth'}); }"
+    scroll_to_top_js = """
+() => {
+    console.log("Scroll button clicked. Checking for HF iframe environment...");
+    if ('parentIFrame' in window) {
+        console.log("HF iframe detected. Using window.parentIFrame.scrollTo().");
+        window.parentIFrame.scrollTo({top: 0, behavior: 'smooth'});
+    } else {
+        console.log("No HF iframe detected. Using standard window.scrollTo().");
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+}
+"""
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
         with gr.Row(elem_classes=["benchmark-header"]):
