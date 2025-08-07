@@ -299,28 +299,6 @@ html:not(.dark) #legend-markdown .light-mode-icon,
 #legend-markdown .light-mode-icon, #legend-markdown .dark-mode-icon {
     display: none;
 }
-
-/*------ Openness label tooltip styles ------*/
-.styler,
-#openness-label-html,
-#agent-tooling-label-html {
-    overflow: visible !important;
-}
-/*------ Table cell tooltip styles ------*/
-.wrap.default.full,
-span.wrap[tabindex="0"][role="button"][data-editable="false"] {
-  overflow: visible !important;
-}
-.table-container button,
-.table-container table {
-    overflow: visible !important;
-}
-/*------ Table column description tooltip styles ------*/
-#legend-markdown,
-#leaderboard-accordion {
-    overflow: visible !important;
-}
-
 /*------ Global tooltip styles ------*/
 .tooltip-icon {
     display: inline-block;
@@ -356,6 +334,28 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 .tooltip-icon:hover::after {
     opacity: 1;
 }
+/*------ Openness label tooltip styles ------*/
+.styler,
+#openness-label-html,
+#agent-tooling-label-html {
+    overflow: visible !important;
+}
+/*------ Table cell tooltip styles ------*/
+.wrap.default.full,
+span.wrap[tabindex="0"][role="button"][data-editable="false"] {
+  overflow: visible !important;
+}
+
+.cell-tooltip-icon::after {
+    height: fit-content;
+    top: 125%;
+}
+/*------ Table column description tooltip styles ------*/
+#legend-markdown,
+#leaderboard-accordion {
+    overflow: visible !important;
+}
+
 /* --- inside table tooltips --- */
 .native-tooltip-icon {
     cursor: help;
