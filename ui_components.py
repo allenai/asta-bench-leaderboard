@@ -532,7 +532,7 @@ def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     # Fallback for unexpected types
     return pd.DataFrame(), {}
 # Create sub-nav bar for benchmarks
-def create_gradio_anchor_id(text: str) -> str:
+def create_gradio_anchor_id(text: str, validation) -> str:
     """
     Replicates the ID format created by gr.Markdown(header_links=True).
     Example: "Paper Finder Validation" -> "h-paper-finder-validation"
@@ -540,8 +540,10 @@ def create_gradio_anchor_id(text: str) -> str:
     text = text.lower()
     text = re.sub(r'\s+', '-', text) # Replace spaces with hyphens
     text = re.sub(r'[^\w-]', '', text) # Remove non-word characters
+    if validation:
+        return f"h-{text}-leaderboard-1"
     return f"h-{text}-leaderboard"
-def create_sub_navigation_bar(tag_map: dict, category_name: str):
+def create_sub_navigation_bar(tag_map: dict, category_name: str, validation: bool = False) -> gr.HTML:
     """
     Builds the entire sub-navigation bar as a single, self-contained HTML component.
     This bypasses Gradio's layout components, giving us full control.
@@ -554,7 +556,7 @@ def create_sub_navigation_bar(tag_map: dict, category_name: str):
     # Start building the list of HTML button elements as strings
     html_buttons = []
     for name in benchmark_names:
-        target_id = create_gradio_anchor_id(name)
+        target_id = create_gradio_anchor_id(name, validation)
 
         # Create a standard HTML button.
         # The onclick attribute calls our global JS function directly.

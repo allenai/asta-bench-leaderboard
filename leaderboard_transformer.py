@@ -109,7 +109,8 @@ def _pretty_column_name(raw_col: str) -> str:
 
 def create_pretty_tag_map(raw_tag_map: dict, name_map: dict) -> dict:
     """
-    Converts a tag map with raw names into a tag map with pretty, formal names.
+    Converts a tag map with raw names into a tag map with pretty, formal names,
+    applying a specific, non-alphabetic sort order to the values.
     """
     pretty_map = {}
     # Helper to get pretty name with a fallback
@@ -119,8 +120,19 @@ def create_pretty_tag_map(raw_tag_map: dict, name_map: dict) -> dict:
     for raw_key, raw_value_list in raw_tag_map.items():
         pretty_key = get_pretty(raw_key)
         pretty_value_list = [get_pretty(raw_val) for raw_val in raw_value_list]
-        pretty_map[pretty_key] = list(set(pretty_value_list))
 
+        # Get the unique values first
+        unique_values = list(set(pretty_value_list))
+        # Get the custom order for the current key. Fall back to an empty list.
+        custom_order = ORDER_MAP.get(pretty_key, [])
+        def sort_key(value):
+            if value in custom_order:
+                return 0, custom_order.index(value)
+            else:
+                return 1, value
+        pretty_map[pretty_key] = sorted(unique_values, key=sort_key)
+
+    print(f"Created pretty tag map: {pretty_map}")
     return pretty_map
 
 

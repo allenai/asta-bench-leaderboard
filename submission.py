@@ -14,7 +14,6 @@ import requests
 from agenteval import (
     process_eval_logs,
     upload_folder_to_hf,
-    upload_summary_to_hf,
 )
 from agenteval.leaderboard.models import LeaderboardSubmission
 from agenteval.leaderboard.upload import sanitize_path_component

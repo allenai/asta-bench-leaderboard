@@ -9,7 +9,7 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
         validation_df, validation_tag_map = get_full_leaderboard_data("validation")
         test_df, test_tag_map = get_full_leaderboard_data("test")
         with gr.Column(elem_id="validation_nav_container", visible=False) as validation_nav_container:
-            create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME)
+            create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME, validation=True)
 
         with gr.Column(elem_id="test_nav_container", visible=True) as test_nav_container:
             create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
@@ -19,8 +19,6 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
         with gr.Tabs():
             with gr.Tab("Results: Test Set") as test_tab:
                 # Repeat the process for the "test" split
-                test_df, test_tag_map = get_full_leaderboard_data("test")
-
                 if not test_df.empty:
                     create_leaderboard_display(
                         full_df=test_df,
@@ -37,8 +35,6 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
                     gr.Markdown("No data available for test split.")
             with gr.Tab("Results: Validation Set") as validation_tab:
                 # 1. Load all necessary data for the "validation" split ONCE.
-                validation_df, validation_tag_map = get_full_leaderboard_data("validation")
-
                 if not validation_df.empty:
                     # 2. Render the main category display using the loaded data.
                     create_leaderboard_display(
