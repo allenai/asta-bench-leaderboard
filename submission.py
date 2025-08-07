@@ -284,8 +284,7 @@ def add_new_eval(
 openness_label_html = """
 <div class="form-label-with-tooltip">
     Openness of Agent
-    <span class="tooltip-icon" data-tooltip="
-        • Closed: No API or code available
+    <span class="tooltip-icon" data-tooltip="• Closed: No API or code available
         • API Available: API available, but no code
         • Open Source: Code available, but no weights
         • Open Source + Open Weights: Code and weights available"

@@ -162,15 +162,13 @@ legend_markdown = f"""
 <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; font-size: 14px; padding-bottom: 8px;">
         
     <div> <!-- Container for the Pareto section -->
-        <b>Pareto</b><span class="tooltip-icon" data-tooltip="
-        Indicates if agent is on the Pareto frontier
+        <b>Pareto</b><span class="tooltip-icon" data-tooltip="Indicates if agent is on the Pareto frontier
         ">ⓘ</span>
         <div style="padding-top: 4px;"><span>🏆 On frontier</span></div>
     </div>
 
     <div> <!-- Container for the Openness section -->
-        <b>Agent Openness</b><span class="tooltip-icon" data-tooltip="
-        •Closed: No API or code available
+        <b>Agent Openness</b><span class="tooltip-icon" data-tooltip="•Closed: No API or code available
         •API Available: API available, but no code
         •Open Source: Code available, but no weights
         •Open Source + Open Weights: Code and weights available
@@ -179,8 +177,7 @@ legend_markdown = f"""
     </div>
 
     <div> <!-- Container for the Tooling section -->
-        <b>Agent Tooling</b><span class="tooltip-icon" data-tooltip="
-        • Standard: Standard Approach used by the agent
+        <b>Agent Tooling</b><span class="tooltip-icon" data-tooltip="• Standard: Standard Approach used by the agent
         • Custom with Standard Search: Standard search used by the agent
         • Fully Custom: Fully custom tools used by the agent
         ">ⓘ</span>
@@ -595,7 +592,7 @@ def format_llm_base_with_html(value):
             # Join the list items with a newline character for a clean tooltip
             tooltip_text = "\n".join(map(str, value))
             # Return an HTML span with the title attribute for the tooltip
-            return f'<span class="tooltip-icon" style="cursor: help;" data-tooltip="{tooltip_text}">{value[0]} (+ {len(value) - 1}) ⓘ</span>'
+            return f'<span class="tooltip-icon cell-tooltip-icon" style="cursor: help;" data-tooltip="{tooltip_text}">{value[0]} (+ {len(value) - 1}) ⓘ</span>'
         if len(value) == 1:
             # If only one item, just return that item
             return value[0]
