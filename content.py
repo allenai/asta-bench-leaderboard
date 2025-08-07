@@ -412,7 +412,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     align-items: center !important;
     gap: 20px !important;
 }
-#scroll-up-button {
+.scroll-up-button {
     flex-grow: 0;
     display: flex;
     color: #032629;
@@ -423,7 +423,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     padding-bottom: 2px;
     min-width: 50px;
 }
-.dark #scroll-up-button {
+.dark .scroll-up-button {
     color: #faf2e9;
     background-color: #032629;
 }

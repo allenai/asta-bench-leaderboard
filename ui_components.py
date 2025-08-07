@@ -386,7 +386,7 @@ def create_benchmark_details_display(
             gr.Markdown(f"### {benchmark_name} Leaderboard", header_links=True)
             scroll_up_button = gr.Button(
                 value="⬆",
-                elem_id="scroll-up-button",
+                elem_classes="scroll-up-button",
             )
             # When the button is clicked, it runs our JavaScript function. No Python needed.
             scroll_up_button.click(fn=None, js=scroll_to_top_js)
