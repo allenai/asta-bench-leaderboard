@@ -351,6 +351,7 @@ def _plot_scatter_plotly(
 
     x_col_to_use = x
     y_col_to_use = y
+    llm_base = data["LLM Base"] if "LLM Base" in data.columns else "LLM Base"
 
     # --- Section 2: Data Preparation---
     required_cols = [y_col_to_use, agent_col, "Openness", "Agent Tooling"]
@@ -428,9 +429,46 @@ def _plot_scatter_plotly(
             ))
 
     # --- Section 5: Prepare for Marker Plotting ---
+    def format_hover_text(row, agent_col, x_axis_label, x_col, y_col):
+        """
+        Builds the complete HTML string for the plot's hover tooltip.
+        Formats the 'LLM Base' column as a bulleted list if multiple.
+        """
+        h_pad = "   "
+        parts = ["<br>"]
+        parts.append(f"{h_pad}<b>{row[agent_col]}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}Score: <b>{row[y_col]:.2f}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}{x_axis_label}: <b>${row[x_col]:.2f}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}Openness: <b>{row['Openness']}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}Tooling: <b>{row['Agent Tooling']}</b>{h_pad}")
+
+        # Add extra vertical space (line spacing) before the next section
+        parts.append("<br>")
+        # Clean and format LLM Base column
+        llm_base_value = row['LLM Base']
+        llm_base_value = clean_llm_base_list(llm_base_value)
+        if isinstance(llm_base_value, list) and llm_base_value:
+            parts.append(f"{h_pad}LLM Base:{h_pad}<br>")
+            # Create a list of padded bullet points
+            list_items = [f"{h_pad}  • <b>{item}</b>{h_pad}" for item in llm_base_value]
+            # Join them with line breaks
+            parts.append('<br>'.join(list_items))
+        else:
+            # Handle the non-list case with padding
+            parts.append(f"{h_pad}LLM Base: <b>{llm_base_value}</b>{h_pad}")
+        # Add a final line break for bottom "padding"
+        parts.append("<br>")
+        # Join all the parts together into the final HTML string
+        return ''.join(parts)
     # Pre-generate hover text and shapes for each point
     data_plot['hover_text'] = data_plot.apply(
-        lambda row: f"<b>{row[agent_col]}</b><br>{x_axis_label}: ${row[x_col_to_use]:.2f}<br>{y_col_to_use}: {row[y_col_to_use]:.2f}",
+        lambda row: format_hover_text(
+            row,
+            agent_col=agent_col,
+            x_axis_label=x_axis_label,
+            x_col=x_col_to_use,
+            y_col=y_col_to_use
+        ),
         axis=1
     )
     data_plot['shape_symbol'] = data_plot['Agent Tooling'].map(shape_map).fillna(default_shape)
@@ -508,6 +546,12 @@ def _plot_scatter_plotly(
         yaxis=dict(title="Score", rangemode="tozero"),
         legend=dict(
             bgcolor='#FAF2E9',
+        ),
+        hoverlabel=dict(
+            bgcolor="#105257",
+            font_size=12,
+            font_family="Manrope",
+            font_color="#d3dedc",
         )
     )
     fig.add_layout_image(
@@ -629,4 +673,14 @@ def svg_to_data_uri(path: str) -> str:
         logger.warning(f"SVG file not found at: {path}")
         return None
 
+def clean_llm_base_list(model_list):
+    """
+    Cleans a list of model strings by keeping only the text after the last '/'.
+    For example: "models/gemini-2.5-flash-preview-05-20" becomes "gemini-2.5-flash-preview-05-20".
+    """
+    # Return the original value if it's not a list, to avoid errors.
+    if not isinstance(model_list, list):
+        return model_list
 
+    # Use a list comprehension for a clean and efficient transformation.
+    return [str(item).split('/')[-1] for item in model_list]
