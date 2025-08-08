@@ -38,57 +38,31 @@ Agents names that are green are Pareto optimal, meaning they achieve the best pe
 """
 LIT_DESCRIPTION = """
 The **Literature Understanding** category evaluates how well agents comprehend and interact with scientific literature—testing their ability to find research papers, assess citation quality, extract information from text, and more.
+<br><br>
+The scores shown below reflect performance aggregated across five distinct benchmarks, each targeting a different aspect of literature-based reasoning. 
+<br><br>
+For detailed results, use the links above to explore individual benchmarks.
 <br>
-The scores shown below reflect performance aggregated across five distinct benchmarks, each targeting a different aspect of literature-based reasoning:
-<br>
-- PaperFinding Bench – PLACEHOLDER DESCRIPTION
-<br>
-- ScholarQA Bench2 – PLACEHOLDER DESCRIPTION
-<br>
-- LitQA2-FT – PLACEHOLDER DESCRIPTION
-<br>
-- ArxivDIGES Tables-Clean – PLACEHOLDER DESCRIPTION
-<br>
-<br>
-Together, these tasks form a comprehensive evaluation of an agent’s ability to navigate, understand, and reason over scientific publications
 """
 CODE_EXECUTION_DESCRIPTION = """
-The **Code & Execution** category in AstaBench includes tasks that evaluate an agent’s ability to write, modify, and run code in realistic research scenarios. Unlike literature tasks—which can sometimes be solved by a language model alone—these problems often require the agent to interact with tools: reading input files, executing code, and writing outputs to specific files in the required format.
+The **Code & Execution** category in AstaBench includes tasks that evaluate an agent’s ability to write, modify, and run code in realistic research scenarios. Unlike literature tasks—which only require read-only tools and can sometimes even be solved by a language model alone—these problems often require the agent to manipulate a machine environment with tools: reading input files, executing code, and writing outputs to specific files in the required format.
+<br><br>
+The scores in this category are aggregated from three distinct benchmarks, each targeting different facets of scientific coding and execution. Together, these benchmarks evaluate whether an agent can function as a hands-on scientific assistant—not just by reasoning about code, but by running it in real-world contexts.
+<br><br>
+For detailed results, use the links above to explore individual benchmark pages.
 <br>
-<br>
-The scores in this category are aggregated from three distinct benchmarks, each targeting different facets of scientific coding and execution:
-<br>
-- CORE-Bench-Hard – PLACEHOLDER DESCRIPTION
-<br>
-- DS-1000 – PLACEHOLDER DESCRIPTION
-<br>
-- SUPER-Expert – PLACEHOLDER DESCRIPTION
-<br>
-<br>
-Together, these benchmarks evaluate whether an agent can function as a hands-on scientific assistant—not just by reasoning about code, but by running it in real-world contexts.
 """
 DATA_ANALYSIS_DESCRIPTION = """
-The **Data Analysis** category evaluates agents on their ability to analyze structured datasets and generate meaningful scientific hypotheses. It currently includes a single benchmark:
-<br>
- - DiscoveryBench
-<br>
-so the category-level scores are the same as the benchmark-level results.
-<br>
-<br>
+The **Data Analysis** category evaluates agents on their ability to analyze structured datasets and generate meaningful scientific hypotheses. It currently includes a single benchmark, DiscoveryBench, so the category-level scores are the same as the benchmark-level results.
+<br><br>
 As additional benchmarks are added in the future, this category will expand to cover a broader range of data-driven reasoning tasks across scientific domains.
+<br>
 """
 DISCOVERY_DESCRIPTION = """
-The **End-to-End Discovery** category tests whether agents can carry out a complete scientific workflow—from hypothesis generation and experiment design to code execution, analysis, and report writing. These tasks require agents to integrate multiple capabilities, producing not just answers but full research artifacts.
+The **End-to-End Discovery** category tests whether agents can carry out a complete scientific workflow, from task description to experiment design, code execution, results  analysis, and report writing. These tasks require agents to integrate multiple capabilities, producing not just answers but full research artifacts.
+<br><br>
+Scores in this category are aggregated from two benchmarks, providing the first standardized way to evaluate automated scientific discovery (ASD) agents across all stages of the research process. Use the links above to explore individual benchmark pages.
 <br>
-<br>
-Scores in this category are aggregated from two benchmarks:
-<br>
-- E2E-Bench – PLACEHOLDER DESCRIPTION
-<br>
-- E2E-Bench-Hard – PLACEHOLDER DESCRIPTION
-<br>
-<br>
-This category provides the first standardized way to evaluate automated scientific discovery (ASD) agents across all stages of the research process.
 """
 
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"
