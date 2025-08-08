@@ -23,7 +23,7 @@ PROJECT_NAME = "asta-bench" + ("-internal" if IS_INTERNAL else "")
 LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
 api = HfApi()
 LOGO_PATH = "assets/logo.svg"
-#    This function will be available on ALL pages of your app.
+# JavaScripts
 scroll_script = """
 <script>
 function scroll_to_element(id) {
@@ -38,8 +38,11 @@ function scroll_to_element(id) {
 }
 </script>
 """
-
-
+redirect_script = """
+<script>
+    if (window.location.pathname === '/') { window.location.replace('/home'); }
+</script>
+"""
 
 # --- Theme Definition ---
 theme = gr.themes.Base(
@@ -96,13 +99,6 @@ try:
 except FileNotFoundError:
     print(f"Warning: Home icon file not found at {LOGO_PATH}.")
     home_icon_data_uri = "none"
-
-# --- This part creates the JavaScript redirect. It is correct. ---
-redirect_script = """
-<script>
-    if (window.location.pathname === '/') { window.location.replace('/home'); }
-</script>
-"""
 
 # --- This is the final CSS ---
 final_css = css + f"""

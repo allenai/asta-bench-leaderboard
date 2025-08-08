@@ -411,6 +411,11 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     display: flex !important;
     align-items: center !important;
     gap: 20px !important;
+    width: 100% !important;
+}
+.scroll-up-container .prose {
+    display: flex;
+    justify-content: flex-end; 
 }
 .scroll-up-button {
     flex-grow: 0;
