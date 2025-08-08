@@ -63,3 +63,11 @@ These design choices ensure fair comparison while penalizing cherry-picking and 
 - FAQ and submission guide
 """, elem_id="about-content"
     )
+
+    # Floating feedback button
+    floating_feedback_button_html = """
+    <div>
+        <a id="feedback-button" href="https://docs.google.com/forms/d/e/1FAIpQLSfJdVkD62aPYh8XehN2FrSeHUWt488Ejc-QdtuZn5NZ3eNoxA/viewform">Have feedback?</a>
+    </div>
+    """
+    gr.HTML(floating_feedback_button_html)  

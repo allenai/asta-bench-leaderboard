@@ -458,38 +458,23 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     background: none;
 }
 
-#floating-feedback-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
+#feedback-button {
+    display: inline-block;
     background-color: #345d60;
     color: white;
     border: none;
     border-radius: 4px;
+    margin: 5px 0 0 24px;
     padding: 15px 20px;
     font-size: 16px;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     transition: all 0.3s ease;
     text-decoration: none;
 }
 
-@media (max-width: 768px) {
-    #floating-feedback-button {
-        padding: 12px 16px;
-        font-size: 12px;
-    }
-}
-
-#floating-feedback-button:hover {
+#feedback-button:hover {
     background-color: #5d888b;
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-}
-
-html, body {
-  height: 100%;
-  overflow-y: auto;
 }
 """
