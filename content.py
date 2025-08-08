@@ -38,19 +38,11 @@ Agents names that are green are Pareto optimal, meaning they achieve the best pe
 """
 LIT_DESCRIPTION = """
 The **Literature Understanding** category evaluates how well agents comprehend and interact with scientific literature—testing their ability to find research papers, assess citation quality, extract information from text, and more.
+<br><br>
+The scores shown below reflect performance aggregated across five distinct benchmarks, each targeting a different aspect of literature-based reasoning. 
+<br><br>
+For detailed results, use the links above to explore individual benchmarks.
 <br>
-The scores shown below reflect performance aggregated across five distinct benchmarks, each targeting a different aspect of literature-based reasoning:
-<br>
-- PaperFinding Bench – PLACEHOLDER DESCRIPTION
-<br>
-- ScholarQA Bench2 – PLACEHOLDER DESCRIPTION
-<br>
-- LitQA2-FT – PLACEHOLDER DESCRIPTION
-<br>
-- ArxivDIGES Tables-Clean – PLACEHOLDER DESCRIPTION
-<br>
-<br>
-Together, these tasks form a comprehensive evaluation of an agent’s ability to navigate, understand, and reason over scientific publications
 """
 CODE_EXECUTION_DESCRIPTION = """
 The **Code & Execution** category in AstaBench includes tasks that evaluate an agent’s ability to write, modify, and run code in realistic research scenarios. Unlike literature tasks—which can sometimes be solved by a language model alone—these problems often require the agent to interact with tools: reading input files, executing code, and writing outputs to specific files in the required format.
