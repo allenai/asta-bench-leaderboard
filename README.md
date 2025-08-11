@@ -31,7 +31,7 @@ First make sure to merge your changes to the `main` branch of this repository. (
 First you need to add the Hugging Face remote repository if you haven't done so already. You can do this by running the following command:
 
 ```bash
-git remote add huggingface https://huggingface.co/datasets/allenai/asta-bench-internal-leaderboard
+git remote add huggingface https://huggingface.co/spaces/allenai/asta-bench-internal-leaderboard
 ```
 You can verify that the remote has been added by running:
 
