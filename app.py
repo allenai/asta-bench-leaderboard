@@ -145,7 +145,7 @@ with demo.route("Code & Execution", "/code-execution"):
 with demo.route("Data Analysis", "/data-analysis"):
     build_data_analysis_page()
 
-with demo.route("Discovery", "/discovery"):
+with demo.route("End-to-End Discovery", "/discovery"):
     build_e2e_page()
 
 with demo.route("About", "/about"):

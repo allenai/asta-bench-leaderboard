@@ -16,7 +16,7 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "discovery": "Discovery",
 
     # Validation Names
-    "arxivdigestables_validation": "ArxivDIGES Tables",
+    "arxivdigestables_validation": "ArxivDIGESTables-Clean",
     "sqa_dev": "ScholarQA-CS2",
     "litqa2_validation": "LitQA2-FullText",
     "paper_finder_validation": "PaperFindingBench",
@@ -26,19 +26,19 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "ds1000_validation": "DS-1000",
     "e2e_discovery_validation": "E2E-Bench",
     "e2e_discovery_hard_validation": "E2E-Bench-Hard",
-    "super_validation": "SUPER",
+    "super_validation": "SUPER-Expert",
     # Test Names
     "paper_finder_test": "PaperFindingBench",
     "paper_finder_litqa2_test": "LitQA2-FullText-Search",
     "sqa_test": "ScholarQA-CS2",
-    "arxivdigestables_test": "ArxivDIGES Tables",
+    "arxivdigestables_test": "ArxivDIGESTables-Clean",
     "litqa2_test": "LitQA2-FullText",
     "discoverybench_test": "DiscoveryBench",
     "core_bench_test": "CORE-Bench-Hard",
     "ds1000_test": "DS-1000",
     "e2e_discovery_test": "E2E-Bench",
     "e2e_discovery_hard_test": "E2E-Bench-Hard",
-    "super_test": "SUPER",
+    "super_test": "SUPER-Expert",
 }
 ORDER_MAP = {
     'Literature Understanding': [
@@ -46,11 +46,11 @@ ORDER_MAP = {
         'LitQA2-FullText-Search',
         'ScholarQA-CS2',
         'LitQA2-FullText',
-        'ArxivDIGES Tables'
+        'ArxivDIGESTables-Clean'
     ],
     'Code Execution': [
+        'SUPER-Expert',
         'CORE-Bench-Hard',
-        'SUPER',
         'DS-1000'
     ],
     # Add other keys for 'Data Analysis' and 'Discovery' when/if we add more benchmarks in those categories
