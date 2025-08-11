@@ -336,16 +336,16 @@ def _plot_scatter_plotly(
 
     # --- Section 1: Define Mappings ---
     color_map = {
-        "Closed": "red",
-        "API Available": "orange",
-        "Open Source": "green",
-        "Open Source + Open Weights": "blue"
+        "Open Source + Open Weights": "deeppink",
+        "Open Source": "coral",
+        "API Available": "yellow",
+        "Closed": "white",
     }
     category_order = list(color_map.keys())
     shape_map = {
         "Standard": "star",
-        "Custom with Standard Search": "diamond",
-        "Fully Custom": "circle"
+        "Custom with Standard Search": "star-diamond",
+        "Fully Custom": "star-triangle-up"
     }
     default_shape = 'square'
 
@@ -424,7 +424,7 @@ def _plot_scatter_plotly(
                 y=frontier_df['y'],
                 mode='lines',
                 name='Efficiency Frontier',
-                line=dict(color='firebrick', width=2, dash='dash'),
+                line=dict(color='#0FCB8C', width=2, dash='dash'),
                 hoverinfo='skip'
             ))
 
@@ -492,7 +492,7 @@ def _plot_scatter_plotly(
                 symbol=group['shape_symbol'],
                 size=10,
                 opacity=0.8,
-                line=dict(width=1, color='DarkSlateGrey')
+                line=dict(width=1, color='deeppink')
             )
         ))
     # ---- Add logic for making the legend -----------
@@ -522,7 +522,7 @@ def _plot_scatter_plotly(
             marker=dict(color='black', symbol=shape_symbol, size=12)
         ))
 
-    # --- Section 8: Configure Layout (Restored from your original code) ---
+    # --- Section 8: Configure Layout  ---
     xaxis_config = dict(title=x_axis_label, rangemode="tozero")
     if divider_line_x > 0:
         fig.add_vline(
@@ -634,8 +634,6 @@ def format_score_column(df: pd.DataFrame, score_col_name: str) -> pd.DataFrame:
 
 
 def get_pareto_df(data):
-    # This is a placeholder; use your actual function that handles dynamic column names
-    # A robust version might look for any column with "Cost" and "Score"
     cost_cols = [c for c in data.columns if 'Cost' in c]
     score_cols = [c for c in data.columns if 'Score' in c]
     if not cost_cols or not score_cols:
