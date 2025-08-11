@@ -75,15 +75,17 @@ COMBINED_ICON_MAP = {
     }
 }
 OPENNESS_SVG_MAP = {
-    "Open Source + Open Weights": "assets/open-weights.svg", "Open Source": "assets/open-source.svg", "API Available": "assets/api.svg", "Closed": "assets/ui.svg"
+    "Open Source + Open Weights": "assets/os-ow-standard.svg",
+    "Open Source": "assets/os-standard.svg",
+    "API Available": "assets/api-standard.svg",
+    "Closed": "assets/c-standard.svg",
 }
 TOOLING_SVG_MAP = {
-    "Standard": {"light": "assets/star-light.svg", "dark": "assets/star-dark.svg"},
-    "Custom with Standard Search": {"light": "assets/diamond-light.svg", "dark": "assets/diamond-dark.svg"},
-    "Fully Custom": {"light": "assets/circle-light.svg", "dark": "assets/circle-dark.svg"},
+    "Standard": "assets/os-ow-standard.svg",
+    "Custom with Standard Search": "assets/os-ow-equivalent.svg",
+    "Fully Custom": "assets/os-ow-custom.svg",
 }
 
-# --- NEW: A global cache to store encoded SVG data ---
 def get_svg_as_data_uri(path: str) -> str:
     """Reads an SVG file and returns it as a base64-encoded data URI."""
     try:
@@ -102,6 +104,7 @@ PRELOADED_URI_MAP = {
     }
     for openness, tooling_map in COMBINED_ICON_MAP.items()
 }
+
 def get_combined_icon_html(row, uri_map):
     """
     Looks up the correct icon URI from the pre-loaded map based on the row's
@@ -164,22 +167,12 @@ openness_html = " ".join(openness_html_items)
 
 # Create HTML for the "Tooling" legend items
 tooling_html_items = []
-for name, paths in TOOLING_SVG_MAP.items():
-    light_theme_icon_uri = get_svg_as_data_uri(paths['dark'])
-    dark_theme_icon_uri = get_svg_as_data_uri(paths['light'])
-
-    # The two swapping icons need to be stacked with absolute positioning
-    img1 = f'<img src="{light_theme_icon_uri}" class="light-mode-icon" alt="{name}" title="{name}" style="position: absolute; top: 0; left: 0;">'
-    img2 = f'<img src="{dark_theme_icon_uri}" class="dark-mode-icon" alt="{name}" title="{name}" style="position: absolute; top: 0; left: 0;">'
-
-    # Their container needs a defined size and relative positioning
-    icon_container = f'<div style="width: 16px; height: 16px; position: relative; flex-shrink: 0;">{img1}{img2}</div>'
-
-    # This item is also a flexbox container
+for name, path in TOOLING_SVG_MAP.items():
+    uri = get_svg_as_data_uri(path)
     tooling_html_items.append(
         f'<div style="display: flex; align-items: center; white-space: nowrap;">'
-        f'{icon_container}'
-        f'<span style="margin-left: 4px;">{name}</span>'
+        f'<img src="{uri}" alt="{name}" title="{name}" style="width:16px; height:16px; margin-right: 4px; flex-shrink: 0;">'
+        f'<span>{name}</span>'
         f'</div>'
     )
 tooling_html = " ".join(tooling_html_items)
