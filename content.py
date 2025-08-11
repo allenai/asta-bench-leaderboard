@@ -245,33 +245,10 @@ nav.svelte-ti537g.svelte-ti537g {
     height: 16px;
     vertical-align: middle;
 }
-
-/* By default, hide BOTH theme-aware icons inside a DataFrame cell */
-.wrap-header-df .cell-wrap .light-mode-icon,
-.wrap-header-df .cell-wrap .dark-mode-icon {
-    display: none !important;
-}
-
-/* Light Theme Rule: Show the light-mode icon */
-html:not(.dark) .wrap-header-df .cell-wrap .light-mode-icon {
-    display: inline-block !important;
-}
-
-/* Dark Theme Rule: Show the dark-mode icon */
-.dark .wrap-header-df .cell-wrap .dark-mode-icon {
-    display: inline-block !important;
-}
 #legend-markdown img {
     width: 16px;
     height: 16px;
     vertical-align: middle;
-}
-html:not(.dark) #legend-markdown .light-mode-icon,
-.dark #legend-markdown .dark-mode-icon {
-    display: inline-block;
-}
-#legend-markdown .light-mode-icon, #legend-markdown .dark-mode-icon {
-    display: none;
 }
 /*------ Global tooltip styles ------*/
 .tooltip-icon {

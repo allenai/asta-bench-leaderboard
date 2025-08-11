@@ -124,29 +124,15 @@ def create_svg_html(value, svg_map):
     Generates the absolute simplest HTML for an icon, without any extra text.
     This version is compatible with gr.DataFrame.
     """
-    # If the value isn't in our map, return an empty string so the cell is blank.
     if pd.isna(value) or value not in svg_map:
         return ""
 
     path_info = svg_map[value]
 
-    # For light/dark-aware icons (like Tooling)
-    if isinstance(path_info, dict):
-        light_theme_icon_uri = get_svg_as_data_uri(path_info['dark'])
-        dark_theme_icon_uri = get_svg_as_data_uri(path_info['light'])
-
-        # Generate the HTML for the two icons side-by-side, with NO text.
-        img1 = f'<img src="{light_theme_icon_uri}" class="light-mode-icon" alt="{value}" title="{value}">'
-        img2 = f'<img src="{dark_theme_icon_uri}" class="dark-mode-icon" alt="{value}" title="{value}">'
-        return f'{img1}{img2}'
-
-    # For single icons that don't change with theme (like Openness)
-    elif isinstance(path_info, str):
-        src = get_svg_as_data_uri(path_info)
-        # Generate the HTML for the single icon, with NO text.
+    src = get_svg_as_data_uri(path_info)
+    # Generate the HTML for the single icon, with NO text.
+    if src:
         return f'<img src="{src}" style="width: 16px; height: 16px; vertical-align: middle;" alt="{value}" title="{value}">'
-
-    # Fallback in case of an unexpected data type
     return ""
 
 # Dynamically generate the correct HTML for the legend parts
@@ -223,7 +209,7 @@ legend_markdown = f"""
 CACHED_VIEWERS = {}
 CACHED_TAG_MAPS = {}
 
-# --- New Helper Class to Solve the Type Mismatch Bug ---
+
 class DummyViewer:
     """A mock viewer to be cached on error. It has a ._load() method
        to ensure it behaves like the real LeaderboardViewer."""
@@ -305,8 +291,6 @@ def create_leaderboard_display(
         axis=1
     )
     # Create mapping for Openness / tooling
-    # df_view['Openness'] = df_view['Openness'].apply(lambda x: create_svg_html(x, OPENNESS_SVG_MAP))
-    # df_view['Agent Tooling'] = df_view['Agent Tooling'].apply(lambda x: create_svg_html(x, TOOLING_SVG_MAP))
     df_view['Icon'] = df_view.apply(
         lambda row: get_combined_icon_html(row, PRELOADED_URI_MAP),
         axis=1  # IMPORTANT: axis=1 tells pandas to process row-by-row
