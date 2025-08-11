@@ -51,32 +51,70 @@ api = HfApi()
 MAX_UPLOAD_BYTES = 100 * 1024**2
 AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
+# Global variables
+COMBINED_ICON_MAP = {
+    "Open Source + Open Weights": {
+        "Standard": "assets/os-ow-standard.svg",        # Bright pink star
+        "Custom with Standard Search": "assets/os-ow-equivalent.svg",    # Bright pink diamond
+        "Custom": "assets/os-ow-custom.svg",            # Bright pink triangle
+    },
+    "Open Source": {
+        "Standard": "assets/os-standard.svg",        # Orange/pink star
+        "Custom with Standard Search": "assets/os-equivalent.svg",    # Orange/pink diamond
+        "Fully Custom": "assets/os-custom.svg",            # Orange/pink triangle
+    },
+    "API Available": {
+        "Standard": "assets/api-standard.svg",       # Yellow/pink star
+        "Custom with Standard Search": "assets/api-equivalent.svg",   # Yellow/pink diamond
+        "Fully Custom": "assets/api-custom.svg",           # Yellow/pink triangle
+    },
+    "Closed": {
+        "Standard": "assets/c-standard.svg",        # Hollow pink star
+        "Equivalent": "assets/c-equivalent.svg",    # Hollow pink diamond
+        "Fully Custom": "assets/c-custom.svg",            # Hollow pink triangle
+    }
+}
+OPENNESS_SVG_MAP = {
+    "Open Source + Open Weights": "assets/open-weights.svg", "Open Source": "assets/open-source.svg", "API Available": "assets/api.svg", "Closed": "assets/ui.svg"
+}
+TOOLING_SVG_MAP = {
+    "Standard": {"light": "assets/star-light.svg", "dark": "assets/star-dark.svg"},
+    "Custom with Standard Search": {"light": "assets/diamond-light.svg", "dark": "assets/diamond-dark.svg"},
+    "Fully Custom": {"light": "assets/circle-light.svg", "dark": "assets/circle-dark.svg"},
+}
 
 # --- NEW: A global cache to store encoded SVG data ---
-SVG_DATA_URI_CACHE = {}
-
-def get_svg_as_data_uri(file_path: str) -> str:
-    """
-    Reads an SVG file, encodes it in Base64, and returns a Data URI.
-    Uses a cache to avoid re-reading files from disk.
-    """
-    # Return from cache if we have already processed this file
-    if file_path in SVG_DATA_URI_CACHE:
-        return SVG_DATA_URI_CACHE[file_path]
-
+def get_svg_as_data_uri(path: str) -> str:
+    """Reads an SVG file and returns it as a base64-encoded data URI."""
     try:
-        # Read the file in binary mode, encode it, and format as a Data URI
-        with open(file_path, "rb") as svg_file:
-            encoded_string = base64.b64encode(svg_file.read()).decode('utf-8')
-        data_uri = f"data:image/svg+xml;base64,{encoded_string}"
-
-        # Store in cache for future use
-        SVG_DATA_URI_CACHE[file_path] = data_uri
-        return data_uri
+        with open(path, "rb") as svg_file:
+            encoded_svg = base64.b64encode(svg_file.read()).decode("utf-8")
+            return f"data:image/svg+xml;base64,{encoded_svg}"
     except FileNotFoundError:
-        # If the file doesn't exist, print a warning and return an empty string
-        print(f"Warning: SVG file not found at '{file_path}'")
+        print(f"Warning: SVG file not found at {path}")
         return ""
+
+# Create a pre-loaded version of our map. This should be run ONCE when the app starts.
+PRELOADED_URI_MAP = {
+    openness: {
+        tooling: get_svg_as_data_uri(path)
+        for tooling, path in tooling_map.items()
+    }
+    for openness, tooling_map in COMBINED_ICON_MAP.items()
+}
+def get_combined_icon_html(row, uri_map):
+    """
+    Looks up the correct icon URI from the pre-loaded map based on the row's
+    'Openness' and 'Agent Tooling' values and returns an HTML <img> tag.
+    """
+    openness_val = row['Openness']
+    tooling_val = row['Agent Tooling']
+    uri = uri_map.get(openness_val, {}).get(tooling_val, "")
+    # The tooltip will show the exact combination for clarity.
+    tooltip = f"Openness: {openness_val}, Tooling: {tooling_val}"
+
+    # Return the HTML string that Gradio will render in the DataFrame.
+    return f'<img src="{uri}" alt="{tooltip}" title="{tooltip}" style="width:24px; height:24px;">'
 
 def create_svg_html(value, svg_map):
     """
@@ -107,16 +145,6 @@ def create_svg_html(value, svg_map):
 
     # Fallback in case of an unexpected data type
     return ""
-
-# Global variables
-OPENNESS_SVG_MAP = {
-    "Open Source + Open Weights": "assets/open-weights.svg", "Open Source": "assets/open-source.svg", "API Available": "assets/api.svg", "Closed": "assets/ui.svg"
-}
-TOOLING_SVG_MAP = {
-    "Standard": {"light": "assets/star-light.svg", "dark": "assets/star-dark.svg"},
-    "Custom with Standard Search": {"light": "assets/diamond-light.svg", "dark": "assets/diamond-dark.svg"},
-    "Fully Custom": {"light": "assets/circle-light.svg", "dark": "assets/circle-dark.svg"},
-}
 
 # Dynamically generate the correct HTML for the legend parts
 openness_html = " ".join([create_svg_html(name, OPENNESS_SVG_MAP) for name in OPENNESS_SVG_MAP])
@@ -284,9 +312,12 @@ def create_leaderboard_display(
         axis=1
     )
     # Create mapping for Openness / tooling
-    df_view['Openness'] = df_view['Openness'].apply(lambda x: create_svg_html(x, OPENNESS_SVG_MAP))
-    df_view['Agent Tooling'] = df_view['Agent Tooling'].apply(lambda x: create_svg_html(x, TOOLING_SVG_MAP))
-
+    # df_view['Openness'] = df_view['Openness'].apply(lambda x: create_svg_html(x, OPENNESS_SVG_MAP))
+    # df_view['Agent Tooling'] = df_view['Agent Tooling'].apply(lambda x: create_svg_html(x, TOOLING_SVG_MAP))
+    df_view['Icon'] = df_view.apply(
+        lambda row: get_combined_icon_html(row, PRELOADED_URI_MAP),
+        axis=1  # IMPORTANT: axis=1 tells pandas to process row-by-row
+    )
 
     # Format cost columns
     for col in df_view.columns:
@@ -303,11 +334,12 @@ def create_leaderboard_display(
     df_view['LLM Base'] = df_view['LLM Base'].apply(format_llm_base_with_html)
 
     all_cols = df_view.columns.tolist()
-    # Remove 'Pareto' from the list and insert it at the beginning
+    # Remove pareto and Icon columns and insert it at the beginning
+    all_cols.insert(0, all_cols.pop(all_cols.index('Icon')))
     all_cols.insert(0, all_cols.pop(all_cols.index('Pareto')))
     df_view = df_view[all_cols]
     # Drop internally used columns that are not needed in the display
-    columns_to_drop = ['id', 'agent_for_hover']
+    columns_to_drop = ['id', 'agent_for_hover', 'Openness', 'Agent Tooling']
     df_view = df_view.drop(columns=columns_to_drop, errors='ignore')
 
     df_headers = df_view.columns.tolist()
@@ -315,15 +347,14 @@ def create_leaderboard_display(
     for col in df_headers:
         if col in ["Logs", "Agent"] or "Cost" in col or "Score" in col:
             df_datatypes.append("markdown")
-        elif col in ["Openness", "Agent Tooling","LLM Base"]:
+        elif col in ["Icon","LLM Base"]:
             df_datatypes.append("html")
         else:
             df_datatypes.append("str")
 
     header_rename_map = {
         "Pareto": "",
-        "Openness": "",
-        "Agent Tooling": ""
+        "Icon": "",
     }
     # 2. Create the final list of headers for display.
     df_view = df_view.rename(columns=header_rename_map)
@@ -332,7 +363,6 @@ def create_leaderboard_display(
         value=scatter_plot,
         show_label=False
     )
-    gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
     # Put table and key into an accordion
     with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
@@ -343,7 +373,7 @@ def create_leaderboard_display(
             datatype=df_datatypes,
             interactive=False,
             wrap=True,
-            column_widths=[30, 30, 30, 200, 200],
+            column_widths=[40, 40, 200, 200],
             elem_classes=["wrap-header-df"]
         )
 
@@ -414,8 +444,10 @@ def create_benchmark_details_display(
             axis=1
         )
 
-        benchmark_table_df['Openness'] = benchmark_table_df['Openness'].apply(lambda x: create_svg_html(x, OPENNESS_SVG_MAP))
-        benchmark_table_df['Agent Tooling'] = benchmark_table_df['Agent Tooling'].apply(lambda x: create_svg_html(x, TOOLING_SVG_MAP))
+        benchmark_table_df['Icon'] = benchmark_table_df.apply(
+            lambda row: get_combined_icon_html(row, PRELOADED_URI_MAP),
+            axis=1  # IMPORTANT: axis=1 tells pandas to process row-by-row
+        )
 
         #Make pretty and format the LLM Base column
         benchmark_table_df['LLM Base'] = benchmark_table_df['LLM Base'].apply(clean_llm_base_list)
@@ -443,8 +475,7 @@ def create_benchmark_details_display(
         benchmark_table_df = format_score_column(benchmark_table_df, benchmark_score_col)
         desired_cols_in_order = [
             'Pareto',
-            'Openness',
-            'Agent Tooling',
+            'Icon',
             'Agent',
             'Submitter',
             'LLM Base',
@@ -468,15 +499,14 @@ def create_benchmark_details_display(
         for col in df_headers:
             if "Logs" in col or "Cost" in col or "Score" in col:
                 df_datatypes.append("markdown")
-            elif col in ["Openness", "Agent Tooling", "LLM Base"]:
+            elif col in ["Icon", "LLM Base"]:
                 df_datatypes.append("html")
             else:
                 df_datatypes.append("str")
         # Remove Pareto, Openness, and Agent Tooling from the headers
         header_rename_map = {
             "Pareto": "",
-            "Openness": "",
-            "Agent Tooling": ""
+            "Icon": "",
         }
         # 2. Create the final list of headers for display.
         benchmark_table_df = benchmark_table_df.rename(columns=header_rename_map)
@@ -490,7 +520,6 @@ def create_benchmark_details_display(
             name=benchmark_name
         )
         gr.Plot(value=benchmark_plot, show_label=False)
-        gr.HTML(SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
         # Put table and key into an accordion
         with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
             gr.HTML(value=legend_markdown, elem_id="legend-markdown")
@@ -500,7 +529,7 @@ def create_benchmark_details_display(
                 datatype=df_datatypes,
                 interactive=False,
                 wrap=True,
-                column_widths=[40, 40, 40, 200, 150, 175, 85],
+                column_widths=[40, 40, 200, 150, 175, 85],
                 elem_classes=["wrap-header-df"]
             )
 
