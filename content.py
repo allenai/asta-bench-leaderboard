@@ -451,4 +451,10 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0,0,0,0.3);
 }
+.dark #main-header h2 {
+    color: #0fcb8c; 
+}
+#main-header h2 {
+    color: #f0529c;
+}
 """
