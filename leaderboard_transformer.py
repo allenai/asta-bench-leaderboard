@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 INFORMAL_TO_FORMAL_NAME_MAP = {
     # Short Names
     "lit": "Literature Understanding",
+    "code": "Code & Execution",
     "data": "Data Analysis",
-    "code": "Code Execution",
-    "discovery": "Discovery",
+    "discovery": "End-to-End Discovery",
 
     # Validation Names
     "arxivdigestables_validation": "ArxivDIGESTables-Clean",
@@ -41,6 +41,12 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
     "super_test": "SUPER-Expert",
 }
 ORDER_MAP = {
+    'Overall_keys': [
+        'lit',
+        'code',
+        'data',
+        'discovery',
+    ],
     'Literature Understanding': [
         'PaperFindingBench',
         'LitQA2-FullText-Search',
@@ -48,7 +54,7 @@ ORDER_MAP = {
         'LitQA2-FullText',
         'ArxivDIGESTables-Clean'
     ],
-    'Code Execution': [
+    'Code & Execution': [
         'SUPER-Expert',
         'CORE-Bench-Hard',
         'DS-1000'
@@ -117,7 +123,10 @@ def create_pretty_tag_map(raw_tag_map: dict, name_map: dict) -> dict:
     def get_pretty(raw_name):
         return name_map.get(raw_name, raw_name.replace("_", " "))
 
-    for raw_key, raw_value_list in raw_tag_map.items():
+    key_order = ORDER_MAP.get('Overall_keys', [])
+    sorted_keys = sorted(raw_tag_map.keys(), key=lambda x: key_order.index(x) if x in key_order else len(key_order))
+    for raw_key in sorted_keys:
+        raw_value_list = raw_tag_map[raw_key]
         pretty_key = get_pretty(raw_key)
         pretty_value_list = [get_pretty(raw_val) for raw_val in raw_value_list]
 
@@ -271,7 +280,7 @@ class DataTransformer:
         # Calculated and add "Categories Attempted" column
         if primary_metric == "Overall":
             def calculate_attempted(row):
-                main_categories = ['Literature Understanding', 'Data Analysis', 'Code Execution', 'Discovery']
+                main_categories = ['Literature Understanding', 'Code & Execution', 'Data Analysis', 'End-to-End Discovery']
                 count = sum(1 for category in main_categories if pd.notna(row.get(f"{category} Cost")))
 
                 # Return the formatted string with the correct emoji
