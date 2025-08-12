@@ -26,6 +26,7 @@ def build_page():
         with gr.Tab("Results: Test Set") as test_tab:
             test_df, test_tag_map = get_full_leaderboard_data("test")
             if not test_df.empty:
+                gr.Markdown("**Test Set** results are reserved for final assessment. This helps ensure that the agent generalizes well to unseen problems.")
                 create_leaderboard_display(
                     full_df=test_df,
                     tag_map=test_tag_map,
@@ -39,6 +40,7 @@ def build_page():
             validation_df, validation_tag_map = get_full_leaderboard_data("validation")
             # Check if data was loaded successfully before trying to display it
             if not validation_df.empty:
+                gr.Markdown("**Validation Set** results are used during development to tune and compare agents before final testing.")
                 # 2. Render the display by calling the factory with the loaded data.
                 create_leaderboard_display(
                     full_df=validation_df,

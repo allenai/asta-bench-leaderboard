@@ -31,7 +31,18 @@ Each category page includes a summary table (average score and cost per problem 
 🔍 Learn more in the AstaBench technical blog post
 """
 SCATTER_DISCLAIMER = """
-Note: Only agents with valid cost data are shown in the scatter plot, as both performance and efficiency are required for comparison. Agents without cost data still appear in the tables below.
+**Note:** Agents without cost data are displayed to the right of the vertical divider line. <span class="tooltip-icon" data-tooltip="Missing Cost Dashed Line: Max Cost + (MaxCost/10) Missing Cost Datapoints/No Cost Data = Max Cost + (MaxCost/5)">ⓘ</span>
+"""
+scatter_disclaimer_html = """
+<div class="disclaimer-text">
+    <b>Note:</b> Agents without cost data are displayed to the right of the vertical divider line.
+    <span class="tooltip-icon" data-tooltip="Missing Cost Dashed Line: 
+    Max Cost + (MaxCost/10)
+    Missing Cost Datapoints / No Cost Data: 
+    Max Cost + (MaxCost/5)">
+        ⓘ
+    </span>
+</div>
 """
 PARETO_DISCLAIMER = """
 Agents names that are green are Pareto optimal, meaning they achieve the best performance for their cost. 
@@ -164,7 +175,7 @@ table.gr-table {
     padding-top: 0 !important;
 }
 #scatter-disclaimer {
-    color: #f0529c !important;
+        overflow: visible !important;
 }
 #pareto-disclaimer {
     color: #f0529c !important;
