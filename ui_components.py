@@ -20,7 +20,7 @@ from leaderboard_transformer import (
     clean_llm_base_list,
 )
 from content import (
-    SCATTER_DISCLAIMER,
+    scatter_disclaimer_html,
     format_error,
     format_log,
     format_warning,
@@ -340,7 +340,7 @@ def create_leaderboard_display(
         value=scatter_plot,
         show_label=False
     )
-
+    gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
     # Put table and key into an accordion
     with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
         gr.HTML(value=legend_markdown, elem_id="legend-markdown")
@@ -497,6 +497,7 @@ def create_benchmark_details_display(
             name=benchmark_name
         )
         gr.Plot(value=benchmark_plot, show_label=False)
+        gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
         # Put table and key into an accordion
         with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
             gr.HTML(value=legend_markdown, elem_id="legend-markdown")

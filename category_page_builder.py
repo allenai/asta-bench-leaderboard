@@ -20,6 +20,7 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
             with gr.Tab("Results: Test Set") as test_tab:
                 # Repeat the process for the "test" split
                 if not test_df.empty:
+                    gr.Markdown("**Test Set** results are reserved for final assessment. This helps ensure that the agent generalizes well to unseen problems.")
                     create_leaderboard_display(
                         full_df=test_df,
                         tag_map=test_tag_map,
@@ -36,6 +37,7 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
             with gr.Tab("Results: Validation Set") as validation_tab:
                 # 1. Load all necessary data for the "validation" split ONCE.
                 if not validation_df.empty:
+                    gr.Markdown("**Validation Set** results are used during development to tune and compare agents before final testing.")
                     # 2. Render the main category display using the loaded data.
                     create_leaderboard_display(
                         full_df=validation_df,

@@ -362,7 +362,7 @@ def _plot_scatter_plotly(
     data_plot = data.copy()
     data_plot[y_col_to_use] = pd.to_numeric(data_plot[y_col_to_use], errors='coerce')
 
-    x_axis_label = f"Cost per problem (USD)" if x else "Cost (Data N/A)"
+    x_axis_label = f"Average (mean) cost per problem (USD)" if x else "Cost (Data N/A)"
     max_reported_cost = 0
     divider_line_x = 0
 
@@ -543,7 +543,7 @@ def _plot_scatter_plotly(
         template="plotly_white",
         title=f"Astabench {name} Leaderboard",
         xaxis=xaxis_config, # Use the updated config
-        yaxis=dict(title="Score", rangemode="tozero"),
+        yaxis=dict(title="Average (mean) score", rangemode="tozero"),
         legend=dict(
             bgcolor='#FAF2E9',
         ),
