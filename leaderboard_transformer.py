@@ -574,7 +574,6 @@ def _plot_scatter_plotly(
             layer="above",
         ),
     )
-
     return fig
 
 

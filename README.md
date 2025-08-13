@@ -18,9 +18,35 @@ tags:
 The leaderboard is built using the [HuggingFace Datasets](https://huggingface.co/docs/datasets/index) library, which provides a convenient way to manage and query datasets.
 It's currently pointed at the [AstaBench Leaderboard](https://huggingface.co/datasets/allenai/asta-bench-internal-results/) dataset, which is a public dataset hosted on HuggingFace.
 
-To run the leaderboard locally, you can use the following command:
+To run the leaderboard locally, you will first need to clone all the datasets that the leaderboard depends on.
+
+Set up SSH-based access to HuggingFace, exactly as you would for GitHub. https://huggingface.co/settings/keys
+Often this means copy the contents of ~/.ssh/id_rsa.pub to your HuggingFace account. Check that HF recognizes
+you over SSH by briefly connecting to it. You should see a message like this:
+
+```
+$> ssh git@hf.co
+PTY allocation request failed on channel 0
+Hi dirkraft, welcome to Hugging Face.
+Connection to hf.co closed.
+```
+
+To avoid polluting the real datasets on HuggingFace, clone all the datasets into a local directory.
+You will set this as ABL_DATASET_PREFIX for development. Then you will be able to freely manipulate each
+of these locally to work on the leaderboard and avoid generating a lot of junk commits on HuggingFace.
+
+Internal datasets
+* `git clone git@hf.co:datasets/allenai/asta-bench-internal-submissions`
+* `git clone git@hf.co:datasets/allenai/asta-bench-internal-results`
+* `git clone git@hf.co:datasets/allenai/asta-bench-internal-contact-info`
+
+Public datasets
+* `git clone git@hf.co:datasets/allenai/asta-bench-submissions`
+* `git clone git@hf.co:datasets/allenai/asta-bench-results`
+* `git clone git@hf.co:datasets/allenai/asta-bench-contact-info`
 
 ```bash
+export ABL_DATASET_PREFIX="/path/to/dataset/root"
 python app.py
 ```
 This will start a local server that you can access in your web browser at `http://localhost:7860`.
