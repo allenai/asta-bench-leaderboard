@@ -6,6 +6,7 @@ import urllib.parse
 from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
 
+from config import LEADERBOARD_PATH, LOCAL_DEBUG
 from content import css
 from main_page import build_page as build_main_page
 from literature_understanding import build_page as build_lit_page
