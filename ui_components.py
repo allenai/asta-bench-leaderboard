@@ -19,12 +19,13 @@ from leaderboard_transformer import (
     get_pareto_df,
     clean_llm_base_list,
 )
-from config import (
-    CONFIG_NAME,
-    EXTRACTED_DATA_DIR,
-    IS_INTERNAL,
-    RESULTS_DATASET,
-)
+# from config import (
+#     CONFIG_NAME,
+#     EXTRACTED_DATA_DIR,
+#     IS_INTERNAL,
+#     RESULTS_DATASET,
+#     LOCAL_DEBUG,
+# )
 from content import (
     scatter_disclaimer_html,
     format_error,
@@ -37,7 +38,25 @@ from content import (
 api = HfApi()
 MAX_UPLOAD_BYTES = 100 * 1024**2
 AGENTEVAL_MANIFEST_NAME = "agenteval.json"
-os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
+# --- Constants and Configuration  ---
+LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
+CONFIG_NAME = os.getenv("HF_CONFIG", "1.0.0-dev1") # This corresponds to 'config' in LeaderboardViewer
+IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
+
+OWNER = "allenai"
+PROJECT_NAME = "asta-bench" + ("-internal" if IS_INTERNAL else "")
+SUBMISSION_DATASET = f"{OWNER}/{PROJECT_NAME}-submissions"
+SUBMISSION_DATASET_PUBLIC = f"{OWNER}/{PROJECT_NAME}-submissions-public"
+CONTACT_DATASET = f"{OWNER}/{PROJECT_NAME}-contact-info"
+RESULTS_DATASET = f"{OWNER}/{PROJECT_NAME}-results" # This is the repo_id for LeaderboardViewer
+LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
+
+if LOCAL_DEBUG:
+    DATA_DIR = os.path.join(os.path.dirname(__file__), "data", CONFIG_NAME)
+else:
+    DATA_DIR = "/home/user/data/" + CONFIG_NAME
+EXTRACTED_DATA_DIR = os.path.join(DATA_DIR, "extracted")
+# os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 # Global variables
 COMBINED_ICON_MAP = {
     "Open Source + Open Weights": {
@@ -62,15 +81,15 @@ COMBINED_ICON_MAP = {
     }
 }
 OPENNESS_SVG_MAP = {
-    "Open Source + Open Weights": "assets/os-ow-standard.svg",
-    "Open Source": "assets/os-standard.svg",
-    "API Available": "assets/api-standard.svg",
-    "Closed": "assets/c-standard.svg",
+    "Open Source + Open Weights": "assets/os-ow-legend.svg",
+    "Open Source": "assets/os-legend.svg",
+    "API Available": "assets/api-legend.svg",
+    "Closed": "assets/c-legend.svg",
 }
 TOOLING_SVG_MAP = {
-    "Standard": "assets/os-ow-standard.svg",
-    "Custom with Standard Search": "assets/os-ow-equivalent.svg",
-    "Fully Custom": "assets/os-ow-custom.svg",
+    "Standard": "assets/standard-legend.svg",
+    "Custom with Standard Search": "assets/equivalent-legend.svg",
+    "Fully Custom": "assets/custom-legend.svg",
 }
 
 def get_svg_as_data_uri(path: str) -> str:
@@ -122,6 +141,100 @@ def create_svg_html(value, svg_map):
         return f'<img src="{src}" style="width: 16px; height: 16px; vertical-align: middle;" alt="{value}" title="{value}">'
     return ""
 
+def build_openness_tooltip_content() -> str:
+    """
+    Generates the inner HTML for the Agent Openness tooltip card,
+    including the SVG icons.
+    """
+    descriptions = {
+        "Open Source + Open Weights": "Both code and ML models are open",
+        "Open Source": "Code is open but uses an ML model with closed-weights",
+        "API Available": "No access to code; API access only",
+        "Closed": "No access to code or API; UI  access only",
+    }
+    html_items = []
+    for name, path in OPENNESS_SVG_MAP.items():
+        uri = get_svg_as_data_uri(path)
+        desc = descriptions.get(name, "")
+
+        # Create the HTML for a single row in the tooltip legend
+        html_items.append(f"""
+            <div class="tooltip-legend-item">
+                <img src="{uri}" alt="{name}">
+                <div>
+                    <strong>{name}</strong>
+                    <span>{desc}</span>
+                </div>
+            </div>
+        """)
+
+    return "".join(html_items)
+def build_pareto_tooltip_content() -> str:
+    """Generates the inner HTML for the Pareto tooltip card with final copy."""
+    trophy_uri = get_svg_as_data_uri("assets/trophy.svg")
+
+    # We use a multi-line f-string for readability.
+    return f"""
+        <h3>On Pareto Frontier</h3>
+        <p class="tooltip-description">The Pareto frontier represents the best balance between score and cost.</p>
+        <p class="tooltip-description">Agents on the frontier either:</p>
+        <ul class="tooltip-sub-list">
+            <li>Offer the lowest cost for a given performance, or</li>
+            <li>Deliver the best performance at a given cost.</li>
+        </ul>
+        <p class="tooltip-description" style="margin-top: 12px;">These agents are marked with this icon: 🏆</p>
+    """
+
+def build_tooling_tooltip_content() -> str:
+    """Generates the inner HTML for the Agent Tooling tooltip card."""
+    descriptions = {
+        "Standard": "Uses only predefined tools from the evaluation environment (as defined in Inspect's state.tools).",
+        "Custom with Standard Search": "Custom tools for accessing an equivalent underlying environment:",
+        "Fully Custom": "Uses tools beyond constraints of Standard or Custom interface",
+    }
+    custom_interface_sub_list = """
+        <ul class="tooltip-sub-list">
+            <li>Literature tasks: Information access is limited to date-restricted usage of the Asta MCP tools.</li>
+            <li>Code tasks: Code execution is limited to an iPython shell in a machine environment initialized with the standard Asta sandbox Dockerfile (or equivalent).</li>
+        </ul>
+    """
+    html_items = []
+    for name, path in TOOLING_SVG_MAP.items():
+        uri = get_svg_as_data_uri(path)
+        desc = descriptions.get(name, "")
+
+        # Check if this is the special case that needs a sub-list
+        sub_list_html = custom_interface_sub_list if name == "Custom with Standard Search" else ""
+
+        html_items.append(f"""
+            <div class="tooltip-legend-item">
+                <img src="{uri}" alt="{name}">
+                <div>
+                    <strong>{name}</strong>
+                    <span>{desc}</span>
+                    {sub_list_html}
+                </div>
+            </div>
+        """)
+
+    return "".join(html_items)
+
+
+def build_descriptions_tooltip_content() -> str:
+    """Generates the inner HTML for the Column Descriptions tooltip card."""
+    return """
+        <div class="tooltip-description-item"><b>Overall Score:</b> Performance across all benchmarks</div>
+        <div class="tooltip-description-item"><b>Overall Cost:</b> Cost per task in USD</div>
+        <div class="tooltip-description-item"><b>Literature Understanding Score:</b> Performance on scientific literature tasks</div>
+        <div class="tooltip-description-item"><b>Literature Understanding Cost:</b> Cost per literature understanding task in USD</div>
+        <div class="tooltip-description-item"><b>Data Analysis Score:</b> Performance on data analysis tasks</div>
+        <div class="tooltip-description-item"><b>Code Execution Score:</b> Performance on coding tasks</div>
+        <div class="tooltip-description-item"><b>Code Execution Cost:</b> Cost per code execution task in USD</div>
+        <div class="tooltip-description-item"><b>Discovery Score:</b> Performance on information discovery tasks</div>
+        <div class="tooltip-description-item"><b>Discovery Cost:</b> Cost per discovery task in USD</div>
+        <div class="tooltip-description-item"><b>Categories Attempted:</b> Number of benchmark categories the agent participated in</div>
+        <div class="tooltip-description-item"><b>Logs:</b> Link to detailed evaluation logs</div>
+    """
 # Dynamically generate the correct HTML for the legend parts
 openness_html = " ".join([create_svg_html(name, OPENNESS_SVG_MAP) for name in OPENNESS_SVG_MAP])
 tooling_html = " ".join([create_svg_html(name, TOOLING_SVG_MAP) for name in TOOLING_SVG_MAP])
@@ -150,45 +263,59 @@ for name, path in TOOLING_SVG_MAP.items():
     )
 tooling_html = " ".join(tooling_html_items)
 
-
+pareto_tooltip_content = build_pareto_tooltip_content()
+openness_tooltip_content = build_openness_tooltip_content()
+tooling_tooltip_content = build_tooling_tooltip_content()
+descriptions_tooltip_content = build_descriptions_tooltip_content()
 # Your final legend_markdown string (the structure of this does not change)
 legend_markdown = f"""
 <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; font-size: 14px; padding-bottom: 8px;">
         
     <div> <!-- Container for the Pareto section -->
-        <b>Pareto</b><span class="tooltip-icon" data-tooltip="Indicates if agent is on the Pareto frontier
-        ">ⓘ</span>
+        <b>Pareto</b>
+        <span class="tooltip-icon-legend">
+            ⓘ
+            <span class="tooltip-card">{pareto_tooltip_content}</span>
+        </span>
         <div style="padding-top: 4px;"><span>🏆 On frontier</span></div>
     </div>
 
     <div> <!-- Container for the Openness section -->
-        <b>Agent Openness</b><span class="tooltip-icon" data-tooltip="•Closed: No API or code available
-        •API Available: API available, but no code
-        •Open Source: Code available, but no weights
-        •Open Source + Open Weights: Code and weights available
-        ">ⓘ</span>
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{openness_html}</div>
+        <b>Agent Openness</b>
+        <span class="tooltip-icon-legend">
+            ⓘ
+            <span class="tooltip-card">
+                <h3>Agent Openness</h3>
+                <p class="tooltip-description">Indicates how transparent and reproducible an agent is.</p>
+                <div class="tooltip-items-container">{openness_tooltip_content}</div>
+            </span>
+        </span>
+        <div style="display: flex; ...">{openness_html}</div>
     </div>
 
     <div> <!-- Container for the Tooling section -->
-        <b>Agent Tooling</b><span class="tooltip-icon" data-tooltip="• Standard: Standard Approach used by the agent
-        • Custom with Standard Search: Standard search used by the agent
-        • Fully Custom: Fully custom tools used by the agent
-        ">ⓘ</span>
+        <b>Agent Tooling</b>
+        <span class="tooltip-icon-legend">
+            ⓘ
+            <span class="tooltip-card">
+                <h3>Agent Tooling</h3>
+                <p class="tooltip-description">Describes the tool usage and execution environment of the agent during evaluation.</p>
+                <div class="tooltip-items-container">{tooling_tooltip_content}</div>
+            </span>
+        </span>
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{tooling_html}</div>
     </div>
     
-     <div><b>Column Descriptions</b><span class="tooltip-icon" data-tooltip="• Overall Score: Performance across all benchmarks
-        • Overall Cost: Cost per task in USD
-        • Literature Understanding Score: Performance on scientific literature tasks
-        • Literature Understanding Cost: Cost per literature understanding task in USD
-        • Data Analysis Score: Performance on data analysis tasks
-        • Code Execution Score: Performance on coding tasks
-        • Code Execution Cost: Cost per code execution task in USD
-        • Discovery Score: Performance on information discovery tasks
-        • Discovery Cost: Cost per discovery task in USD
-        • Categories Attempted: Number of benchmark categories the agent participated in
-        • Logs: Link to detailed evaluation logs">ⓘ</span></div>
+    <div><!-- Container for the Column Descriptions section -->
+        <b>Column Descriptions</b>
+        <span class="tooltip-icon-legend">
+            ⓘ
+            <span class="tooltip-card">
+                <h3>Column Descriptions</h3>
+                <div class="tooltip-items-container">{descriptions_tooltip_content}</div>
+            </span>
+        </span>
+    </div>
 </div>
 """
 

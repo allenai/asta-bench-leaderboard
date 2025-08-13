@@ -445,4 +445,75 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 #main-header h2 {
     color: #f0529c;
 }
+/* --- New HTML-Based Tooltip Styles --- */
+
+/* 1. The icon that triggers the hover */
+.tooltip-icon-legend {
+    position: relative;
+    cursor: help;
+    display: inline-block;
+}
+
+/* 2. The HTML pop-up card. THIS REPLACES the old '::after' rule. */
+.tooltip-card {
+    /* Hiding mechanism */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s;
+    pointer-events: none;
+
+    /* Card appearance */
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background-color: #083c40;
+    color: #e5e7eb;
+    border-radius: 12px;
+    padding: 15px;
+    width: max-content;
+    max-width: 400px;
+    text-align: left;
+}
+
+/* 3. The hover state: when you hover the icon, show the card */
+.tooltip-icon-legend:hover .tooltip-card {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 4. Typography inside the card */
+.tooltip-card h3 {
+    font-size: 18px; color: #fff; margin-top: 0; margin-bottom: 12px;
+}
+.tooltip-card .tooltip-description {
+    margin-bottom: 20px; line-height: 1.3;
+}
+.tooltip-card .tooltip-items-container {
+    display: flex; flex-direction: column; gap: 10px;
+}
+.tooltip-card .tooltip-legend-item {
+    display: flex; align-items: flex-start; gap: 10px;
+}
+.tooltip-card .tooltip-legend-item img {
+    width: 20px; height: 20px; margin-top: 2px;
+}
+.tooltip-card .tooltip-legend-item div {
+    display: flex; flex-direction: column;
+}
+.tooltip-card .tooltip-legend-item strong {
+    font-weight: 600; color: #fff;
+}
+.tooltip-card .tooltip-legend-item span {
+    font-size: 13px; line-height: 1.3;
+}
+.tooltip-sub-list {
+    list-style-type: '• '; 
+    padding-left: 18px;         
+    font-size: 13px;
+    line-height: 1.3;  
+    display: flex;
+    flex-direction: column;          
+}
 """
