@@ -445,4 +445,18 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 #main-header h2 {
     color: #f0529c;
 }
+#about-page-content-wrapper {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 800px; 
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column; 
+  gap: 40px; 
+  margin-top: 40px;
+  opacity: 85%; 
+}
+.divider-line {
+    opacity: 40%;
+}
 """
