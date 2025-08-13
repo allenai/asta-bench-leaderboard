@@ -44,10 +44,6 @@ MAX_UPLOAD_BYTES = 100 * 1024**2
 AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 
-# --- Global State for Viewers (simple caching) ---
-CACHED_VIEWERS = {}
-CACHED_TAG_MAPS = {}
-
 # --- Submission Logic (largely unchanged from original, ensure LeaderboardSubmission and other deps are fine) ---
 def try_load_dataset_submission(*args, **kwargs) -> DatasetDict: # Renamed to avoid conflict if LV has one
     try:
@@ -206,6 +202,12 @@ def add_new_eval(
         except Exception as e: return format_warning(f"Submission recorded, but contact info failed to save: {e}")
     else: print("mock uploaded contact info", flush=True)
 
+    return format_log(
+        f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split. "
+    )
+
+def _deprecated_scoring_logic():
+    # No longer triggered on eval submission. Kept for quick reference for a little while (2025). TODO delete this.
 
     # 3. Process and score the submission
     eval_result_obj = None # Define to avoid NameError
@@ -258,13 +260,6 @@ def add_new_eval(
         except Exception as e:
             return format_error(f"Failed to upload summary results to leaderboard: {e}")
     else: print("mock uploaded results to lb", flush=True)
-
-    # Invalidate viewer cache for the split that was updated
-    if val_or_test in CACHED_VIEWERS:
-        del CACHED_VIEWERS[val_or_test]
-    if val_or_test in CACHED_TAG_MAPS:
-        del CACHED_TAG_MAPS[val_or_test]
-
 
     return format_log(
         f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split. "
