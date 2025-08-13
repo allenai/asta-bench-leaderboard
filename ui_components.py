@@ -198,21 +198,50 @@ def build_tooling_tooltip_content() -> str:
     return "".join(html_items)
 
 
-def build_descriptions_tooltip_content() -> str:
-    """Generates the inner HTML for the Column Descriptions tooltip card."""
-    return """
-        <div class="tooltip-description-item"><b>Overall Score:</b> Performance across all benchmarks</div>
-        <div class="tooltip-description-item"><b>Overall Cost:</b> Cost per task in USD</div>
-        <div class="tooltip-description-item"><b>Literature Understanding Score:</b> Performance on scientific literature tasks</div>
-        <div class="tooltip-description-item"><b>Literature Understanding Cost:</b> Cost per literature understanding task in USD</div>
-        <div class="tooltip-description-item"><b>Data Analysis Score:</b> Performance on data analysis tasks</div>
-        <div class="tooltip-description-item"><b>Code Execution Score:</b> Performance on coding tasks</div>
-        <div class="tooltip-description-item"><b>Code Execution Cost:</b> Cost per code execution task in USD</div>
-        <div class="tooltip-description-item"><b>Discovery Score:</b> Performance on information discovery tasks</div>
-        <div class="tooltip-description-item"><b>Discovery Cost:</b> Cost per discovery task in USD</div>
-        <div class="tooltip-description-item"><b>Categories Attempted:</b> Number of benchmark categories the agent participated in</div>
-        <div class="tooltip-description-item"><b>Logs:</b> Link to detailed evaluation logs</div>
-    """
+def build_descriptions_tooltip_content(table) -> str:
+    """Generates the inner HTML for the Column Descriptions tooltip card depending on which kind of table."""
+    if table == "Overall":
+        return """
+            <div class="tooltip-description-item"><b>Agent:</b> Name of the evaluated agent.</div>
+            <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
+            <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
+            <div class="tooltip-description-item"><b>Overall Score:</b> Macro-average of the four category-level average scores. Each category contributes equally.</div>
+            <div class="tooltip-description-item"><b>Overall Cost:</b> Macro-average cost per problem across all categories, in USD. Based on submission-time values. Each category contributes equally</div>
+            <div class="tooltip-description-item"><b>Literature Understanding Score:</b> Macro-average score across Literature Understanding benchmarks.</div>
+            <div class="tooltip-description-item"><b>Literature Understanding Cost:</b> Macro-average cost per problem (USD) across Literature Understanding benchmarks.</div>
+            <div class="tooltip-description-item"><b>Code Execution Score:</b> Macro-average score across Code & Execution benchmarks.</div>
+            <div class="tooltip-description-item"><b>Code Execution Cost:</b> Macro-average cost per problem (USD) across Code & Execution benchmarks.</div>
+            <div class="tooltip-description-item"><b>Data Analysis Score:</b> Macro-average score across Data Analysis benchmarks.</div>
+            <div class="tooltip-description-item"><b>Data Analysis Cost:</b> Macro-average cost per problem (USD) across Data Analysis benchmarks.</div>
+            <div class="tooltip-description-item"><b>End-to-End Discovery Score:</b> Macro-average score across End-to-End Discovery benchmarks.</div>
+            <div class="tooltip-description-item"><b>End-to-End Discovery Cost:</b> Macro-average cost per problem (USD)across End-to-End Discovery benchmarks.</div>
+            <div class="tooltip-description-item"><b>Categories Attempted:</b> Number of core categories with at least one benchmark attempted (out of 4).</div>
+            <div class="tooltip-description-item"><b>Logs:</b> View evaluation run logs (e.g., outputs, traces).</div>
+        """
+    elif table in ["Literature Understanding", "Code & Execution", "Data Analysis", "End-to-End Discovery"]:
+        return f"""
+            <div class="tooltip-description-item"><b>Agent:</b> Name of the evaluated agent.</div>
+            <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
+            <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
+            <div class="tooltip-description-item"><b>{table} Score:</b> Macro-average score across {table} benchmarks.</div>
+            <div class="tooltip-description-item"><b>{table} Cost:</b> Macro-average cost per problem (USD) across {table} benchmarks.</div>
+            <div class="tooltip-description-item"><b>Benchmark Score:</b> Average (mean) score on the benchmark.</div>
+            <div class="tooltip-description-item"><b>Benchmark Cost:</b> Average (mean) cost per problem (USD) on the benchmark.</div>
+            <div class="tooltip-description-item"><b>Benchmarks Attempted:</b> Number of benchmarks attempted in this category (e.g., 3/5).</div>
+            <div class="tooltip-description-item"><b>Logs:</b> View evaluation run logs (e.g., outputs, traces).</div>
+        """
+    else:
+        # Fallback for any other table type, e.g., individual benchmarks
+        return f"""
+            <div class="tooltip-description-item"><b>Agent:</b> Name of the evaluated agent.</div>
+            <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
+            <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
+            <div class="tooltip-description-item"><b>Benchmark Attempted:</b> Indicates whether the agent attempted this benchmark.</div>
+            <div class="tooltip-description-item"><b>{table} Score:</b> Score achieved by the agent on this benchmark.</div>
+            <div class="tooltip-description-item"><b>{table} Cost:</b> Cost incurred by the agent to solve this benchmark (in USD).</div>
+            <div class="tooltip-description-item"><b>Logs:</b> View evaluation run logs (e.g., outputs, traces).</div>
+        """
+
 # Dynamically generate the correct HTML for the legend parts
 openness_html = " ".join([create_svg_html(name, OPENNESS_SVG_MAP) for name in OPENNESS_SVG_MAP])
 tooling_html = " ".join([create_svg_html(name, TOOLING_SVG_MAP) for name in TOOLING_SVG_MAP])
@@ -244,58 +273,64 @@ tooling_html = " ".join(tooling_html_items)
 pareto_tooltip_content = build_pareto_tooltip_content()
 openness_tooltip_content = build_openness_tooltip_content()
 tooling_tooltip_content = build_tooling_tooltip_content()
-descriptions_tooltip_content = build_descriptions_tooltip_content()
-# Your final legend_markdown string (the structure of this does not change)
-legend_markdown = f"""
-<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; font-size: 14px; padding-bottom: 8px;">
-        
-    <div> <!-- Container for the Pareto section -->
-        <b>Pareto</b>
-        <span class="tooltip-icon-legend">
-            ⓘ
-            <span class="tooltip-card">{pareto_tooltip_content}</span>
-        </span>
-        <div style="padding-top: 4px;"><span>🏆 On frontier</span></div>
-    </div>
 
-    <div> <!-- Container for the Openness section -->
-        <b>Agent Openness</b>
-        <span class="tooltip-icon-legend">
-            ⓘ
-            <span class="tooltip-card">
-                <h3>Agent Openness</h3>
-                <p class="tooltip-description">Indicates how transparent and reproducible an agent is.</p>
-                <div class="tooltip-items-container">{openness_tooltip_content}</div>
+def create_legend_markdown(which_table: str) -> str:
+    """
+    Generates the complete HTML for the legend section, including tooltips.
+    This is used in the main leaderboard display.
+    """
+    descriptions_tooltip_content = build_descriptions_tooltip_content(which_table)
+    legend_markdown = f"""
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; font-size: 14px; padding-bottom: 8px;">
+            
+        <div> <!-- Container for the Pareto section -->
+            <b>Pareto</b>
+            <span class="tooltip-icon-legend">
+                ⓘ
+                <span class="tooltip-card">{pareto_tooltip_content}</span>
             </span>
-        </span>
-        <div style="display: flex; ...">{openness_html}</div>
-    </div>
-
-    <div> <!-- Container for the Tooling section -->
-        <b>Agent Tooling</b>
-        <span class="tooltip-icon-legend">
-            ⓘ
-            <span class="tooltip-card">
-                <h3>Agent Tooling</h3>
-                <p class="tooltip-description">Describes the tool usage and execution environment of the agent during evaluation.</p>
-                <div class="tooltip-items-container">{tooling_tooltip_content}</div>
-            </span>
-        </span>
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{tooling_html}</div>
-    </div>
+            <div style="margin-top: 8px;"><span>🏆 On frontier</span></div>
+        </div>
     
-    <div><!-- Container for the Column Descriptions section -->
-        <b>Column Descriptions</b>
-        <span class="tooltip-icon-legend">
-            ⓘ
-            <span class="tooltip-card">
-                <h3>Column Descriptions</h3>
-                <div class="tooltip-items-container">{descriptions_tooltip_content}</div>
+        <div> <!-- Container for the Openness section -->
+            <b>Agent Openness</b>
+            <span class="tooltip-icon-legend">
+                ⓘ
+                <span class="tooltip-card">
+                    <h3>Agent Openness</h3>
+                    <p class="tooltip-description">Indicates how transparent and reproducible an agent is.</p>
+                    <div class="tooltip-items-container">{openness_tooltip_content}</div>
+                </span>
             </span>
-        </span>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 8px;">{openness_html}</div>
+        </div>
+    
+        <div> <!-- Container for the Tooling section -->
+            <b>Agent Tooling</b>
+            <span class="tooltip-icon-legend">
+                ⓘ
+                <span class="tooltip-card">
+                    <h3>Agent Tooling</h3>
+                    <p class="tooltip-description">Describes the tool usage and execution environment of the agent during evaluation.</p>
+                    <div class="tooltip-items-container">{tooling_tooltip_content}</div>
+                </span>
+            </span>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 8px;">{tooling_html}</div>
+        </div>
+        
+        <div><!-- Container for the Column Descriptions section -->
+            <b>Column Descriptions</b>
+            <span class="tooltip-icon-legend">
+                ⓘ
+                <span class="tooltip-card">
+                    <h3>Column Descriptions</h3>
+                    <div class="tooltip-items-container">{descriptions_tooltip_content}</div>
+                </span>
+            </span>
+        </div>
     </div>
-</div>
-"""
+    """
+    return legend_markdown
 
 # --- Global State for Viewers (simple caching) ---
 CACHED_VIEWERS = {}
@@ -435,7 +470,6 @@ def create_leaderboard_display(
     gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
     # Put table and key into an accordion
     with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
-        gr.HTML(value=legend_markdown, elem_id="legend-markdown")
         dataframe_component = gr.DataFrame(
             headers=df_headers,
             value=df_view,
@@ -445,6 +479,8 @@ def create_leaderboard_display(
             column_widths=[40, 40, 200, 200],
             elem_classes=["wrap-header-df"]
         )
+        legend_markdown = create_legend_markdown(category_name)
+        gr.HTML(value=legend_markdown, elem_id="legend-markdown")
 
     # Return the components so they can be referenced elsewhere.
     return plot_component, dataframe_component
@@ -592,7 +628,6 @@ def create_benchmark_details_display(
         gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
         # Put table and key into an accordion
         with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
-            gr.HTML(value=legend_markdown, elem_id="legend-markdown")
             gr.DataFrame(
                 headers=df_headers,
                 value=benchmark_table_df,
@@ -602,6 +637,8 @@ def create_benchmark_details_display(
                 column_widths=[40, 40, 200, 150, 175, 85],
                 elem_classes=["wrap-header-df"]
             )
+            legend_markdown = create_legend_markdown(benchmark_name)
+            gr.HTML(value=legend_markdown, elem_id="legend-markdown")
 
 def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     """

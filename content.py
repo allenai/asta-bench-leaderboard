@@ -447,14 +447,14 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 }
 /* --- New HTML-Based Tooltip Styles --- */
 
-/* 1. The icon that triggers the hover */
+/* The icon that triggers the hover */
 .tooltip-icon-legend {
     position: relative;
     cursor: help;
     display: inline-block;
 }
 
-/* 2. The HTML pop-up card. THIS REPLACES the old '::after' rule. */
+/* The HTML pop-up card.*/
 .tooltip-card {
     /* Hiding mechanism */
     opacity: 0;
@@ -477,13 +477,11 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     text-align: left;
 }
 
-/* 3. The hover state: when you hover the icon, show the card */
 .tooltip-icon-legend:hover .tooltip-card {
     opacity: 1;
     visibility: visible;
 }
 
-/* 4. Typography inside the card */
 .tooltip-card h3 {
     font-size: 18px; color: #fff; margin-top: 0; margin-bottom: 12px;
 }
