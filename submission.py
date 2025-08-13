@@ -29,7 +29,6 @@ from config import (
     LOCAL_DEBUG,
     RESULTS_DATASET,
     SUBMISSION_DATASET,
-    SUBMISSION_DATASET_PUBLIC,
 )
 from content import (
     CITATION_BUTTON_LABEL,
@@ -228,13 +227,11 @@ def add_new_eval(
         return format_error(f"Error scoring submission: {e}. Check manifest and log files.")
 
     # 4. Upload scored submission files
-    logs_url_private_val, logs_url_public_val = None, None
+    logs_url = None
     scored_submission_name = f"{submission_name}_scored"
     if not LOCAL_DEBUG:
         try:
-            logs_url_private_val = checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET, CONFIG_NAME, val_or_test, scored_submission_name)
-            if val_or_test == "validation" and not IS_INTERNAL: # Public copy for validation
-                logs_url_public_val = checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET_PUBLIC, CONFIG_NAME, val_or_test, scored_submission_name)
+            logs_url = checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET, CONFIG_NAME, val_or_test, scored_submission_name)
         except ValueError as e: return format_error(str(e))
         except Exception as e: return format_error(f"Failed to upload scored submission: {e}")
     else: print("mock uploaded scored submission", flush=True)
@@ -248,8 +245,7 @@ def add_new_eval(
     eval_result_obj.submission.degree_of_control = degree_of_control
     eval_result_obj.submission.username = username
     eval_result_obj.submission.submit_time = submission_time
-    eval_result_obj.submission.logs_url = logs_url_private_val
-    eval_result_obj.submission.logs_url_public = logs_url_public_val
+    eval_result_obj.submission.logs_url = logs_url
 
     # 5. Upload summary statistics to RESULTS_DATASET (for the leaderboard)
     if not LOCAL_DEBUG:
