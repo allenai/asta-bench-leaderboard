@@ -19,13 +19,12 @@ from leaderboard_transformer import (
     get_pareto_df,
     clean_llm_base_list,
 )
-# from config import (
-#     CONFIG_NAME,
-#     EXTRACTED_DATA_DIR,
-#     IS_INTERNAL,
-#     RESULTS_DATASET,
-#     LOCAL_DEBUG,
-# )
+from config import (
+    CONFIG_NAME,
+    EXTRACTED_DATA_DIR,
+    IS_INTERNAL,
+    RESULTS_DATASET,
+)
 from content import (
     scatter_disclaimer_html,
     format_error,
@@ -38,46 +37,28 @@ from content import (
 api = HfApi()
 MAX_UPLOAD_BYTES = 100 * 1024**2
 AGENTEVAL_MANIFEST_NAME = "agenteval.json"
-# --- Constants and Configuration  ---
-LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
-CONFIG_NAME = os.getenv("HF_CONFIG", "1.0.0-dev1") # This corresponds to 'config' in LeaderboardViewer
-IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
-
-OWNER = "allenai"
-PROJECT_NAME = "asta-bench" + ("-internal" if IS_INTERNAL else "")
-SUBMISSION_DATASET = f"{OWNER}/{PROJECT_NAME}-submissions"
-SUBMISSION_DATASET_PUBLIC = f"{OWNER}/{PROJECT_NAME}-submissions-public"
-CONTACT_DATASET = f"{OWNER}/{PROJECT_NAME}-contact-info"
-RESULTS_DATASET = f"{OWNER}/{PROJECT_NAME}-results" # This is the repo_id for LeaderboardViewer
-LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
-
-if LOCAL_DEBUG:
-    DATA_DIR = os.path.join(os.path.dirname(__file__), "data", CONFIG_NAME)
-else:
-    DATA_DIR = "/home/user/data/" + CONFIG_NAME
-EXTRACTED_DATA_DIR = os.path.join(DATA_DIR, "extracted")
-# os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
+os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 # Global variables
 COMBINED_ICON_MAP = {
     "Open Source + Open Weights": {
-        "Standard": "assets/os-ow-standard.svg",        # Bright pink star
-        "Custom with Standard Search": "assets/os-ow-equivalent.svg",    # Bright pink diamond
-        "Custom": "assets/os-ow-custom.svg",            # Bright pink triangle
+        "Standard": "assets/os-ow-standard.svg",
+        "Custom with Standard Search": "assets/os-ow-equivalent.svg",
+        "Custom": "assets/os-ow-custom.svg",
     },
     "Open Source": {
-        "Standard": "assets/os-standard.svg",        # Orange/pink star
-        "Custom with Standard Search": "assets/os-equivalent.svg",    # Orange/pink diamond
-        "Fully Custom": "assets/os-custom.svg",            # Orange/pink triangle
+        "Standard": "assets/os-standard.svg",
+        "Custom with Standard Search": "assets/os-equivalent.svg",
+        "Fully Custom": "assets/os-custom.svg",
     },
     "API Available": {
-        "Standard": "assets/api-standard.svg",       # Yellow/pink star
-        "Custom with Standard Search": "assets/api-equivalent.svg",   # Yellow/pink diamond
-        "Fully Custom": "assets/api-custom.svg",           # Yellow/pink triangle
+        "Standard": "assets/api-standard.svg",
+        "Custom with Standard Search": "assets/api-equivalent.svg",
+        "Fully Custom": "assets/api-custom.svg",
     },
     "Closed": {
-        "Standard": "assets/c-standard.svg",        # Hollow pink star
-        "Equivalent": "assets/c-equivalent.svg",    # Hollow pink diamond
-        "Fully Custom": "assets/c-custom.svg",            # Hollow pink triangle
+        "Standard": "assets/c-standard.svg",
+        "Equivalent": "assets/c-equivalent.svg",
+        "Fully Custom": "assets/c-custom.svg",
     }
 }
 OPENNESS_SVG_MAP = {
@@ -144,7 +125,6 @@ def create_svg_html(value, svg_map):
 def build_openness_tooltip_content() -> str:
     """
     Generates the inner HTML for the Agent Openness tooltip card,
-    including the SVG icons.
     """
     descriptions = {
         "Open Source + Open Weights": "Both code and ML models are open",
@@ -169,11 +149,9 @@ def build_openness_tooltip_content() -> str:
         """)
 
     return "".join(html_items)
+
 def build_pareto_tooltip_content() -> str:
     """Generates the inner HTML for the Pareto tooltip card with final copy."""
-    trophy_uri = get_svg_as_data_uri("assets/trophy.svg")
-
-    # We use a multi-line f-string for readability.
     return f"""
         <h3>On Pareto Frontier</h3>
         <p class="tooltip-description">The Pareto frontier represents the best balance between score and cost.</p>

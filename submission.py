@@ -21,16 +21,16 @@ from datasets import Dataset, DatasetDict, VerificationMode, load_dataset
 from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
-# from config import (
-#     CONFIG_NAME,
-#     CONTACT_DATASET,
-#     EXTRACTED_DATA_DIR,
-#     IS_INTERNAL,
-#     LOCAL_DEBUG,
-#     RESULTS_DATASET,
-#     SUBMISSION_DATASET,
-#     SUBMISSION_DATASET_PUBLIC,
-# )
+from config import (
+    CONFIG_NAME,
+    CONTACT_DATASET,
+    EXTRACTED_DATA_DIR,
+    IS_INTERNAL,
+    LOCAL_DEBUG,
+    RESULTS_DATASET,
+    SUBMISSION_DATASET,
+    SUBMISSION_DATASET_PUBLIC,
+)
 from content import (
     CITATION_BUTTON_LABEL,
     CITATION_BUTTON_TEXT,
@@ -42,24 +42,6 @@ from content import (
 api = HfApi()
 MAX_UPLOAD_BYTES = 100 * 1024**2
 AGENTEVAL_MANIFEST_NAME = "agenteval.json"
-# --- Constants and Configuration  ---
-LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
-CONFIG_NAME = os.getenv("HF_CONFIG", "1.0.0-dev1") # This corresponds to 'config' in LeaderboardViewer
-IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
-
-OWNER = "allenai"
-PROJECT_NAME = "asta-bench" + ("-internal" if IS_INTERNAL else "")
-SUBMISSION_DATASET = f"{OWNER}/{PROJECT_NAME}-submissions"
-SUBMISSION_DATASET_PUBLIC = f"{OWNER}/{PROJECT_NAME}-submissions-public"
-CONTACT_DATASET = f"{OWNER}/{PROJECT_NAME}-contact-info"
-RESULTS_DATASET = f"{OWNER}/{PROJECT_NAME}-results" # This is the repo_id for LeaderboardViewer
-LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
-
-if LOCAL_DEBUG:
-    DATA_DIR = os.path.join(os.path.dirname(__file__), "data", CONFIG_NAME)
-else:
-    DATA_DIR = "/home/user/data/" + CONFIG_NAME
-EXTRACTED_DATA_DIR = os.path.join(DATA_DIR, "extracted")
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 
 # --- Global State for Viewers (simple caching) ---

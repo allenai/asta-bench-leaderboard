@@ -18,8 +18,11 @@ tags:
 The leaderboard is built using the [HuggingFace Datasets](https://huggingface.co/docs/datasets/index) library, which provides a convenient way to manage and query datasets.
 It's currently pointed at the [AstaBench Leaderboard](https://huggingface.co/datasets/allenai/asta-bench-internal-results/) dataset, which is a public dataset hosted on HuggingFace.
 
-To run the leaderboard locally, you can use the following command:
-
+To run the leaderboard locally first make sure to set this env variable:
+```bash
+export IS_INTERNAL=true
+```
+You can then start it up with the following command:
 ```bash
 python app.py
 ```
