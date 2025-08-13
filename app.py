@@ -6,6 +6,7 @@ import urllib.parse
 from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
 
+from config import LEADERBOARD_PATH, LOCAL_DEBUG
 from content import css
 from main_page import build_page as build_main_page
 from literature_understanding import build_page as build_lit_page
@@ -15,12 +16,6 @@ from e2e import build_page as build_e2e_page
 from submission import build_page as build_submission_page
 from about import build_page as build_about_page
 
-# --- Constants and Configuration  ---
-LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
-IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
-OWNER = "allenai"
-PROJECT_NAME = "asta-bench" + ("-internal" if IS_INTERNAL else "")
-LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
 api = HfApi()
 LOGO_PATH = "assets/logo.svg"
 # JavaScripts
