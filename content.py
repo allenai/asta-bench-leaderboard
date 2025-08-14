@@ -73,6 +73,95 @@ Scores in this category are aggregated from two benchmarks, providing the first 
 <br>
 """
 
+# External URLs for benchmark descriptions
+SCHOLAR_QA_CS_URL = "https://www.semanticscholar.org/paper/OpenScholar%3A-Synthesizing-Scientific-Literature-LMs-Asai-He/b40df4b273f255b3cb5639e220c8ab7b1bdb313e"
+LITQA2_URL = "https://www.semanticscholar.org/paper/Language-agents-achieve-superhuman-synthesis-of-Skarlinski-Cox/fa5f9aa1cb6f97654ca8e6d279ceee1427a87e68"
+ARXIV_DIGESTABLES_URL = "https://www.semanticscholar.org/paper/ArxivDIGESTables%3A-Synthesizing-Scientific-into-Newman-Lee/c7face35e84f2cb04fb1600d54298799aa0ed189"
+SUPER_URL = "https://www.semanticscholar.org/paper/SUPER%3A-Evaluating-Agents-on-Setting-Up-and-Tasks-Bogin-Yang/053ef8299988680d47df36224bfccffc817472f1"
+CORE_BENCH_URL = "https://www.semanticscholar.org/paper/CORE-Bench%3A-Fostering-the-Credibility-of-Published-Siegel-Kapoor/4c913d59d150fe7581386b87dfd9f90448a9adee"
+DS1000_URL = "https://arxiv.org/abs/2211.11501"
+DISCOVERY_BENCH_URL = "https://www.semanticscholar.org/paper/DiscoveryBench%3A-Towards-Data-Driven-Discovery-with-Majumder-Surana/48c83799530dc523ee01e6c1c40ad577d5c10a16"
+
+# Helper function to create external links
+def external_link(url, text, is_s2_url=False):
+    url = f"{url}?utm_source=asta_leaderboard" if is_s2_url else url
+    return f"<a href='{url}' target='_blank' rel='noopener noreferrer'>{text}</a>"
+
+def internal_leaderboard_link(text):
+    return f"<a href='#h-{text.replace(' ', '-').lower()}-leaderboard'>{text}</a>"
+
+# Descriptions for each benchmark
+BENCHMARK_DESCRIPTIONS = {
+    'PaperFindingBench': (
+        "PaperFindingBench assesses an agent's ability to locate sets of papers based on a natural language "
+        "description that may involve both the papers' content and metadata, such as the author or publication year."
+    ),
+    'LitQA2-FullText-Search': (
+        f"A version of {internal_leaderboard_link('LitQA2-FullText')} that isolates the retrieval aspect of the task. "
+        "This benchmark features the same multi-choice questions as {internal_link('h-litqa2-fulltext-leaderboard', 'LitQA2-FullText')}, but the agent is not evaluated on answering the actual question "
+        "but rather on providing a ranked list of papers in which the answer is likely to be found."
+    ),
+    'ScholarQA-CS2': (
+        "ScholarQA-CS2 assesses long-form model responses to literature review questions in the domain of computer science. "
+        "Answers are expected to be comprehensive reports, such as those produced by deep research systems. "
+        f"This benchmark advances on the previously released {external_link(SCHOLAR_QA_CS_URL, 'ScholarQA-CS', is_s2_url=True)} "
+        "by using queries from real-world usage, and introducing new evaluation methods for coverage and precision "
+        "of both the report text and its citations."
+    ),
+    'LitQA2-FullText': (
+        f"{external_link(LITQA2_URL, 'LitQA2', is_s2_url=True)}, a benchmark introduced by FutureHouse, gauges a model's ability to answer questions that require document retrieval from the scientific literature. "
+        "It consists of multiple-choice questions that necessitate finding a unique paper and analyzing its detailed full text to spot precise information; these questions cannot be answered from a paper’s abstract. "
+        "While the original version of the benchmark provided for each question the title of the paper in which the answer can be found, it did not specify the overall collection to search over. In our version, "
+        "we search over the index we provide as part of the Asta standard toolset. The “-FullText” suffix indicates we consider only the subset of LitQA2 questions for which "
+        "the full-text version of the answering paper is open source and available in our index."
+    ),
+    'ArxivDIGESTables-Clean': (
+        f"{external_link(ARXIV_DIGESTABLES_URL, 'ArxivDIGESTables', is_s2_url=True)} assesses the ability of models to construct literature review tables, i.e., tables whose rows are papers and whose columns constitute a set of "
+        "aspects used to compare and contrast the papers. The goal is to construct such tables given a set of related papers and a table caption describing the user's goal. Generated tables are evaluated by "
+        "comparing them to actual tables published in ArXiv papers. The “-Clean” suffix indicates a curated subset of ArxivDIGESTables which drops tables that are either trivial or impossible to reconstruct from full-texts."
+    ),
+    'SUPER-Expert': (
+        "SUPER-Expert evaluates the capability of models in setting up and executing tasks from low-resource "
+        "research repositories—centralized databases containing research data and related materials. "
+        f"The \"-Expert\" split indicates the name of the most challenging split in the {external_link(SUPER_URL, 'original SUPER benchmark', is_s2_url=True)} "
+        "that involves solving reproduction tasks from scratch and without any intermediate hints or details "
+        "about the important landmarks involved in each task."
+    ),
+    'CORE-Bench-Hard': (
+        "Core-Bench-Hard tests computational reproducibility, a task involving reproducing the results of a study "
+        "using provided code and data. It consists of both language-only and vision-language challenges across "
+        "multiple difficulty levels. "
+        f"The \"-Hard\" split refers to the name of the most challenging split in the original {external_link(CORE_BENCH_URL, 'Core-bench benchmark', is_s2_url=True)} "
+        "where only a README file is provided with no instructions or an auxiliary Dockerfile."
+    ),
+    'DS-1000': (
+        "DS-1000 is an established code generation benchmark containing Python data science coding questions "
+        "originally sourced from StackOverflow. It's designed to reflect an array of diverse, realistic, and "
+        "practical use cases and directly involves many of the Python libraries commonly used in data science "
+        f"and machine learning research. We split the original {external_link(DS1000_URL, 'dataset')} "
+        "into 100 validation and 900 test problems."
+    ),
+    'DiscoveryBench': (
+        "DiscoveryBench is the first comprehensive benchmark to formalize the multi-step process of data-driven "
+        "analysis and discovery (i.e., data loading, transformation, statistical analysis, and modeling). "
+        f"Originally introduced {external_link(DISCOVERY_BENCH_URL, 'here', is_s2_url=True)}, it is designed to systematically "
+        "evaluate how well current LLMs can replicate or reproduce published scientific findings across diverse "
+        "domains, including social science, biology, history, and more."
+    ),
+    'E2E-Bench': (
+        "E2E-Bench is the \"decathlon\" of AI-assisted research. It measures whether a system can run the entire "
+        "research pipeline, starting with an initial task description, to designing and performing (software) "
+        "experiments, to analyzing and writing up the results."
+    ),
+    'E2E-Bench-Hard': (
+        f"E2E-Bench-Hard is a more challenging variant of {internal_leaderboard_link('E2E-Bench')}. Tasks are generated using the HypER system, "
+        "which identifies research trends and proposes new, underexplored problems. Unlike the regular version, "
+        "these tasks are not simplified or curated for accessibility; they are reviewed only for feasibility. "
+        "This version is intended to test whether systems can handle more complex and less-structured research "
+        f"scenarios, following the same end-to-end process as {internal_leaderboard_link('E2E-Bench')}."
+    )
+}
+
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"
 CITATION_BUTTON_TEXT = r"""@article{asta-bench,
     title={AstaBench},
@@ -366,11 +455,17 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     grid-row: 2 !important;
     grid-column: 1 / -1 !important;
 }
+.benchmark-main-subtitle{
+    color: #0FCB8C !important;
+}
 .benchmark-header {
     display: flex !important;
     align-items: center !important;
     gap: 20px !important;
     width: 100% !important;
+}
+.benchmark-title{
+    color: #f0529c !important;
 }
 .scroll-up-container .prose {
     display: flex;

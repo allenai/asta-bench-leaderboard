@@ -27,6 +27,7 @@ from config import (
     RESULTS_DATASET,
 )
 from content import (
+    BENCHMARK_DESCRIPTIONS,
     format_error,
     format_log,
     format_warning,
@@ -552,19 +553,14 @@ def create_benchmark_details_display(
 
     gr.HTML(f'<h2 style="padding-top: 120px;">{category_name} Detailed Benchmark Results</h2>')
     gr.Markdown("---")
+    #TODO: need to update color to green
+    gr.HTML('<h2 class="benchmark-main-subtitle">Detailed Benchmark Results</h2>')
+    gr.Markdown("---")
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
-        with gr.Row(elem_classes=["benchmark-header"]):
-            gr.Markdown(f"### {benchmark_name} Leaderboard", header_links=True)
-            button_str = f"""
-            <button
-                class="scroll-up-button"
-                onclick="scroll_to_element('page-content-wrapper')"
-            >
-                {"⬆"}
-            </button>
-            """
-            gr.HTML(button_str,elem_classes="scroll-up-container")
+        gr.HTML(f'<h3 class="benchmark-title" id="h-{benchmark_name.lower()}-leaderboard">{benchmark_name} Leaderboard</h3>')
+        gr.HTML(BENCHMARK_DESCRIPTIONS.get(benchmark_name, ""), elem_classes=["benchmark-description"])
+        gr.HTML(f'<a href="#h-{category_name.lower()}-leaderboard" style="color: inherit; text-decoration: underline;">Return to the aggregate {category_name} leaderboard</a>')
 
         # 3. Prepare the data for this specific benchmark's table and plot
         benchmark_score_col = f"{benchmark_name} Score"
