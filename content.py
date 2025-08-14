@@ -543,4 +543,8 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 .divider-line {
     opacity: 40%;
 }
+#leaderboard-accordion table {
+    width: auto !important;
+    margin-right: auto !important;
+}
 """

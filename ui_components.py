@@ -458,13 +458,13 @@ def create_leaderboard_display(
     all_cols.insert(0, all_cols.pop(all_cols.index('Pareto')))
     df_view = df_view[all_cols]
     # Drop internally used columns that are not needed in the display
-    columns_to_drop = ['id', 'agent_for_hover', 'Openness', 'Agent Tooling']
+    columns_to_drop = ['id', 'Openness', 'Agent Tooling']
     df_view = df_view.drop(columns=columns_to_drop, errors='ignore')
 
     df_headers = df_view.columns.tolist()
     df_datatypes = []
     for col in df_headers:
-        if col in ["Logs", "Agent"] or "Cost" in col or "Score" in col:
+        if col == "Logs" or "Cost" in col or "Score" in col:
             df_datatypes.append("markdown")
         elif col in ["Icon","LLM Base"]:
             df_datatypes.append("html")
@@ -477,6 +477,17 @@ def create_leaderboard_display(
     }
     # 2. Create the final list of headers for display.
     df_view = df_view.rename(columns=header_rename_map)
+    # Dynamically set widths for the DataFrame columns
+    fixed_start_widths = [40, 40, 200, 150, 200, 120, 120]
+    num_score_cost_cols = 0
+    remaining_headers = df_headers[len(fixed_start_widths):]
+    for col in remaining_headers:
+        if "Score" in col or "Cost" in col:
+            num_score_cost_cols += 1
+    dynamic_widths = [80] * num_score_cost_cols
+    fixed_end_widths = [80, 40]
+    # 5. Combine all the lists to create the final, fully dynamic list.
+    final_column_widths = fixed_start_widths + dynamic_widths + fixed_end_widths
 
     plot_component = gr.Plot(
         value=scatter_plot,
@@ -491,7 +502,7 @@ def create_leaderboard_display(
             datatype=df_datatypes,
             interactive=False,
             wrap=True,
-            column_widths=[40, 40, 200, 200],
+            column_widths=final_column_widths,
             elem_classes=["wrap-header-df"]
         )
         legend_markdown = create_legend_markdown(category_name)
@@ -649,7 +660,7 @@ def create_benchmark_details_display(
                 datatype=df_datatypes,
                 interactive=False,
                 wrap=True,
-                column_widths=[40, 40, 200, 150, 175, 85],
+                column_widths=[40, 40, 200, 150, 175, 85, 100, 100, 40],
                 elem_classes=["wrap-header-df"]
             )
             legend_markdown = create_legend_markdown(benchmark_name)
