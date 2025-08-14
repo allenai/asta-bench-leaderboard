@@ -344,30 +344,43 @@ def _plot_scatter_plotly(
 ) -> go.Figure:
 
     # --- Section 1: Define Mappings ---
+    # These include aliases for openness categories,
+    # so multiple names might correspond to the same color.
     color_map = {
         "Open Source + Open Weights": "deeppink",
         "Open Source": "coral",
         "API Available": "yellow",
         "Closed": "white",
+        "Open source & open weights": "deeppink",
+        "Open source & closed weights": "coral",
+        "Closed source & API available": "yellow",
+        "Closed source & UI only": "white",
+    }
+    # Only keep one name per color for the legend.
+    colors_for_legend = {
+        "Open Source + Open Weights",
+        "Open Source",
+        "API Available",
+        "Closed",
     }
     category_order = list(color_map.keys())
-    # add these after defining category_order to avoid having both sets
-    # in the legend
-    color_map["Open source & open weights"] = color_map["Open Source + Open Weights"]
-    color_map["Open source & closed weights"] = color_map["Open Source"]
-    color_map["Closed source & API available"] = color_map["API Available"]
-    color_map["Closed source & UI only"] = color_map["Closed"]
 
+    # These include alieases for tool usage categories,
+    # so multiple names might correspond to the same shape.
     shape_map = {
         "Standard": "star",
         "Custom with Standard Search": "star-diamond",
         "Fully Custom": "star-triangle-up",
+        "Custom interface": "star-diamond",
+        "Fully custom": "star-triangle-up",
     }
     default_shape = 'square'
-    shape_order = list(shape_map.keys())
-    # add these after defining shape_orer to avoid having both sets in the legend
-    shape_map["Custom interface"] = shape_map["Custom with Standard Search"]
-    shape_map["Fully custom"] = shape_map["Fully Custom"]
+    # Only keep one name per shape for the legend.
+    shapes_for_legend = {
+        "Standard",
+        "Custom with Standard Search",
+        "Fully Custom",
+    }
 
     x_col_to_use = x
     y_col_to_use = y
@@ -516,7 +529,7 @@ def _plot_scatter_plotly(
             )
         ))
     # ---- Add logic for making the legend -----------
-    for i, category in enumerate(category_order):
+    for i, category in enumerate(colors_for_legend):
         fig.add_trace(go.Scatter(
             x=[None], y=[None],
             mode='markers',
@@ -531,7 +544,7 @@ def _plot_scatter_plotly(
         ))
 
     # Part B: Dummy traces for the SHAPES ("Agent Tooling")
-    for i, shape_name in enumerate(shape_order):
+    for i, shape_name in enumerate(shapes_for_legend):
         fig.add_trace(go.Scatter(
             x=[None], y=[None],
             mode='markers',
