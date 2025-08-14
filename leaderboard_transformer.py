@@ -349,20 +349,25 @@ def _plot_scatter_plotly(
         "Open Source": "coral",
         "API Available": "yellow",
         "Closed": "white",
-        "Open source & open weights": "deeppink",
-        "Open source & closed weights": "coral",
-        "Closed source & API available": "yellow",
-        "Closed source & UI only": "white",
     }
     category_order = list(color_map.keys())
+    # add these after defining category_order to avoid having both sets
+    # in the legend
+    color_map["Open source & open weights"] = color_map["Open Source + Open Weights"]
+    color_map["Open source & closed weights"] = color_map["Open Source"]
+    color_map["Closed source & API available"] = color_map["API Available"]
+    color_map["Closed source & UI only"] = color_map["Closed"]
+
     shape_map = {
         "Standard": "star",
         "Custom with Standard Search": "star-diamond",
         "Fully Custom": "star-triangle-up",
-        "Custom interface": "star-diamond",
-        "Fully custom": "star-triangle-up"
     }
     default_shape = 'square'
+    shape_order = list(shape_map.keys())
+    # add these after defining shape_orer to avoid having both sets in the legend
+    shape_map["Custom interface"] = shape_map["Custom with Standard Search"]
+    shape_map["Fully custom"] = shape_map["Fully Custom"]
 
     x_col_to_use = x
     y_col_to_use = y
@@ -526,15 +531,14 @@ def _plot_scatter_plotly(
         ))
 
     # Part B: Dummy traces for the SHAPES ("Agent Tooling")
-    shape_items = list(shape_map.items())
-    for i, (shape_name, shape_symbol) in enumerate(shape_items):
+    for i, shape_name in enumerate(shape_order):
         fig.add_trace(go.Scatter(
             x=[None], y=[None],
             mode='markers',
             name=shape_name,
             legendgroup="tooling_group",
             legendgrouptitle_text="Agent Tooling" if i == 0 else None,
-            marker=dict(color='black', symbol=shape_symbol, size=12)
+            marker=dict(color='black', symbol=shape_map.get(shape_name), size=12)
         ))
 
     # --- Section 8: Configure Layout  ---
