@@ -329,6 +329,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     grid-template-columns: auto auto auto auto 1fr auto auto !important;
     gap: 10px 20px !important; /* Vertical and horizontal spacing */
     width: 100% !important;
+    align-items: center;
 }
 .nav-holder nav a[href*="about"] {
     grid-row: 1 !important;
@@ -525,18 +526,19 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     font-size: 13px;
     line-height: 1.3;  
     display: flex;
-    flex-direction: column;          
+    flex-direction: column;   
+}       
 /* About Page CSS */
 #about-page-content-wrapper {
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 800px; 
-  padding: 0 24px;
-  display: flex;
-  flex-direction: column; 
-  gap: 40px; 
-  margin-top: 40px;
-  opacity: 85%; 
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 800px; 
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column; 
+    gap: 40px; 
+    margin-top: 40px;
+    opacity: 85%; 
 }
 .divider-line {
     opacity: 40%;
