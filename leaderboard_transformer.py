@@ -6,6 +6,8 @@ from typing import Optional
 import base64
 import html
 
+from aliases import OPENNESS_ALIASES, TOOL_USAGE_ALIASES
+
 logger = logging.getLogger(__name__)
 
 INFORMAL_TO_FORMAL_NAME_MAP = {
@@ -373,18 +375,16 @@ def _plot_scatter_plotly(
         "Open Source": "coral",
         "API Available": "yellow",
         "Closed": "white",
-        "Open source & open weights": "deeppink",
-        "Open source & closed weights": "coral",
-        "Closed source & API available": "yellow",
-        "Closed source & UI only": "white",
+        # "Open source & open weights": "deeppink",
+        # "Open source & closed weights": "coral",
+        # "Closed source & API available": "yellow",
+        # "Closed source & UI only": "white",
     }
+    for canonical_openness, openness_aliases in OPENNESS_ALIASES.items():
+        for openness_alias in openness_aliases:
+            color_map[openness_alias] = color_map[canonical_openness]
     # Only keep one name per color for the legend.
-    colors_for_legend = {
-        "Open Source + Open Weights",
-        "Open Source",
-        "API Available",
-        "Closed",
-    }
+    colors_for_legend = set(OPENNESS_ALIASES.keys())
     category_order = list(color_map.keys())
 
     # These include alieases for tool usage categories,
@@ -393,16 +393,15 @@ def _plot_scatter_plotly(
         "Standard": "star",
         "Custom with Standard Search": "star-diamond",
         "Fully Custom": "star-triangle-up",
-        "Custom interface": "star-diamond",
-        "Fully custom": "star-triangle-up",
+        # "Custom interface": "star-diamond",
+        # "Fully custom": "star-triangle-up",
     }
+    for canonical_tool_usage, tool_usages_aliases in TOOL_USAGE_ALIASES.items():
+        for tool_usage_alias in tool_usages_aliases:
+            shape_map[tool_usage_alias] = shape_map[canonical_tool_usage]
     default_shape = 'square'
     # Only keep one name per shape for the legend.
-    shapes_for_legend = {
-        "Standard",
-        "Custom with Standard Search",
-        "Fully Custom",
-    }
+    shapes_for_legend = set(TOOL_USAGE_ALIASES.keys())
 
     x_col_to_use = x
     y_col_to_use = y
