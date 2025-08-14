@@ -8,6 +8,7 @@ import base64
 from agenteval.leaderboard.view import LeaderboardViewer
 from huggingface_hub import HfApi
 
+import aliases
 from leaderboard_transformer import (
     DataTransformer,
     transform_raw_dataframe,
@@ -62,13 +63,25 @@ COMBINED_ICON_MAP = {
     }
 }
 
-for openness_option in COMBINED_ICON_MAP:
-    COMBINED_ICON_MAP[openness_option]["Custom interface"] = COMBINED_ICON_MAP[openness_option]["Custom with Standard Search"]
-    COMBINED_ICON_MAP[openness_option]["Fully custom"] = COMBINED_ICON_MAP[openness_option]["Fully Custom"]
-COMBINED_ICON_MAP["Open source & open weights"] = COMBINED_ICON_MAP["Open Source + Open Weights"]
-COMBINED_ICON_MAP["Open source & closed weights"] = COMBINED_ICON_MAP["Open Source"]
-COMBINED_ICON_MAP["Closed source & API available"] = COMBINED_ICON_MAP["API Available"]
-COMBINED_ICON_MAP["Closed source & UI only"] = COMBINED_ICON_MAP["Closed"]
+
+# it's important to do the tool usage first here, so that when we do openness, the changes
+# get picked up
+for openness in COMBINED_ICON_MAP:
+    for canonical_tool_usage, tool_usage_aliases in aliases.TOOL_USAGE_ALIASES.items():
+        for tool_usage_alias in tool_usage_aliases:
+            COMBINED_ICON_MAP[openness][tool_usage_alias] = COMBINED_ICON_MAP[openness][canonical_tool_usage]
+
+for canonical_openness, openness_aliases in aliases.OPENNESS_ALIASES.items():
+    for openness_alias in openness_aliases:
+        COMBINED_ICON_MAP[openness_alias] = COMBINED_ICON_MAP[canonical_openness]
+
+# for openness_option in COMBINED_ICON_MAP:
+#     COMBINED_ICON_MAP[openness_option]["Custom interface"] = COMBINED_ICON_MAP[openness_option]["Custom with Standard Search"]
+#     COMBINED_ICON_MAP[openness_option]["Fully custom"] = COMBINED_ICON_MAP[openness_option]["Fully Custom"]
+# COMBINED_ICON_MAP["Open source & open weights"] = COMBINED_ICON_MAP["Open Source + Open Weights"]
+# COMBINED_ICON_MAP["Open source & closed weights"] = COMBINED_ICON_MAP["Open Source"]
+# COMBINED_ICON_MAP["Closed source & API available"] = COMBINED_ICON_MAP["API Available"]
+# COMBINED_ICON_MAP["Closed source & UI only"] = COMBINED_ICON_MAP["Closed"]
 
 OPENNESS_SVG_MAP = {
     "Open Source + Open Weights": "assets/os-ow-standard.svg",
