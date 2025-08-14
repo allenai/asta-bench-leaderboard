@@ -264,7 +264,6 @@ nav.svelte-ti537g.svelte-ti537g {
 /*------ Global tooltip styles ------*/
 .tooltip-icon {
     display: inline-block;
-    margin-left: 6px;
     cursor: help;
     position: relative;
 }

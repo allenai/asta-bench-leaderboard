@@ -478,7 +478,7 @@ def create_leaderboard_display(
     # 2. Create the final list of headers for display.
     df_view = df_view.rename(columns=header_rename_map)
     # Dynamically set widths for the DataFrame columns
-    fixed_start_widths = [40, 40, 200, 150, 200, 120, 120]
+    fixed_start_widths = [40, 40, 200, 100, 200]
     num_score_cost_cols = 0
     remaining_headers = df_headers[len(fixed_start_widths):]
     for col in remaining_headers:
