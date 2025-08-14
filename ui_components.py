@@ -41,25 +41,25 @@ AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 # Global variables
 COMBINED_ICON_MAP = {
-    "Open Source + Open Weights": {
-        "Standard": "assets/os-ow-standard.svg",        # Bright pink star
-        "Custom with Standard Search": "assets/os-ow-equivalent.svg",    # Bright pink diamond
-        "Fully Custom": "assets/os-ow-custom.svg",            # Bright pink triangle
+    aliases.CANONICAL_OPENNESS_OPEN_OPEN_WEIGHTS: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/os-ow-standard.svg",        # Bright pink star
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/os-ow-equivalent.svg",    # Bright pink diamond
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/os-ow-custom.svg",            # Bright pink triangle
     },
-    "Open Source": {
-        "Standard": "assets/os-standard.svg",        # Orange/pink star
-        "Custom with Standard Search": "assets/os-equivalent.svg",    # Orange/pink diamond
-        "Fully Custom": "assets/os-custom.svg",            # Orange/pink triangle
+    aliases.CANONICAL_OPENNESS_OPEN_CLOSED_WEIGHTS: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/os-standard.svg",        # Orange/pink star
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/os-equivalent.svg",    # Orange/pink diamond
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/os-custom.svg",            # Orange/pink triangle
     },
-    "API Available": {
-        "Standard": "assets/api-standard.svg",       # Yellow/pink star
-        "Custom with Standard Search": "assets/api-equivalent.svg",   # Yellow/pink diamond
-        "Fully Custom": "assets/api-custom.svg",           # Yellow/pink triangle
+    aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/api-standard.svg",       # Yellow/pink star
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/api-equivalent.svg",   # Yellow/pink diamond
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/api-custom.svg",           # Yellow/pink triangle
     },
-    "Closed": {
-        "Standard": "assets/c-standard.svg",        # Hollow pink star
-        "Custom with Standard Search": "assets/c-equivalent.svg",    # Hollow pink diamond
-        "Fully Custom": "assets/c-custom.svg",            # Hollow pink triangle
+    aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/c-standard.svg",        # Hollow pink star
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/c-equivalent.svg",    # Hollow pink diamond
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/c-custom.svg",            # Hollow pink triangle
     }
 }
 
