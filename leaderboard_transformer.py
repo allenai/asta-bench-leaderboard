@@ -6,6 +6,8 @@ from typing import Optional
 import base64
 import html
 
+import aliases
+
 logger = logging.getLogger(__name__)
 
 INFORMAL_TO_FORMAL_NAME_MAP = {
@@ -366,19 +368,34 @@ def _plot_scatter_plotly(
 ) -> go.Figure:
 
     # --- Section 1: Define Mappings ---
+    # These include aliases for openness categories,
+    # so multiple names might correspond to the same color.
     color_map = {
-        "Open Source + Open Weights": "deeppink",
-        "Open Source": "coral",
-        "API Available": "yellow",
-        "Closed": "white",
+        aliases.CANONICAL_OPENNESS_OPEN_OPEN_WEIGHTS: "deeppink",
+        aliases.CANONICAL_OPENNESS_OPEN_CLOSED_WEIGHTS: "coral",
+        aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE: "yellow",
+        aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY: "white",
     }
+    for canonical_openness, openness_aliases in aliases.OPENNESS_ALIASES.items():
+        for openness_alias in openness_aliases:
+            color_map[openness_alias] = color_map[canonical_openness]
+    # Only keep one name per color for the legend.
+    colors_for_legend = set(aliases.OPENNESS_ALIASES.keys())
     category_order = list(color_map.keys())
+
+    # These include aliases for tool usage categories,
+    # so multiple names might correspond to the same shape.
     shape_map = {
-        "Standard": "star",
-        "Custom with Standard Search": "star-diamond",
-        "Fully Custom": "star-triangle-up"
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "star",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "star-diamond",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "star-triangle-up",
     }
+    for canonical_tool_usage, tool_usages_aliases in aliases.TOOL_USAGE_ALIASES.items():
+        for tool_usage_alias in tool_usages_aliases:
+            shape_map[tool_usage_alias] = shape_map[canonical_tool_usage]
     default_shape = 'square'
+    # Only keep one name per shape for the legend.
+    shapes_for_legend = set(aliases.TOOL_USAGE_ALIASES.keys())
 
     x_col_to_use = x
     y_col_to_use = y
@@ -527,7 +544,7 @@ def _plot_scatter_plotly(
             )
         ))
     # ---- Add logic for making the legend -----------
-    for i, category in enumerate(category_order):
+    for i, category in enumerate(colors_for_legend):
         fig.add_trace(go.Scatter(
             x=[None], y=[None],
             mode='markers',
@@ -542,15 +559,14 @@ def _plot_scatter_plotly(
         ))
 
     # Part B: Dummy traces for the SHAPES ("Agent Tooling")
-    shape_items = list(shape_map.items())
-    for i, (shape_name, shape_symbol) in enumerate(shape_items):
+    for i, shape_name in enumerate(shapes_for_legend):
         fig.add_trace(go.Scatter(
             x=[None], y=[None],
             mode='markers',
             name=shape_name,
             legendgroup="tooling_group",
             legendgrouptitle_text="Agent Tooling" if i == 0 else None,
-            marker=dict(color='black', symbol=shape_symbol, size=12)
+            marker=dict(color='black', symbol=shape_map.get(shape_name), size=12)
         ))
 
     # --- Section 8: Configure Layout  ---

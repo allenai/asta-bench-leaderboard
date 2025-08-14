@@ -8,6 +8,7 @@ import base64
 from agenteval.leaderboard.view import LeaderboardViewer
 from huggingface_hub import HfApi
 
+import aliases
 from leaderboard_transformer import (
     DataTransformer,
     transform_raw_dataframe,
@@ -40,27 +41,41 @@ AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 # Global variables
 COMBINED_ICON_MAP = {
-    "Open Source + Open Weights": {
-        "Standard": "assets/os-ow-standard.svg",
-        "Custom with Standard Search": "assets/os-ow-equivalent.svg",
-        "Custom": "assets/os-ow-custom.svg",
+    aliases.CANONICAL_OPENNESS_OPEN_OPEN_WEIGHTS: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/os-ow-standard.svg",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/os-ow-equivalent.svg",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/os-ow-custom.svg",
     },
-    "Open Source": {
-        "Standard": "assets/os-standard.svg",
-        "Custom with Standard Search": "assets/os-equivalent.svg",
-        "Fully Custom": "assets/os-custom.svg",
+    aliases.CANONICAL_OPENNESS_OPEN_CLOSED_WEIGHTS: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/os-standard.svg",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/os-equivalent.svg",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/os-custom.svg",
     },
-    "API Available": {
-        "Standard": "assets/api-standard.svg",
-        "Custom with Standard Search": "assets/api-equivalent.svg",
-        "Fully Custom": "assets/api-custom.svg",
+    aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/api-standard.svg",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/api-equivalent.svg",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/api-custom.svg",
     },
-    "Closed": {
-        "Standard": "assets/c-standard.svg",
-        "Equivalent": "assets/c-equivalent.svg",
-        "Fully Custom": "assets/c-custom.svg",
+    aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/c-standard.svg",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/c-equivalent.svg",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/c-custom.svg",
     }
 }
+
+
+# it's important to do the tool usage first here, so that when
+# we do openness, the tool usage changes get picked up
+for openness in COMBINED_ICON_MAP:
+    for canonical_tool_usage, tool_usage_aliases in aliases.TOOL_USAGE_ALIASES.items():
+        for tool_usage_alias in tool_usage_aliases:
+            COMBINED_ICON_MAP[openness][tool_usage_alias] = COMBINED_ICON_MAP[openness][canonical_tool_usage]
+
+for canonical_openness, openness_aliases in aliases.OPENNESS_ALIASES.items():
+    for openness_alias in openness_aliases:
+        COMBINED_ICON_MAP[openness_alias] = COMBINED_ICON_MAP[canonical_openness]
+
+
 OPENNESS_SVG_MAP = {
     "Open Source + Open Weights": "assets/os-ow-legend.svg",
     "Open Source": "assets/os-legend.svg",
