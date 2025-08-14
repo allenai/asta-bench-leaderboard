@@ -482,28 +482,42 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 }
 
 .tooltip-card h3 {
-    font-size: 18px; color: #fff; margin-top: 0; margin-bottom: 12px;
+    font-size: 18px; 
+    color: #fff; 
+    margin-top: 0; 
+    margin-bottom: 12px;
 }
 .tooltip-card .tooltip-description {
-    margin-bottom: 20px; line-height: 1.3;
+    margin-bottom: 20px; 
+    line-height: 1.3;
 }
 .tooltip-card .tooltip-items-container {
-    display: flex; flex-direction: column; gap: 10px;
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px;
 }
 .tooltip-card .tooltip-legend-item {
-    display: flex; align-items: flex-start; gap: 10px;
+    display: flex; 
+    align-items: 
+    flex-start; 
+    gap: 10px;
 }
 .tooltip-card .tooltip-legend-item img {
-    width: 20px; height: 20px; margin-top: 2px;
+    width: 20px; 
+    height: 20px; 
+    margin-top: 2px;
 }
 .tooltip-card .tooltip-legend-item div {
-    display: flex; flex-direction: column;
+    display: flex; 
+    flex-direction: column;
 }
 .tooltip-card .tooltip-legend-item strong {
-    font-weight: 600; color: #fff;
+    font-weight: 600; 
+    color: #fff;
 }
 .tooltip-card .tooltip-legend-item span {
-    font-size: 13px; line-height: 1.3;
+    font-size: 13px; 
+    line-height: 1.3;
 }
 .tooltip-sub-list {
     list-style-type: '• '; 
