@@ -349,12 +349,18 @@ def _plot_scatter_plotly(
         "Open Source": "coral",
         "API Available": "yellow",
         "Closed": "white",
+        "Open source & open weights": "deeppink",
+        "Open source & closed weights": "coral",
+        "Closed source & API available": "yellow",
+        "Closed source & UI only": "white",
     }
     category_order = list(color_map.keys())
     shape_map = {
         "Standard": "star",
         "Custom with Standard Search": "star-diamond",
-        "Fully Custom": "star-triangle-up"
+        "Fully Custom": "star-triangle-up",
+        "Custom interface": "star-diamond",
+        "Fully custom": "star-triangle-up"
     }
     default_shape = 'square'
 

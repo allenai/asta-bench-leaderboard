@@ -43,7 +43,7 @@ COMBINED_ICON_MAP = {
     "Open Source + Open Weights": {
         "Standard": "assets/os-ow-standard.svg",        # Bright pink star
         "Custom with Standard Search": "assets/os-ow-equivalent.svg",    # Bright pink diamond
-        "Custom": "assets/os-ow-custom.svg",            # Bright pink triangle
+        "Fully Custom": "assets/os-ow-custom.svg",            # Bright pink triangle
     },
     "Open Source": {
         "Standard": "assets/os-standard.svg",        # Orange/pink star
@@ -57,10 +57,19 @@ COMBINED_ICON_MAP = {
     },
     "Closed": {
         "Standard": "assets/c-standard.svg",        # Hollow pink star
-        "Equivalent": "assets/c-equivalent.svg",    # Hollow pink diamond
+        "Custom with Standard Search": "assets/c-equivalent.svg",    # Hollow pink diamond
         "Fully Custom": "assets/c-custom.svg",            # Hollow pink triangle
     }
 }
+
+for openness_option in COMBINED_ICON_MAP:
+    COMBINED_ICON_MAP[openness_option]["Custom interface"] = COMBINED_ICON_MAP[openness_option]["Custom with Standard Search"]
+    COMBINED_ICON_MAP[openness_option]["Fully custom"] = COMBINED_ICON_MAP[openness_option]["Fully Custom"]
+COMBINED_ICON_MAP["Open source & open weights"] = COMBINED_ICON_MAP["Open Source + Open Weights"]
+COMBINED_ICON_MAP["Open source & closed weights"] = COMBINED_ICON_MAP["Open Source"]
+COMBINED_ICON_MAP["Closed source & API available"] = COMBINED_ICON_MAP["API Available"]
+COMBINED_ICON_MAP["Closed source & UI only"] = COMBINED_ICON_MAP["Closed"]
+
 OPENNESS_SVG_MAP = {
     "Open Source + Open Weights": "assets/os-ow-standard.svg",
     "Open Source": "assets/os-standard.svg",
