@@ -375,10 +375,6 @@ def _plot_scatter_plotly(
         "Open Source": "coral",
         "API Available": "yellow",
         "Closed": "white",
-        # "Open source & open weights": "deeppink",
-        # "Open source & closed weights": "coral",
-        # "Closed source & API available": "yellow",
-        # "Closed source & UI only": "white",
     }
     for canonical_openness, openness_aliases in OPENNESS_ALIASES.items():
         for openness_alias in openness_aliases:
@@ -393,8 +389,6 @@ def _plot_scatter_plotly(
         "Standard": "star",
         "Custom with Standard Search": "star-diamond",
         "Fully Custom": "star-triangle-up",
-        # "Custom interface": "star-diamond",
-        # "Fully custom": "star-triangle-up",
     }
     for canonical_tool_usage, tool_usages_aliases in TOOL_USAGE_ALIASES.items():
         for tool_usage_alias in tool_usages_aliases:
