@@ -1,6 +1,5 @@
 # app.py
 import gradio as gr
-import os
 import urllib.parse
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -165,7 +164,7 @@ def restart_space_job():
 if __name__ == "__main__":
     if LOCAL_DEBUG:
         print("Launching in LOCAL_DEBUG mode.")
-        def get_initial_global_tag_choices(): return ["Overall", "TagA"]
+        def get_initial_global_tag_choices(): return ["Overall"]
         demo.launch(debug=True, allowed_paths=["assets"])
     else:
         print("Launching in Space mode.")
