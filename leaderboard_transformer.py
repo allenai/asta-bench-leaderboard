@@ -254,35 +254,8 @@ class DataTransformer:
 
         df_view = df_sorted.copy()
 
-        # 3. Combine "Agent" and "Submitter" into a single HTML-formatted column
-        #    We do this *before* defining the final column list.
-        if 'Agent' in df_view.columns and 'Submitter' in df_view.columns:
-            #preserve just agent name for scatterplot hover
-            df_view['agent_for_hover'] = df_view['Agent']
-            
-            def combine_agent_submitter(row):
-                agent = row['Agent']
-                submitter = row['Submitter']
-
-                # Check if submitter exists and is not empty
-                if pd.notna(submitter) and submitter.strip() != '':
-                    # Create a two-line HTML string with styled submitter text
-                    return (
-                        f"<div>{agent}<br>"
-                        f"<span style='font-size: 0.9em; color: #667876;'>{submitter}</span>"
-                        f"</div>"
-                    )
-                else:
-                    # If no submitter, just return the agent name
-                    return agent
-
-            # Apply the function to create the new combined 'Agent' column
-            df_view['Agent'] = df_view.apply(combine_agent_submitter, axis=1)
-            # The 'Submitter' column is no longer needed
-            df_view = df_view.drop(columns=['Submitter'])
-
-        # 4. Build the List of Columns to Display
-        base_cols = ["id","Agent","LLM Base", "agent_for_hover"]
+        # --- 3. Add Columns for Agent Openness and Tooling ---
+        base_cols = ["id","Agent","Submitter","LLM Base"]
         new_cols = ["Openness", "Agent Tooling"]
         ending_cols = ["Logs"]
 
@@ -342,7 +315,7 @@ class DataTransformer:
                     data=df_view,
                     x=primary_cost_col,
                     y=primary_score_col,
-                    agent_col="agent_for_hover",
+                    agent_col="Agent",
                     name=primary_metric
                 )
                 # Use a consistent key for easy retrieval later
@@ -363,7 +336,7 @@ def _plot_scatter_plotly(
         data: pd.DataFrame,
         x: Optional[str],
         y: str,
-        agent_col: str = 'agent_for_hover',
+        agent_col: str = 'Agent',
         name: Optional[str] = None
 ) -> go.Figure:
 
