@@ -1,49 +1,58 @@
 TITLE = """<h1 align="left" id="space-title">AstaBench Leaderboard</h1>"""
 
 INTRO_PARAGRAPH = """
-Newer benchmarks may test agentic AI and isolated aspects of scientific reasoning, but none rigorously measure agentic AI or capture the full range of skills research demands. Agents can appear effective by simply retrying tasks—often at high computational cost and with inconsistent results. Scientific AI needs evaluations that reflect the real complexity of research.
+<p>
+    Newer benchmarks may test agentic AI and isolated aspects of scientific reasoning, but none rigorously measure agentic AI or capture the full range of skills research demands. Agents can appear effective by simply retrying tasks—often at high computational cost and with inconsistent results. Scientific AI needs evaluations that reflect the real complexity of research.
+</p>
 <br>
+<p>
+    AstaBench fills that gap: a suite of open benchmarks for evaluating scientific AI assistants on core scientific tasks that require novel reasoning. The suite includes over 8,000 tasks across 11 benchmarks, organized into four core categories: Literature Understanding, Code & Execution, Data Analysis, and End-to-End Discovery.
+</p>
 <br>
-AstaBench fills that gap: a suite of open benchmarks for evaluating scientific AI assistants on core scientific tasks that require novel reasoning. The suite includes over 8,000 tasks across 11 benchmarks, organized into four core categories: Literature Understanding, Code & Execution, Data Analysis, and End-to-End Discovery.
+<p>
+    The <strong>AstaBench Leaderboard</strong> below provides a high-level summary of agent performance and efficiency. It includes:
+</p>
+<ul class="info-list">
+    <li>
+        An <strong>overall score</strong>, computed as a macro average of the four category-level macro averages, ensuring each domain contributes equally—regardless of how many benchmarks each category includes. This provides a fair and balanced comparison across agents with varying capabilities.
+    </li>
+    <li>
+        An <strong>overall average cost per task</strong>, consistently aggregated across all categories, to reflect the real efficiency of each agent under comparable conditions.
+    </li>
+</ul>
 <br>
+<p>
+    To support domain-specific insight, AstaBench also provides per-category leaderboards:
+</p>
+<ul class="info-list">
+    <li>Literature Understanding</li>
+    <li>Code & Execution</li>
+    <li>Data Analysis</li>
+    <li>End-to-End Discovery</li>
+</ul>
 <br>
-The **AstaBench Leaderboard** below provides a high-level summary of agent performance and efficiency. It includes:
-<br>
-<br>
-- An **overall score**, computed as a macro average of the four category-level macro averages, ensuring each domain contributes equally—regardless of how many benchmarks each category includes. This provides a fair and balanced comparison across agents with varying capabilities.
-- An **overall average cost per task**, consistently aggregated across all categories, to reflect the real efficiency of each agent under comparable conditions.
-<br>
-To support domain-specific insight, AstaBench also provides per-category leaderboards:
-<br>
-<br>
-- Literature Understanding
-<br>
-- Code & Execution
-<br>
-- Data Analysis
-<br>
-- End-to-End Discovery
-<br>
-<br>
-Each category page includes a summary table (average score and cost per problem for that domain), as well as per-benchmark leaderboards for detailed comparisons on specific tasks.
-<br>
-<br>
-🔍 Learn more in the AstaBench technical blog post
+<p>
+    Each category page includes a summary table (average score and cost per problem for that domain), as well as per-benchmark leaderboards for detailed comparisons on specific tasks.
+</p>
+<p>
+    🔍 Learn more in the AstaBench technical blog post
+</p>
 """
 SCATTER_DISCLAIMER = """
-**Note:** Agents without cost data are displayed to the right of the vertical divider line. <span class="tooltip-icon" data-tooltip="Missing Cost Dashed Line: Max Cost + (MaxCost/10) Missing Cost Datapoints/No Cost Data = Max Cost + (MaxCost/5)">ⓘ</span>
+**Note:** Agents without cost data are displayed to the right of the vertical divider line.
 """
-scatter_disclaimer_html = """
-<div class="disclaimer-text">
-    <b>Note:</b> Agents without cost data are displayed to the right of the vertical divider line.
-    <span class="tooltip-icon" data-tooltip="Missing Cost Dashed Line: 
-    Max Cost + (MaxCost/10)
-    Missing Cost Datapoints / No Cost Data: 
-    Max Cost + (MaxCost/5)">
-        ⓘ
-    </span>
-</div>
-"""
+# Leaving this here incase we chang eour mind and want the formula public for transparency
+# scatter_disclaimer_html = """
+# <div class="disclaimer-text">
+#     <b>Note:</b> Agents without cost data are displayed to the right of the vertical divider line.
+#     <span class="tooltip-icon" data-tooltip="Missing Cost Dashed Line:
+#     Max Cost + (MaxCost/10)
+#     Missing Cost Datapoints / No Cost Data:
+#     Max Cost + (MaxCost/5)">
+#         ⓘ
+#     </span>
+# </div>
+# """
 PARETO_DISCLAIMER = """
 Agents names that are green are Pareto optimal, meaning they achieve the best performance for their cost. 
 """
@@ -164,6 +173,7 @@ table.gr-table th, table.gr-table td {
     padding: 4px 4px !important; 
     width: 1%;
     white-space: nowrap;
+    
 }
 table.svelte-1e98i6s td {
     vertical-align: top !important;
@@ -246,7 +256,7 @@ nav.svelte-ti537g.svelte-ti537g {
     line-height: 1.2 !important;
     vertical-align: top !important;
     font-size: 12px !important;
-    
+    font-family: 'Manrope';
 }
 .wrap-header-df th {
     height: auto !important;
@@ -539,11 +549,11 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     margin-top: 40px;
     opacity: 85%; 
 }
-.divider-line {
-    opacity: 40%;
-}
 #leaderboard-accordion table {
     width: auto !important;
     margin-right: auto !important;
+}
+.info-list {
+    padding-left: 20px;
 }
 """

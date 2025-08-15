@@ -27,12 +27,12 @@ from config import (
     RESULTS_DATASET,
 )
 from content import (
-    scatter_disclaimer_html,
     format_error,
     format_log,
     format_warning,
     hf_uri_to_web_url,
     hyperlink,
+    SCATTER_DISCLAIMER,
 )
 
 api = HfApi()
@@ -499,7 +499,7 @@ def create_leaderboard_display(
         value=scatter_plot,
         show_label=False
     )
-    gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
+    gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
     # Put table and key into an accordion
     with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
         dataframe_component = gr.DataFrame(
@@ -539,8 +539,8 @@ def create_benchmark_details_display(
         gr.Markdown(f"No detailed benchmarks found for the category: {category_name}")
         return
 
+    gr.HTML(f'<h2 style="padding-top: 120px;">{category_name} Detailed Benchmark Results</h2>')
     gr.Markdown("---")
-    gr.Markdown("## Detailed Benchmark Results")
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
         with gr.Row(elem_classes=["benchmark-header"]):
@@ -662,7 +662,7 @@ def create_benchmark_details_display(
             name=benchmark_name
         )
         gr.Plot(value=benchmark_plot, show_label=False)
-        gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
+        gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
         # Put table and key into an accordion
         with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
             gr.DataFrame(
@@ -755,7 +755,7 @@ def create_sub_navigation_bar(tag_map: dict, category_name: str, validation: boo
     # This container will be our flexbox row.
     full_html = f"""
         <div class="sub-nav-bar-container">
-            <span class="sub-nav-label">Benchmarks:</span>
+            <span class="sub-nav-label">Benchmarks in this category:</span>
             {''.join(html_buttons)}
         </div>
     """

@@ -511,7 +511,7 @@ def _plot_scatter_plotly(
             marker=dict(
                 color=color_map.get(category, 'black'),
                 symbol=group['shape_symbol'],
-                size=10,
+                size=15,
                 opacity=0.8,
                 line=dict(width=1, color='deeppink')
             )
@@ -561,7 +561,7 @@ def _plot_scatter_plotly(
 
     fig.update_layout(
         template="plotly_white",
-        title=f"Astabench {name} Leaderboard",
+        title=f"AstaBench {name} Leaderboard",
         xaxis=xaxis_config, # Use the updated config
         yaxis=dict(title="Average (mean) score", rangemode="tozero"),
         legend=dict(
