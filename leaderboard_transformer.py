@@ -113,6 +113,7 @@ def _pretty_column_name(raw_col: str) -> str:
         'Openness': 'Openness',
         'Agent tooling': 'Agent Tooling',
         'LLM base': 'LLM Base',
+        'Source': 'Source',
     }
 
     if raw_col in fixed_mappings:
@@ -186,7 +187,6 @@ def transform_raw_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         raise TypeError("Input 'raw_df' must be a pandas DataFrame.")
 
     df = raw_df.copy()
-
     # Create the mapping for pretty column names
     pretty_cols_map = {col: _pretty_column_name(col) for col in df.columns}
 
@@ -255,7 +255,7 @@ class DataTransformer:
         df_view = df_sorted.copy()
 
         # --- 3. Add Columns for Agent Openness and Tooling ---
-        base_cols = ["id","Agent","Submitter","LLM Base"]
+        base_cols = ["id","Agent","Submitter","LLM Base","Source"]
         new_cols = ["Openness", "Agent Tooling"]
         ending_cols = ["Logs"]
 
