@@ -12,8 +12,5 @@ CONTACT_DATASET = f"{OWNER}/{PROJECT_NAME}-contact-info"
 RESULTS_DATASET = f"{OWNER}/{PROJECT_NAME}-results" # This is the repo_id for LeaderboardViewer
 LEADERBOARD_PATH = f"{OWNER}/{PROJECT_NAME}-leaderboard"
 
-if LOCAL_DEBUG:
-    DATA_DIR = os.path.join(os.path.dirname(__file__), "data", CONFIG_NAME)
-else:
-    DATA_DIR = "/home/user/data/" + CONFIG_NAME
+DATA_DIR = "/tmp/abl/data/" + CONFIG_NAME
 EXTRACTED_DATA_DIR = os.path.join(DATA_DIR, "extracted")
