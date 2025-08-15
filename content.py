@@ -264,7 +264,6 @@ nav.svelte-ti537g.svelte-ti537g {
 /*------ Global tooltip styles ------*/
 .tooltip-icon {
     display: inline-block;
-    margin-left: 6px;
     cursor: help;
     position: relative;
 }
@@ -542,5 +541,9 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 }
 .divider-line {
     opacity: 40%;
+}
+#leaderboard-accordion table {
+    width: auto !important;
+    margin-right: auto !important;
 }
 """
