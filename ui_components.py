@@ -451,6 +451,12 @@ def create_leaderboard_display(
     #Make pretty and format the LLM Base column
     df_view['LLM Base'] = df_view['LLM Base'].apply(clean_llm_base_list)
     df_view['LLM Base'] = df_view['LLM Base'].apply(format_llm_base_with_html)
+    # append the repro url to the end of the agent name
+    if 'Source' in df_view.columns:
+        df_view['Agent'] = df_view.apply(
+            lambda row: f"{row['Agent']} {row['Source']}" if row['Source'] else row['Agent'],
+            axis=1
+        )
 
     all_cols = df_view.columns.tolist()
     # Remove pareto and Icon columns and insert it at the beginning
@@ -458,7 +464,7 @@ def create_leaderboard_display(
     all_cols.insert(0, all_cols.pop(all_cols.index('Pareto')))
     df_view = df_view[all_cols]
     # Drop internally used columns that are not needed in the display
-    columns_to_drop = ['id', 'Openness', 'Agent Tooling']
+    columns_to_drop = ['id', 'Openness', 'Agent Tooling', 'Source']
     df_view = df_view.drop(columns=columns_to_drop, errors='ignore')
 
     df_headers = df_view.columns.tolist()
@@ -466,7 +472,7 @@ def create_leaderboard_display(
     for col in df_headers:
         if col == "Logs" or "Cost" in col or "Score" in col:
             df_datatypes.append("markdown")
-        elif col in ["Icon","LLM Base"]:
+        elif col in ["Agent","Icon","LLM Base"]:
             df_datatypes.append("html")
         else:
             df_datatypes.append("str")
@@ -484,8 +490,8 @@ def create_leaderboard_display(
     for col in remaining_headers:
         if "Score" in col or "Cost" in col:
             num_score_cost_cols += 1
-    dynamic_widths = [80] * num_score_cost_cols
-    fixed_end_widths = [80, 40]
+    dynamic_widths = [90] * num_score_cost_cols
+    fixed_end_widths = [90, 50]
     # 5. Combine all the lists to create the final, fully dynamic list.
     final_column_widths = fixed_start_widths + dynamic_widths + fixed_end_widths
 
@@ -553,7 +559,7 @@ def create_benchmark_details_display(
         benchmark_cost_col = f"{benchmark_name} Cost"
 
         # Define the columns needed for the detailed table
-        table_cols = ['Agent','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'LLM Base']
+        table_cols = ['Agent','Source','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'LLM Base']
 
         # Filter to only columns that actually exist in the full dataframe
         existing_table_cols = [col for col in table_cols if col in full_df.columns]
@@ -583,6 +589,12 @@ def create_benchmark_details_display(
         #Make pretty and format the LLM Base column
         benchmark_table_df['LLM Base'] = benchmark_table_df['LLM Base'].apply(clean_llm_base_list)
         benchmark_table_df['LLM Base'] = benchmark_table_df['LLM Base'].apply(format_llm_base_with_html)
+        # append the repro url to the end of the agent name
+        if 'Source' in benchmark_table_df.columns:
+            benchmark_table_df['Agent'] = benchmark_table_df.apply(
+                lambda row: f"{row['Agent']} {row['Source']}" if row['Source'] else row['Agent'],
+                axis=1
+            )
 
         # Calculated and add "Benchmark Attempted" column
         def check_benchmark_status(row):
@@ -630,7 +642,7 @@ def create_benchmark_details_display(
         for col in df_headers:
             if "Logs" in col or "Cost" in col or "Score" in col:
                 df_datatypes.append("markdown")
-            elif col in ["Icon", "LLM Base"]:
+            elif col in ["Agent","Icon", "LLM Base"]:
                 df_datatypes.append("html")
             else:
                 df_datatypes.append("str")
@@ -641,8 +653,6 @@ def create_benchmark_details_display(
         }
         # 2. Create the final list of headers for display.
         benchmark_table_df = benchmark_table_df.rename(columns=header_rename_map)
-        # Create the scatter plot using the full data for context, but plotting benchmark metrics
-        # This shows all agents on the same axis for better comparison.
         benchmark_plot = _plot_scatter_plotly(
             data=full_df,
             x=benchmark_cost_col,
@@ -685,10 +695,17 @@ def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
                 if pd.isna(raw_uri) or raw_uri == "": return ""
                 web_url = hf_uri_to_web_url(str(raw_uri))
                 return hyperlink(web_url, "🔗") if web_url else ""
-
             # Apply the function to the "Logs" column
             pretty_df["Logs"] = pretty_df["Logs"].apply(format_log_entry_to_html)
 
+        if "Source" in pretty_df.columns:
+            def format_source_url_to_html(raw_url):
+                # Handle empty or NaN values, returning a blank string.
+                if pd.isna(raw_url) or raw_url == "": return ""
+                # Assume 'source_url' is already a valid web URL and doesn't need conversion.
+                return hyperlink(str(raw_url), "🔗")
+            # Apply the function to the "source_url" column.
+            pretty_df["Source"] = pretty_df["Source"].apply(format_source_url_to_html)
         return pretty_df, pretty_tag_map
 
     # Fallback for unexpected types
