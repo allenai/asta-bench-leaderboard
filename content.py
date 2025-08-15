@@ -212,6 +212,15 @@ def hf_uri_to_web_url(uri: str) -> str:
 
 
 css = """
+/* CSS Color Variables using Gradio theme */
+:root {
+    --color-primary-green: var(--primary-900); /* #0FCB8C */
+    --color-primary-pink: var(--secondary-900); /* #f0529c */
+    --color-neutral-light: var(--neutral-200); /* #C9C9C3 */
+    --color-background-light: var(--neutral-50); /* #FAF2E9 */
+    --color-background-dark: var(--neutral-900); /* #032629 */
+    --color-text-light: var(--neutral-50); /* #FAF2E9 */
+}
 #intro-paragraph {
     font-size: 18px;
     max-width: 60%;
@@ -456,35 +465,22 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     grid-column: 1 / -1 !important;
 }
 .benchmark-main-subtitle{
-    color: #0FCB8C !important;
-}
-.benchmark-header {
-    display: flex !important;
-    align-items: center !important;
-    gap: 20px !important;
-    width: 100% !important;
+    color: var(--color-primary-green);
+    overflow: hidden;
 }
 .benchmark-title{
-    color: #f0529c !important;
+    color: var(--color-primary-pink);
 }
-.scroll-up-container .prose {
-    display: flex;
-    justify-content: flex-end; 
+.dark .benchmark-title{
+    color: var(--color-primary-green);
 }
 .scroll-up-button {
-    flex-grow: 0;
-    display: flex;
-    color: #032629;
-    background-color: #faf2e9;
-    align-items: flex-end;
-    height: 57px;
-    padding: 0px;
-    padding-bottom: 2px;
-    min-width: 50px;
+    margin: 20px 0;
+    text-align: left;
+    text-decoration: underline;
 }
-.dark .scroll-up-button {
-    color: #faf2e9;
-    background-color: #032629;
+.scroll-up-button:hover {
+    text-decoration: none;
 }
 /*------ Submission Page CSS ------*/
 #custom-form-group {
@@ -637,5 +633,9 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 }
 .info-list {
     padding-left: 20px;
+}
+/* Smooth scrolling for the entire page */
+html {
+    scroll-behavior: smooth;
 }
 """

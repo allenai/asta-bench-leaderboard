@@ -534,7 +534,8 @@ def create_leaderboard_display(
 def create_benchmark_details_display(
         full_df: pd.DataFrame,
         tag_map: dict,
-        category_name: str
+        category_name: str,
+        validation: bool = False,
 ):
     """
     Generates a detailed breakdown for each benchmark within a given category.
@@ -558,9 +559,11 @@ def create_benchmark_details_display(
     gr.Markdown("---")
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
-        gr.HTML(f'<h3 class="benchmark-title" id="h-{benchmark_name.lower()}-leaderboard">{benchmark_name} Leaderboard</h3>')
-        gr.HTML(BENCHMARK_DESCRIPTIONS.get(benchmark_name, ""), elem_classes=["benchmark-description"])
-        gr.HTML(f'<a href="#h-{category_name.lower()}-leaderboard" style="color: inherit; text-decoration: underline;">Return to the aggregate {category_name} leaderboard</a>')
+        gr.HTML(f'''
+            <h3 class="benchmark-title" id="{create_gradio_anchor_id(benchmark_name, validation)}">{benchmark_name} Leaderboard</h3>
+            <div class="benchmark-description">{BENCHMARK_DESCRIPTIONS.get(benchmark_name, "")}</div>
+            <button onclick="scroll_to_element('page-content-wrapper')" class="scroll-up-button">Return to the aggregate {category_name} leaderboard</button>
+        ''')
 
         # 3. Prepare the data for this specific benchmark's table and plot
         benchmark_score_col = f"{benchmark_name} Score"
