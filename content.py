@@ -1,3 +1,18 @@
+import re
+
+def create_gradio_anchor_id(text: str, validation) -> str:
+    """
+    Replicates the ID format created by gr.Markdown(header_links=True).
+    Example: "Paper Finder Validation" -> "h-paper-finder-validation"
+    """
+    text = text.lower()
+    text = re.sub(r'\s+', '-', text) # Replace spaces with hyphens
+    text = re.sub(r'[^\w-]', '', text) # Remove non-word characters
+    if validation:
+        return f"h-{text}-leaderboard-1"
+    return f"h-{text}-leaderboard"
+
+
 TITLE = """<h1 align="left" id="space-title">AstaBench Leaderboard</h1>"""
 
 INTRO_PARAGRAPH = """
@@ -87,18 +102,20 @@ def external_link(url, text, is_s2_url=False):
     url = f"{url}?utm_source=asta_leaderboard" if is_s2_url else url
     return f"<a href='{url}' target='_blank' rel='noopener noreferrer'>{text}</a>"
 
-def internal_leaderboard_link(text):
-    return f"<a href='#h-{text.replace(' ', '-').lower()}-leaderboard'>{text}</a>"
+def internal_leaderboard_link(text, validation):
+    anchor_id = create_gradio_anchor_id(text, validation)
+    return f"<a href='#{anchor_id}'>{text}</a>"
 
-# Descriptions for each benchmark
-BENCHMARK_DESCRIPTIONS = {
+# Function to get benchmark descriptions with validation flag
+def get_benchmark_description(benchmark_name, validation):
+    descriptions = {
     'PaperFindingBench': (
         "PaperFindingBench assesses an agent's ability to locate sets of papers based on a natural language "
         "description that may involve both the papers' content and metadata, such as the author or publication year."
     ),
     'LitQA2-FullText-Search': (
-        f"A version of {internal_leaderboard_link('LitQA2-FullText')} that isolates the retrieval aspect of the task. "
-        "This benchmark features the same multi-choice questions as {internal_link('h-litqa2-fulltext-leaderboard', 'LitQA2-FullText')}, but the agent is not evaluated on answering the actual question "
+        f"A version of {internal_leaderboard_link('LitQA2-FullText', validation)} that isolates the retrieval aspect of the task. "
+        f"This benchmark features the same multi-choice questions as {internal_leaderboard_link('LitQA2-FullText', validation)}, but the agent is not evaluated on answering the actual question "
         "but rather on providing a ranked list of papers in which the answer is likely to be found."
     ),
     'ScholarQA-CS2': (
@@ -154,13 +171,15 @@ BENCHMARK_DESCRIPTIONS = {
         "experiments, to analyzing and writing up the results."
     ),
     'E2E-Bench-Hard': (
-        f"E2E-Bench-Hard is a more challenging variant of {internal_leaderboard_link('E2E-Bench')}. Tasks are generated using the HypER system, "
+        f"E2E-Bench-Hard is a more challenging variant of {internal_leaderboard_link('E2E-Bench', validation)}. Tasks are generated using the HypER system, "
         "which identifies research trends and proposes new, underexplored problems. Unlike the regular version, "
         "these tasks are not simplified or curated for accessibility; they are reviewed only for feasibility. "
         "This version is intended to test whether systems can handle more complex and less-structured research "
-        f"scenarios, following the same end-to-end process as {internal_leaderboard_link('E2E-Bench')}."
+        f"scenarios, following the same end-to-end process as {internal_leaderboard_link('E2E-Bench', validation)}."
     )
-}
+    }
+    
+    return descriptions.get(benchmark_name, "")
 
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"
 CITATION_BUTTON_TEXT = r"""@article{asta-bench,

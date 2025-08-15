@@ -2,7 +2,6 @@ import gradio as gr
 import pandas as pd
 import plotly.graph_objects as go
 import os
-import re
 import base64
 
 from agenteval.leaderboard.view import LeaderboardViewer
@@ -28,9 +27,9 @@ from config import (
 )
 from content import (
     BENCHMARK_DESCRIPTIONS,
+    create_gradio_anchor_id,
     format_error,
-    format_log,
-    format_warning,
+    get_benchmark_description,
     hf_uri_to_web_url,
     hyperlink,
     SCATTER_DISCLAIMER,
@@ -561,8 +560,8 @@ def create_benchmark_details_display(
     for benchmark_name in benchmark_names:
         gr.HTML(f'''
             <h3 class="benchmark-title" id="{create_gradio_anchor_id(benchmark_name, validation)}">{benchmark_name} Leaderboard</h3>
-            <div class="benchmark-description">{BENCHMARK_DESCRIPTIONS.get(benchmark_name, "")}</div>
             <button onclick="scroll_to_element('page-content-wrapper')" class="scroll-up-button">Return to the aggregate {category_name} leaderboard</button>
+            <div class="benchmark-description">{get_benchmark_description(benchmark_name, validation)}</div>
         ''')
 
         # 3. Prepare the data for this specific benchmark's table and plot
@@ -723,18 +722,6 @@ def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
 
     # Fallback for unexpected types
     return pd.DataFrame(), {}
-# Create sub-nav bar for benchmarks
-def create_gradio_anchor_id(text: str, validation) -> str:
-    """
-    Replicates the ID format created by gr.Markdown(header_links=True).
-    Example: "Paper Finder Validation" -> "h-paper-finder-validation"
-    """
-    text = text.lower()
-    text = re.sub(r'\s+', '-', text) # Replace spaces with hyphens
-    text = re.sub(r'[^\w-]', '', text) # Remove non-word characters
-    if validation:
-        return f"h-{text}-leaderboard-1"
-    return f"h-{text}-leaderboard"
 def create_sub_navigation_bar(tag_map: dict, category_name: str, validation: bool = False) -> gr.HTML:
     """
     Builds the entire sub-navigation bar as a single, self-contained HTML component.
