@@ -41,18 +41,6 @@ INTRO_PARAGRAPH = """
 SCATTER_DISCLAIMER = """
 **Note:** Agents without cost data are displayed to the right of the vertical divider line.
 """
-# Leaving this here incase we chang eour mind and want the formula public for transparency
-# scatter_disclaimer_html = """
-# <div class="disclaimer-text">
-#     <b>Note:</b> Agents without cost data are displayed to the right of the vertical divider line.
-#     <span class="tooltip-icon" data-tooltip="Missing Cost Dashed Line:
-#     Max Cost + (MaxCost/10)
-#     Missing Cost Datapoints / No Cost Data:
-#     Max Cost + (MaxCost/5)">
-#         ⓘ
-#     </span>
-# </div>
-# """
 PARETO_DISCLAIMER = """
 Agents names that are green are Pareto optimal, meaning they achieve the best performance for their cost. 
 """
@@ -173,7 +161,6 @@ table.gr-table th, table.gr-table td {
     padding: 4px 4px !important; 
     width: 1%;
     white-space: nowrap;
-    
 }
 table.svelte-1e98i6s td {
     vertical-align: top !important;
