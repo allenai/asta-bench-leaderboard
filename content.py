@@ -264,7 +264,6 @@ nav.svelte-ti537g.svelte-ti537g {
 /*------ Global tooltip styles ------*/
 .tooltip-icon {
     display: inline-block;
-    margin-left: 6px;
     cursor: help;
     position: relative;
 }
@@ -329,6 +328,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     grid-template-columns: auto auto auto auto 1fr auto auto !important;
     gap: 10px 20px !important; /* Vertical and horizontal spacing */
     width: 100% !important;
+    align-items: center;
 }
 .nav-holder nav a[href*="about"] {
     grid-row: 1 !important;
@@ -445,18 +445,105 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 #main-header h2 {
     color: #f0529c;
 }
+
+/* --- New HTML-Based Tooltip Styles --- */
+.tooltip-icon-legend {
+    position: relative;
+    cursor: help;
+    display: inline-block;
+}
+
+/* The HTML pop-up card.*/
+.tooltip-card {
+    /* Hiding mechanism */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s;
+    pointer-events: none;
+
+    /* Card appearance */
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background-color: #083c40;
+    color: #e5e7eb;
+    border-radius: 12px;
+    padding: 15px;
+    width: max-content;
+    max-width: 400px;
+    text-align: left;
+}
+
+.tooltip-icon-legend:hover .tooltip-card {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tooltip-card h3 {
+    font-size: 18px; 
+    color: #fff; 
+    margin-top: 0; 
+    margin-bottom: 12px;
+}
+.tooltip-card .tooltip-description {
+    margin-bottom: 20px; 
+    line-height: 1.3;
+}
+.tooltip-card .tooltip-items-container {
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px;
+}
+.tooltip-card .tooltip-legend-item {
+    display: flex; 
+    align-items: 
+    flex-start; 
+    gap: 10px;
+}
+.tooltip-card .tooltip-legend-item img {
+    width: 20px; 
+    height: 20px; 
+    margin-top: 2px;
+}
+.tooltip-card .tooltip-legend-item div {
+    display: flex; 
+    flex-direction: column;
+}
+.tooltip-card .tooltip-legend-item strong {
+    font-weight: 600; 
+    color: #fff;
+}
+.tooltip-card .tooltip-legend-item span {
+    font-size: 13px; 
+    line-height: 1.3;
+}
+.tooltip-sub-list {
+    list-style-type: '• '; 
+    padding-left: 18px;         
+    font-size: 13px;
+    line-height: 1.3;  
+    display: flex;
+    flex-direction: column;   
+}       
+/* About Page CSS */
 #about-page-content-wrapper {
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 800px; 
-  padding: 0 24px;
-  display: flex;
-  flex-direction: column; 
-  gap: 40px; 
-  margin-top: 40px;
-  opacity: 85%; 
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 800px; 
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column; 
+    gap: 40px; 
+    margin-top: 40px;
+    opacity: 85%; 
 }
 .divider-line {
     opacity: 40%;
+}
+#leaderboard-accordion table {
+    width: auto !important;
+    margin-right: auto !important;
 }
 """

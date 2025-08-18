@@ -6,6 +6,8 @@ from typing import Optional
 import base64
 import html
 
+import aliases
+
 logger = logging.getLogger(__name__)
 
 INFORMAL_TO_FORMAL_NAME_MAP = {
@@ -17,28 +19,50 @@ INFORMAL_TO_FORMAL_NAME_MAP = {
 
     # Validation Names
     "arxivdigestables_validation": "ArxivDIGESTables-Clean",
+    "ArxivDIGESTables_Clean_validation": "ArxivDIGESTables-Clean",
     "sqa_dev": "ScholarQA-CS2",
+    "ScholarQA_CS2_validation": "ScholarQA-CS2",
     "litqa2_validation": "LitQA2-FullText",
+    "LitQA2_FullText_validation": "LitQA2-FullText",
     "paper_finder_validation": "PaperFindingBench",
+    "PaperFindingBench_validation": "PaperFindingBench",
     "paper_finder_litqa2_validation": "LitQA2-FullText-Search",
+    "LitQA2_FullText_Search_validation": "LitQA2-FullText-Search",
     "discoverybench_validation": "DiscoveryBench",
+    "DiscoveryBench_validation": "DiscoveryBench",
     "core_bench_validation": "CORE-Bench-Hard",
+    "CORE_Bench_Hard_validation": "CORE-Bench-Hard",
     "ds1000_validation": "DS-1000",
+    "DS_1000_validation": "DS-1000",
     "e2e_discovery_validation": "E2E-Bench",
+    "E2E_Bench_validation": "E2E-Bench",
     "e2e_discovery_hard_validation": "E2E-Bench-Hard",
+    "E2E_Bench_Hard_validation": "E2E-Bench-Hard",
     "super_validation": "SUPER-Expert",
+    "SUPER_Expert_validation": "SUPER-Expert",
     # Test Names
     "paper_finder_test": "PaperFindingBench",
+    "PaperFindingBench_test": "PaperFindingBench",
     "paper_finder_litqa2_test": "LitQA2-FullText-Search",
+    "LitQA2_FullText_Search_test": "LitQA2-FullText-Search",
     "sqa_test": "ScholarQA-CS2",
+    "ScholarQA_CS2_test": "ScholarQA-CS2",
     "arxivdigestables_test": "ArxivDIGESTables-Clean",
+    "ArxivDIGESTables_Clean_test": "ArxivDIGESTables-Clean",
     "litqa2_test": "LitQA2-FullText",
+    "LitQA2_FullText_test": "LitQA2-FullText",
     "discoverybench_test": "DiscoveryBench",
+    "DiscoveryBench_test": "DiscoveryBench",
     "core_bench_test": "CORE-Bench-Hard",
+    "CORE_Bench_Hard_test": "CORE-Bench-Hard",
     "ds1000_test": "DS-1000",
+    "DS_1000_test": "DS-1000",
     "e2e_discovery_test": "E2E-Bench",
+    "E2E_Bench_test": "E2E-Bench",
     "e2e_discovery_hard_test": "E2E-Bench-Hard",
+    "E2E_Bench_Hard_test": "E2E-Bench-Hard",
     "super_test": "SUPER-Expert",
+    "SUPER_Expert_test": "SUPER-Expert",
 }
 ORDER_MAP = {
     'Overall_keys': [
@@ -89,6 +113,7 @@ def _pretty_column_name(raw_col: str) -> str:
         'Openness': 'Openness',
         'Agent tooling': 'Agent Tooling',
         'LLM base': 'LLM Base',
+        'Source': 'Source',
     }
 
     if raw_col in fixed_mappings:
@@ -162,7 +187,6 @@ def transform_raw_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         raise TypeError("Input 'raw_df' must be a pandas DataFrame.")
 
     df = raw_df.copy()
-
     # Create the mapping for pretty column names
     pretty_cols_map = {col: _pretty_column_name(col) for col in df.columns}
 
@@ -230,35 +254,8 @@ class DataTransformer:
 
         df_view = df_sorted.copy()
 
-        # 3. Combine "Agent" and "Submitter" into a single HTML-formatted column
-        #    We do this *before* defining the final column list.
-        if 'Agent' in df_view.columns and 'Submitter' in df_view.columns:
-            #preserve just agent name for scatterplot hover
-            df_view['agent_for_hover'] = df_view['Agent']
-            
-            def combine_agent_submitter(row):
-                agent = row['Agent']
-                submitter = row['Submitter']
-
-                # Check if submitter exists and is not empty
-                if pd.notna(submitter) and submitter.strip() != '':
-                    # Create a two-line HTML string with styled submitter text
-                    return (
-                        f"<div>{agent}<br>"
-                        f"<span style='font-size: 0.9em; color: #667876;'>{submitter}</span>"
-                        f"</div>"
-                    )
-                else:
-                    # If no submitter, just return the agent name
-                    return agent
-
-            # Apply the function to create the new combined 'Agent' column
-            df_view['Agent'] = df_view.apply(combine_agent_submitter, axis=1)
-            # The 'Submitter' column is no longer needed
-            df_view = df_view.drop(columns=['Submitter'])
-
-        # 4. Build the List of Columns to Display
-        base_cols = ["id","Agent","LLM Base", "agent_for_hover"]
+        # --- 3. Add Columns for Agent Openness and Tooling ---
+        base_cols = ["id","Agent","Submitter","LLM Base","Source"]
         new_cols = ["Openness", "Agent Tooling"]
         ending_cols = ["Logs"]
 
@@ -318,7 +315,7 @@ class DataTransformer:
                     data=df_view,
                     x=primary_cost_col,
                     y=primary_score_col,
-                    agent_col="agent_for_hover",
+                    agent_col="Agent",
                     name=primary_metric
                 )
                 # Use a consistent key for easy retrieval later
@@ -339,24 +336,39 @@ def _plot_scatter_plotly(
         data: pd.DataFrame,
         x: Optional[str],
         y: str,
-        agent_col: str = 'agent_for_hover',
+        agent_col: str = 'Agent',
         name: Optional[str] = None
 ) -> go.Figure:
 
     # --- Section 1: Define Mappings ---
+    # These include aliases for openness categories,
+    # so multiple names might correspond to the same color.
     color_map = {
-        "Open Source + Open Weights": "deeppink",
-        "Open Source": "coral",
-        "API Available": "yellow",
-        "Closed": "white",
+        aliases.CANONICAL_OPENNESS_OPEN_OPEN_WEIGHTS: "deeppink",
+        aliases.CANONICAL_OPENNESS_OPEN_CLOSED_WEIGHTS: "coral",
+        aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE: "yellow",
+        aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY: "white",
     }
+    for canonical_openness, openness_aliases in aliases.OPENNESS_ALIASES.items():
+        for openness_alias in openness_aliases:
+            color_map[openness_alias] = color_map[canonical_openness]
+    # Only keep one name per color for the legend.
+    colors_for_legend = set(aliases.OPENNESS_ALIASES.keys())
     category_order = list(color_map.keys())
+
+    # These include aliases for tool usage categories,
+    # so multiple names might correspond to the same shape.
     shape_map = {
-        "Standard": "star",
-        "Custom with Standard Search": "star-diamond",
-        "Fully Custom": "star-triangle-up"
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "star",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "star-diamond",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "star-triangle-up",
     }
+    for canonical_tool_usage, tool_usages_aliases in aliases.TOOL_USAGE_ALIASES.items():
+        for tool_usage_alias in tool_usages_aliases:
+            shape_map[tool_usage_alias] = shape_map[canonical_tool_usage]
     default_shape = 'square'
+    # Only keep one name per shape for the legend.
+    shapes_for_legend = set(aliases.TOOL_USAGE_ALIASES.keys())
 
     x_col_to_use = x
     y_col_to_use = y
@@ -505,7 +517,7 @@ def _plot_scatter_plotly(
             )
         ))
     # ---- Add logic for making the legend -----------
-    for i, category in enumerate(category_order):
+    for i, category in enumerate(colors_for_legend):
         fig.add_trace(go.Scatter(
             x=[None], y=[None],
             mode='markers',
@@ -520,15 +532,14 @@ def _plot_scatter_plotly(
         ))
 
     # Part B: Dummy traces for the SHAPES ("Agent Tooling")
-    shape_items = list(shape_map.items())
-    for i, (shape_name, shape_symbol) in enumerate(shape_items):
+    for i, shape_name in enumerate(shapes_for_legend):
         fig.add_trace(go.Scatter(
             x=[None], y=[None],
             mode='markers',
             name=shape_name,
             legendgroup="tooling_group",
             legendgrouptitle_text="Agent Tooling" if i == 0 else None,
-            marker=dict(color='black', symbol=shape_symbol, size=12)
+            marker=dict(color='black', symbol=shape_map.get(shape_name), size=12)
         ))
 
     # --- Section 8: Configure Layout  ---

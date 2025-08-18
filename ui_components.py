@@ -8,6 +8,7 @@ import base64
 from agenteval.leaderboard.view import LeaderboardViewer
 from huggingface_hub import HfApi
 
+import aliases
 from leaderboard_transformer import (
     DataTransformer,
     transform_raw_dataframe,
@@ -40,37 +41,51 @@ AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 # Global variables
 COMBINED_ICON_MAP = {
-    "Open Source + Open Weights": {
-        "Standard": "assets/os-ow-standard.svg",        # Bright pink star
-        "Custom with Standard Search": "assets/os-ow-equivalent.svg",    # Bright pink diamond
-        "Custom": "assets/os-ow-custom.svg",            # Bright pink triangle
+    aliases.CANONICAL_OPENNESS_OPEN_OPEN_WEIGHTS: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/os-ow-standard.svg",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/os-ow-equivalent.svg",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/os-ow-custom.svg",
     },
-    "Open Source": {
-        "Standard": "assets/os-standard.svg",        # Orange/pink star
-        "Custom with Standard Search": "assets/os-equivalent.svg",    # Orange/pink diamond
-        "Fully Custom": "assets/os-custom.svg",            # Orange/pink triangle
+    aliases.CANONICAL_OPENNESS_OPEN_CLOSED_WEIGHTS: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/os-standard.svg",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/os-equivalent.svg",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/os-custom.svg",
     },
-    "API Available": {
-        "Standard": "assets/api-standard.svg",       # Yellow/pink star
-        "Custom with Standard Search": "assets/api-equivalent.svg",   # Yellow/pink diamond
-        "Fully Custom": "assets/api-custom.svg",           # Yellow/pink triangle
+    aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/api-standard.svg",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/api-equivalent.svg",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/api-custom.svg",
     },
-    "Closed": {
-        "Standard": "assets/c-standard.svg",        # Hollow pink star
-        "Equivalent": "assets/c-equivalent.svg",    # Hollow pink diamond
-        "Fully Custom": "assets/c-custom.svg",            # Hollow pink triangle
+    aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY: {
+        aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/c-standard.svg",
+        aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/c-equivalent.svg",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/c-custom.svg",
     }
 }
+
+
+# it's important to do the tool usage first here, so that when
+# we do openness, the tool usage changes get picked up
+for openness in COMBINED_ICON_MAP:
+    for canonical_tool_usage, tool_usage_aliases in aliases.TOOL_USAGE_ALIASES.items():
+        for tool_usage_alias in tool_usage_aliases:
+            COMBINED_ICON_MAP[openness][tool_usage_alias] = COMBINED_ICON_MAP[openness][canonical_tool_usage]
+
+for canonical_openness, openness_aliases in aliases.OPENNESS_ALIASES.items():
+    for openness_alias in openness_aliases:
+        COMBINED_ICON_MAP[openness_alias] = COMBINED_ICON_MAP[canonical_openness]
+
+
 OPENNESS_SVG_MAP = {
-    "Open Source + Open Weights": "assets/os-ow-standard.svg",
-    "Open Source": "assets/os-standard.svg",
-    "API Available": "assets/api-standard.svg",
-    "Closed": "assets/c-standard.svg",
+    "Open Source + Open Weights": "assets/os-ow-legend.svg",
+    "Open Source": "assets/os-legend.svg",
+    "API Available": "assets/api-legend.svg",
+    "Closed": "assets/c-legend.svg",
 }
 TOOLING_SVG_MAP = {
-    "Standard": "assets/os-ow-standard.svg",
-    "Custom with Standard Search": "assets/os-ow-equivalent.svg",
-    "Fully Custom": "assets/os-ow-custom.svg",
+    "Standard": "assets/standard-legend.svg",
+    "Custom with Standard Search": "assets/equivalent-legend.svg",
+    "Fully Custom": "assets/custom-legend.svg",
 }
 
 def get_svg_as_data_uri(path: str) -> str:
@@ -122,6 +137,126 @@ def create_svg_html(value, svg_map):
         return f'<img src="{src}" style="width: 16px; height: 16px; vertical-align: middle;" alt="{value}" title="{value}">'
     return ""
 
+def build_openness_tooltip_content() -> str:
+    """
+    Generates the inner HTML for the Agent Openness tooltip card,
+    """
+    descriptions = {
+        "Open Source + Open Weights": "Both code and ML models are open",
+        "Open Source": "Code is open but uses an ML model with closed-weights",
+        "API Available": "No access to code; API access only",
+        "Closed": "No access to code or API; UI  access only",
+    }
+    html_items = []
+    for name, path in OPENNESS_SVG_MAP.items():
+        uri = get_svg_as_data_uri(path)
+        desc = descriptions.get(name, "")
+
+        # Create the HTML for a single row in the tooltip legend
+        html_items.append(f"""
+            <div class="tooltip-legend-item">
+                <img src="{uri}" alt="{name}">
+                <div>
+                    <strong>{name}</strong>
+                    <span>{desc}</span>
+                </div>
+            </div>
+        """)
+
+    return "".join(html_items)
+
+def build_pareto_tooltip_content() -> str:
+    """Generates the inner HTML for the Pareto tooltip card with final copy."""
+    return f"""
+        <h3>On Pareto Frontier</h3>
+        <p class="tooltip-description">The Pareto frontier represents the best balance between score and cost.</p>
+        <p class="tooltip-description">Agents on the frontier either:</p>
+        <ul class="tooltip-sub-list">
+            <li>Offer the lowest cost for a given performance, or</li>
+            <li>Deliver the best performance at a given cost.</li>
+        </ul>
+        <p class="tooltip-description" style="margin-top: 12px;">These agents are marked with this icon: 🏆</p>
+    """
+
+def build_tooling_tooltip_content() -> str:
+    """Generates the inner HTML for the Agent Tooling tooltip card."""
+    descriptions = {
+        "Standard": "Uses only predefined tools from the evaluation environment (as defined in Inspect's state.tools).",
+        "Custom with Standard Search": "Custom tools for accessing an equivalent underlying environment:",
+        "Fully Custom": "Uses tools beyond constraints of Standard or Custom interface",
+    }
+    custom_interface_sub_list = """
+        <ul class="tooltip-sub-list">
+            <li>Literature tasks: Information access is limited to date-restricted usage of the Asta MCP tools.</li>
+            <li>Code tasks: Code execution is limited to an iPython shell in a machine environment initialized with the standard Asta sandbox Dockerfile (or equivalent).</li>
+        </ul>
+    """
+    html_items = []
+    for name, path in TOOLING_SVG_MAP.items():
+        uri = get_svg_as_data_uri(path)
+        desc = descriptions.get(name, "")
+
+        # Check if this is the special case that needs a sub-list
+        sub_list_html = custom_interface_sub_list if name == "Custom with Standard Search" else ""
+
+        html_items.append(f"""
+            <div class="tooltip-legend-item">
+                <img src="{uri}" alt="{name}">
+                <div>
+                    <strong>{name}</strong>
+                    <span>{desc}</span>
+                    {sub_list_html}
+                </div>
+            </div>
+        """)
+
+    return "".join(html_items)
+
+
+def build_descriptions_tooltip_content(table) -> str:
+    """Generates the inner HTML for the Column Descriptions tooltip card depending on which kind of table."""
+    if table == "Overall":
+        return """
+            <div class="tooltip-description-item"><b>Agent:</b> Name of the evaluated agent.</div>
+            <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
+            <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
+            <div class="tooltip-description-item"><b>Overall Score:</b> Macro-average of the four category-level average scores. Each category contributes equally.</div>
+            <div class="tooltip-description-item"><b>Overall Cost:</b> Macro-average cost per problem across all categories, in USD. Based on submission-time values. Each category contributes equally</div>
+            <div class="tooltip-description-item"><b>Literature Understanding Score:</b> Macro-average score across Literature Understanding benchmarks.</div>
+            <div class="tooltip-description-item"><b>Literature Understanding Cost:</b> Macro-average cost per problem (USD) across Literature Understanding benchmarks.</div>
+            <div class="tooltip-description-item"><b>Code Execution Score:</b> Macro-average score across Code & Execution benchmarks.</div>
+            <div class="tooltip-description-item"><b>Code Execution Cost:</b> Macro-average cost per problem (USD) across Code & Execution benchmarks.</div>
+            <div class="tooltip-description-item"><b>Data Analysis Score:</b> Macro-average score across Data Analysis benchmarks.</div>
+            <div class="tooltip-description-item"><b>Data Analysis Cost:</b> Macro-average cost per problem (USD) across Data Analysis benchmarks.</div>
+            <div class="tooltip-description-item"><b>End-to-End Discovery Score:</b> Macro-average score across End-to-End Discovery benchmarks.</div>
+            <div class="tooltip-description-item"><b>End-to-End Discovery Cost:</b> Macro-average cost per problem (USD)across End-to-End Discovery benchmarks.</div>
+            <div class="tooltip-description-item"><b>Categories Attempted:</b> Number of core categories with at least one benchmark attempted (out of 4).</div>
+            <div class="tooltip-description-item"><b>Logs:</b> View evaluation run logs (e.g., outputs, traces).</div>
+        """
+    elif table in ["Literature Understanding", "Code & Execution", "Data Analysis", "End-to-End Discovery"]:
+        return f"""
+            <div class="tooltip-description-item"><b>Agent:</b> Name of the evaluated agent.</div>
+            <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
+            <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
+            <div class="tooltip-description-item"><b>{table} Score:</b> Macro-average score across {table} benchmarks.</div>
+            <div class="tooltip-description-item"><b>{table} Cost:</b> Macro-average cost per problem (USD) across {table} benchmarks.</div>
+            <div class="tooltip-description-item"><b>Benchmark Score:</b> Average (mean) score on the benchmark.</div>
+            <div class="tooltip-description-item"><b>Benchmark Cost:</b> Average (mean) cost per problem (USD) on the benchmark.</div>
+            <div class="tooltip-description-item"><b>Benchmarks Attempted:</b> Number of benchmarks attempted in this category (e.g., 3/5).</div>
+            <div class="tooltip-description-item"><b>Logs:</b> View evaluation run logs (e.g., outputs, traces).</div>
+        """
+    else:
+        # Fallback for any other table type, e.g., individual benchmarks
+        return f"""
+            <div class="tooltip-description-item"><b>Agent:</b> Name of the evaluated agent.</div>
+            <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
+            <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
+            <div class="tooltip-description-item"><b>Benchmark Attempted:</b> Indicates whether the agent attempted this benchmark.</div>
+            <div class="tooltip-description-item"><b>{table} Score:</b> Score achieved by the agent on this benchmark.</div>
+            <div class="tooltip-description-item"><b>{table} Cost:</b> Cost incurred by the agent to solve this benchmark (in USD).</div>
+            <div class="tooltip-description-item"><b>Logs:</b> View evaluation run logs (e.g., outputs, traces).</div>
+        """
+
 # Dynamically generate the correct HTML for the legend parts
 openness_html = " ".join([create_svg_html(name, OPENNESS_SVG_MAP) for name in OPENNESS_SVG_MAP])
 tooling_html = " ".join([create_svg_html(name, TOOLING_SVG_MAP) for name in TOOLING_SVG_MAP])
@@ -150,47 +285,67 @@ for name, path in TOOLING_SVG_MAP.items():
     )
 tooling_html = " ".join(tooling_html_items)
 
+pareto_tooltip_content = build_pareto_tooltip_content()
+openness_tooltip_content = build_openness_tooltip_content()
+tooling_tooltip_content = build_tooling_tooltip_content()
 
-# Your final legend_markdown string (the structure of this does not change)
-legend_markdown = f"""
-<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; font-size: 14px; padding-bottom: 8px;">
-        
-    <div> <!-- Container for the Pareto section -->
-        <b>Pareto</b><span class="tooltip-icon" data-tooltip="Indicates if agent is on the Pareto frontier
-        ">ⓘ</span>
-        <div style="padding-top: 4px;"><span>🏆 On frontier</span></div>
-    </div>
-
-    <div> <!-- Container for the Openness section -->
-        <b>Agent Openness</b><span class="tooltip-icon" data-tooltip="•Closed: No API or code available
-        •API Available: API available, but no code
-        •Open Source: Code available, but no weights
-        •Open Source + Open Weights: Code and weights available
-        ">ⓘ</span>
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{openness_html}</div>
-    </div>
-
-    <div> <!-- Container for the Tooling section -->
-        <b>Agent Tooling</b><span class="tooltip-icon" data-tooltip="• Standard: Standard Approach used by the agent
-        • Custom with Standard Search: Standard search used by the agent
-        • Fully Custom: Fully custom tools used by the agent
-        ">ⓘ</span>
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">{tooling_html}</div>
-    </div>
+def create_legend_markdown(which_table: str) -> str:
+    """
+    Generates the complete HTML for the legend section, including tooltips.
+    This is used in the main leaderboard display.
+    """
+    descriptions_tooltip_content = build_descriptions_tooltip_content(which_table)
+    legend_markdown = f"""
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; font-size: 14px; padding-bottom: 8px;">
+            
+        <div> <!-- Container for the Pareto section -->
+            <b>Pareto</b>
+            <span class="tooltip-icon-legend">
+                ⓘ
+                <span class="tooltip-card">{pareto_tooltip_content}</span>
+            </span>
+            <div style="margin-top: 8px;"><span>🏆 On frontier</span></div>
+        </div>
     
-     <div><b>Column Descriptions</b><span class="tooltip-icon" data-tooltip="• Overall Score: Performance across all benchmarks
-        • Overall Cost: Cost per task in USD
-        • Literature Understanding Score: Performance on scientific literature tasks
-        • Literature Understanding Cost: Cost per literature understanding task in USD
-        • Data Analysis Score: Performance on data analysis tasks
-        • Code Execution Score: Performance on coding tasks
-        • Code Execution Cost: Cost per code execution task in USD
-        • Discovery Score: Performance on information discovery tasks
-        • Discovery Cost: Cost per discovery task in USD
-        • Categories Attempted: Number of benchmark categories the agent participated in
-        • Logs: Link to detailed evaluation logs">ⓘ</span></div>
-</div>
-"""
+        <div> <!-- Container for the Openness section -->
+            <b>Agent Openness</b>
+            <span class="tooltip-icon-legend">
+                ⓘ
+                <span class="tooltip-card">
+                    <h3>Agent Openness</h3>
+                    <p class="tooltip-description">Indicates how transparent and reproducible an agent is.</p>
+                    <div class="tooltip-items-container">{openness_tooltip_content}</div>
+                </span>
+            </span>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 8px;">{openness_html}</div>
+        </div>
+    
+        <div> <!-- Container for the Tooling section -->
+            <b>Agent Tooling</b>
+            <span class="tooltip-icon-legend">
+                ⓘ
+                <span class="tooltip-card">
+                    <h3>Agent Tooling</h3>
+                    <p class="tooltip-description">Describes the tool usage and execution environment of the agent during evaluation.</p>
+                    <div class="tooltip-items-container">{tooling_tooltip_content}</div>
+                </span>
+            </span>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 8px;">{tooling_html}</div>
+        </div>
+        
+        <div><!-- Container for the Column Descriptions section -->
+            <b>Column Descriptions</b>
+            <span class="tooltip-icon-legend">
+                ⓘ
+                <span class="tooltip-card">
+                    <h3>Column Descriptions</h3>
+                    <div class="tooltip-items-container">{descriptions_tooltip_content}</div>
+                </span>
+            </span>
+        </div>
+    </div>
+    """
+    return legend_markdown
 
 # --- Global State for Viewers (simple caching) ---
 CACHED_VIEWERS = {}
@@ -296,6 +451,12 @@ def create_leaderboard_display(
     #Make pretty and format the LLM Base column
     df_view['LLM Base'] = df_view['LLM Base'].apply(clean_llm_base_list)
     df_view['LLM Base'] = df_view['LLM Base'].apply(format_llm_base_with_html)
+    # append the repro url to the end of the agent name
+    if 'Source' in df_view.columns:
+        df_view['Agent'] = df_view.apply(
+            lambda row: f"{row['Agent']} {row['Source']}" if row['Source'] else row['Agent'],
+            axis=1
+        )
 
     all_cols = df_view.columns.tolist()
     # Remove pareto and Icon columns and insert it at the beginning
@@ -303,15 +464,15 @@ def create_leaderboard_display(
     all_cols.insert(0, all_cols.pop(all_cols.index('Pareto')))
     df_view = df_view[all_cols]
     # Drop internally used columns that are not needed in the display
-    columns_to_drop = ['id', 'agent_for_hover', 'Openness', 'Agent Tooling']
+    columns_to_drop = ['id', 'Openness', 'Agent Tooling', 'Source']
     df_view = df_view.drop(columns=columns_to_drop, errors='ignore')
 
     df_headers = df_view.columns.tolist()
     df_datatypes = []
     for col in df_headers:
-        if col in ["Logs", "Agent"] or "Cost" in col or "Score" in col:
+        if col == "Logs" or "Cost" in col or "Score" in col:
             df_datatypes.append("markdown")
-        elif col in ["Icon","LLM Base"]:
+        elif col in ["Agent","Icon","LLM Base"]:
             df_datatypes.append("html")
         else:
             df_datatypes.append("str")
@@ -322,6 +483,17 @@ def create_leaderboard_display(
     }
     # 2. Create the final list of headers for display.
     df_view = df_view.rename(columns=header_rename_map)
+    # Dynamically set widths for the DataFrame columns
+    fixed_start_widths = [40, 40, 200, 100, 200]
+    num_score_cost_cols = 0
+    remaining_headers = df_headers[len(fixed_start_widths):]
+    for col in remaining_headers:
+        if "Score" in col or "Cost" in col:
+            num_score_cost_cols += 1
+    dynamic_widths = [90] * num_score_cost_cols
+    fixed_end_widths = [90, 50]
+    # 5. Combine all the lists to create the final, fully dynamic list.
+    final_column_widths = fixed_start_widths + dynamic_widths + fixed_end_widths
 
     plot_component = gr.Plot(
         value=scatter_plot,
@@ -330,16 +502,18 @@ def create_leaderboard_display(
     gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
     # Put table and key into an accordion
     with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
-        gr.HTML(value=legend_markdown, elem_id="legend-markdown")
         dataframe_component = gr.DataFrame(
             headers=df_headers,
             value=df_view,
             datatype=df_datatypes,
             interactive=False,
             wrap=True,
-            column_widths=[40, 40, 200, 200],
-            elem_classes=["wrap-header-df"]
+            column_widths=final_column_widths,
+            elem_classes=["wrap-header-df"],
+            show_search="search",
         )
+        legend_markdown = create_legend_markdown(category_name)
+        gr.HTML(value=legend_markdown, elem_id="legend-markdown")
 
     # Return the components so they can be referenced elsewhere.
     return plot_component, dataframe_component
@@ -386,7 +560,7 @@ def create_benchmark_details_display(
         benchmark_cost_col = f"{benchmark_name} Cost"
 
         # Define the columns needed for the detailed table
-        table_cols = ['Agent','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'LLM Base']
+        table_cols = ['Agent','Source','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'LLM Base']
 
         # Filter to only columns that actually exist in the full dataframe
         existing_table_cols = [col for col in table_cols if col in full_df.columns]
@@ -416,6 +590,12 @@ def create_benchmark_details_display(
         #Make pretty and format the LLM Base column
         benchmark_table_df['LLM Base'] = benchmark_table_df['LLM Base'].apply(clean_llm_base_list)
         benchmark_table_df['LLM Base'] = benchmark_table_df['LLM Base'].apply(format_llm_base_with_html)
+        # append the repro url to the end of the agent name
+        if 'Source' in benchmark_table_df.columns:
+            benchmark_table_df['Agent'] = benchmark_table_df.apply(
+                lambda row: f"{row['Agent']} {row['Source']}" if row['Source'] else row['Agent'],
+                axis=1
+            )
 
         # Calculated and add "Benchmark Attempted" column
         def check_benchmark_status(row):
@@ -463,7 +643,7 @@ def create_benchmark_details_display(
         for col in df_headers:
             if "Logs" in col or "Cost" in col or "Score" in col:
                 df_datatypes.append("markdown")
-            elif col in ["Icon", "LLM Base"]:
+            elif col in ["Agent","Icon", "LLM Base"]:
                 df_datatypes.append("html")
             else:
                 df_datatypes.append("str")
@@ -474,8 +654,6 @@ def create_benchmark_details_display(
         }
         # 2. Create the final list of headers for display.
         benchmark_table_df = benchmark_table_df.rename(columns=header_rename_map)
-        # Create the scatter plot using the full data for context, but plotting benchmark metrics
-        # This shows all agents on the same axis for better comparison.
         benchmark_plot = _plot_scatter_plotly(
             data=full_df,
             x=benchmark_cost_col,
@@ -487,16 +665,17 @@ def create_benchmark_details_display(
         gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
         # Put table and key into an accordion
         with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
-            gr.HTML(value=legend_markdown, elem_id="legend-markdown")
             gr.DataFrame(
                 headers=df_headers,
                 value=benchmark_table_df,
                 datatype=df_datatypes,
                 interactive=False,
                 wrap=True,
-                column_widths=[40, 40, 200, 150, 175, 85],
+                column_widths=[40, 40, 200, 150, 175, 85, 100, 100, 40],
                 elem_classes=["wrap-header-df"]
             )
+            legend_markdown = create_legend_markdown(benchmark_name)
+            gr.HTML(value=legend_markdown, elem_id="legend-markdown")
 
 def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     """
@@ -517,10 +696,17 @@ def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
                 if pd.isna(raw_uri) or raw_uri == "": return ""
                 web_url = hf_uri_to_web_url(str(raw_uri))
                 return hyperlink(web_url, "🔗") if web_url else ""
-
             # Apply the function to the "Logs" column
             pretty_df["Logs"] = pretty_df["Logs"].apply(format_log_entry_to_html)
 
+        if "Source" in pretty_df.columns:
+            def format_source_url_to_html(raw_url):
+                # Handle empty or NaN values, returning a blank string.
+                if pd.isna(raw_url) or raw_url == "": return ""
+                # Assume 'source_url' is already a valid web URL and doesn't need conversion.
+                return hyperlink(str(raw_url), "🔗")
+            # Apply the function to the "source_url" column.
+            pretty_df["Source"] = pretty_df["Source"].apply(format_source_url_to_html)
         return pretty_df, pretty_tag_map
 
     # Fallback for unexpected types

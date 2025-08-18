@@ -32,7 +32,6 @@ from config import (
     LOCAL_DEBUG,
     RESULTS_DATASET,
     SUBMISSION_DATASET,
-    SUBMISSION_DATASET_PUBLIC,
 )
 from content import (
     CITATION_BUTTON_LABEL,
