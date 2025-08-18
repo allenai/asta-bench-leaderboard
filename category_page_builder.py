@@ -30,7 +30,8 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
                     create_benchmark_details_display(
                         full_df=test_df,
                         tag_map=test_tag_map,
-                        category_name=CATEGORY_NAME
+                        category_name=CATEGORY_NAME,
+                        validation=False,
                     )
                 else:
                     gr.Markdown("No data available for test split.")
@@ -50,7 +51,8 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
                     create_benchmark_details_display(
                         full_df=validation_df,
                         tag_map=validation_tag_map,
-                        category_name=CATEGORY_NAME
+                        category_name=CATEGORY_NAME,
+                        validation=True,
                     )
                 else:
                     gr.Markdown("No data available for validation split.")

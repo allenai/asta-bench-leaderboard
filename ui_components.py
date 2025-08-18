@@ -2,7 +2,6 @@ import gradio as gr
 import pandas as pd
 import plotly.graph_objects as go
 import os
-import re
 import base64
 
 from agenteval.leaderboard.view import LeaderboardViewer
@@ -27,9 +26,9 @@ from config import (
     RESULTS_DATASET,
 )
 from content import (
+    create_gradio_anchor_id,
     format_error,
-    format_log,
-    format_warning,
+    get_benchmark_description,
     hf_uri_to_web_url,
     hyperlink,
     SCATTER_DISCLAIMER,
@@ -533,7 +532,8 @@ def create_leaderboard_display(
 def create_benchmark_details_display(
         full_df: pd.DataFrame,
         tag_map: dict,
-        category_name: str
+        category_name: str,
+        validation: bool = False,
 ):
     """
     Generates a detailed breakdown for each benchmark within a given category.
@@ -550,21 +550,15 @@ def create_benchmark_details_display(
         gr.Markdown(f"No detailed benchmarks found for the category: {category_name}")
         return
 
-    gr.HTML(f'<h2 style="padding-top: 120px;">{category_name} Detailed Benchmark Results</h2>')
+    gr.HTML(f'<h2 class="benchmark-main-subtitle">{category_name} Detailed Benchmark Results</h2>')
     gr.Markdown("---")
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
-        with gr.Row(elem_classes=["benchmark-header"]):
-            gr.Markdown(f"### {benchmark_name} Leaderboard", header_links=True)
-            button_str = f"""
-            <button
-                class="scroll-up-button"
-                onclick="scroll_to_element('page-content-wrapper')"
-            >
-                {"⬆"}
-            </button>
-            """
-            gr.HTML(button_str,elem_classes="scroll-up-container")
+        gr.HTML(f'''
+            <h3 class="benchmark-title" id="{create_gradio_anchor_id(benchmark_name, validation)}">{benchmark_name} Leaderboard</h3>
+            <div class="benchmark-description">{get_benchmark_description(benchmark_name, validation)}</div>
+            <button onclick="scroll_to_element('page-content-wrapper')" class="scroll-up-button">Return to the aggregate {category_name} leaderboard</button>
+        ''')
 
         # 3. Prepare the data for this specific benchmark's table and plot
         benchmark_score_col = f"{benchmark_name} Score"
@@ -724,18 +718,6 @@ def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
 
     # Fallback for unexpected types
     return pd.DataFrame(), {}
-# Create sub-nav bar for benchmarks
-def create_gradio_anchor_id(text: str, validation) -> str:
-    """
-    Replicates the ID format created by gr.Markdown(header_links=True).
-    Example: "Paper Finder Validation" -> "h-paper-finder-validation"
-    """
-    text = text.lower()
-    text = re.sub(r'\s+', '-', text) # Replace spaces with hyphens
-    text = re.sub(r'[^\w-]', '', text) # Remove non-word characters
-    if validation:
-        return f"h-{text}-leaderboard-1"
-    return f"h-{text}-leaderboard"
 def create_sub_navigation_bar(tag_map: dict, category_name: str, validation: bool = False) -> gr.HTML:
     """
     Builds the entire sub-navigation bar as a single, self-contained HTML component.
