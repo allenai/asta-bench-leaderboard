@@ -344,7 +344,7 @@ def _plot_scatter_plotly(
     # These include aliases for openness categories,
     # so multiple names might correspond to the same color.
     color_map = {
-        aliases.CANONICAL_OPENNESS_OPEN_OPEN_WEIGHTS: "deeppink",
+        aliases.CANONICAL_OPENNESS_OPEN_WEIGHTS: "deeppink",
         aliases.CANONICAL_OPENNESS_OPEN_CLOSED_WEIGHTS: "coral",
         aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE: "yellow",
         aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY: "white",

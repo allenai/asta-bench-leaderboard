@@ -40,7 +40,7 @@ AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 # Global variables
 COMBINED_ICON_MAP = {
-    aliases.CANONICAL_OPENNESS_OPEN_OPEN_WEIGHTS: {
+    aliases.CANONICAL_OPENNESS_OPEN_WEIGHTS: {
         aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/os-ow-standard.svg",
         aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/os-ow-equivalent.svg",
         aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/os-ow-custom.svg",
@@ -77,13 +77,13 @@ for canonical_openness, openness_aliases in aliases.OPENNESS_ALIASES.items():
 
 OPENNESS_SVG_MAP = {
     "Open Source + Open Weights": "assets/os-ow-legend.svg",
-    "Open Source": "assets/os-legend.svg",
+    "Open Source + Closed Weights": "assets/os-legend.svg",
     "API Available": "assets/api-legend.svg",
-    "Closed": "assets/c-legend.svg",
+    "Closed Source & UI only": "assets/c-legend.svg",
 }
 TOOLING_SVG_MAP = {
     "Standard": "assets/standard-legend.svg",
-    "Custom with Standard Search": "assets/equivalent-legend.svg",
+    "Custom Interface": "assets/equivalent-legend.svg",
     "Fully Custom": "assets/custom-legend.svg",
 }
 
@@ -142,9 +142,9 @@ def build_openness_tooltip_content() -> str:
     """
     descriptions = {
         "Open Source + Open Weights": "Both code and ML models are open",
-        "Open Source": "Code is open but uses an ML model with closed-weights",
+        "Open Source + Closed Weights": "Code is open but uses an ML model with closed-weights",
         "API Available": "No access to code; API access only",
-        "Closed": "No access to code or API; UI  access only",
+        "Closed Source + UI Only": "No access to code or API; UI  access only",
     }
     html_items = []
     for name, path in OPENNESS_SVG_MAP.items():
@@ -186,7 +186,7 @@ def build_tooling_tooltip_content() -> str:
     """Generates the inner HTML for the Agent Tooling tooltip card."""
     descriptions = {
         "Standard": "Uses only predefined tools from the evaluation environment (as defined in Inspect's state.tools).",
-        "Custom with Standard Search": "Custom tools for accessing an equivalent underlying environment:",
+        "Custom Interface": "Custom tools for accessing an equivalent underlying environment:",
         "Fully Custom": "Uses tools beyond constraints of Standard or Custom interface",
     }
     custom_interface_sub_list = """
@@ -201,7 +201,7 @@ def build_tooling_tooltip_content() -> str:
         desc = descriptions.get(name, "")
 
         # Check if this is the special case that needs a sub-list
-        sub_list_html = custom_interface_sub_list if name == "Custom with Standard Search" else ""
+        sub_list_html = custom_interface_sub_list if name == "Custom Interface" else ""
 
         html_items.append(f"""
             <div class="tooltip-legend-item">
@@ -301,7 +301,7 @@ def create_legend_markdown(which_table: str) -> str:
     descriptions_tooltip_content = build_descriptions_tooltip_content(which_table)
     trophy_uri = get_svg_as_data_uri("assets/trophy.svg")
     legend_markdown = f"""
-    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; font-size: 14px; padding-bottom: 8px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0px; font-size: 13px; padding-bottom: 8px;">
             
         <div> <!-- Container for the Pareto section -->
             <b>Pareto</b>
@@ -325,7 +325,7 @@ def create_legend_markdown(which_table: str) -> str:
                     <div class="tooltip-items-container">{openness_tooltip_content}</div>
                 </span>
             </span>
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 8px;">{openness_html}</div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px;">{openness_html}</div>
         </div>
     
         <div> <!-- Container for the Tooling section -->
@@ -338,7 +338,7 @@ def create_legend_markdown(which_table: str) -> str:
                     <div class="tooltip-items-container">{tooling_tooltip_content}</div>
                 </span>
             </span>
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 8px;">{tooling_html}</div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px;">{tooling_html}</div>
         </div>
         
         <div><!-- Container for the Column Descriptions section -->
