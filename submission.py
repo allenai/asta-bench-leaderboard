@@ -2,6 +2,9 @@ import logging
 import sys
 
 import matplotlib
+from agenteval.cli import SUBMISSION_METADATA_FILENAME
+from agenteval.models import SubmissionMetadata
+
 matplotlib.use('Agg')
 
 import os
@@ -183,6 +186,19 @@ def add_new_eval(
 
     submission_name = f"{safe_username}_{safe_agent_name}_{submission_time.strftime('%Y-%m-%d_%H-%M-%S')}"
 
+    logger.info("agent {agent_name}: Writing submission metadata")
+    subm_meta = SubmissionMetadata(
+        agent_name=agent_name,
+        agent_description=agent_description,
+        agent_url=agent_url,
+        openness=openness,
+        tool_usage=degree_of_control,
+        username=profile.username,
+        submit_time=submission_time,
+    )
+    with open(os.path.join(extracted_dir, SUBMISSION_METADATA_FILENAME), "w", encoding="utf-8") as fp:
+        fp.write(subm_meta.model_dump_json(indent=2))
+
     logger.info(f"agent {agent_name}: Upload raw (unscored) submission files")
     try:
         checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET, CONFIG_NAME, val_or_test, submission_name)
@@ -193,8 +209,12 @@ def add_new_eval(
 
     logger.info(f"agent {agent_name}: Save contact information")
     contact_info = {
-        "agent_name": agent_name, "agent_description": agent_description, "url": agent_url,
-        "username": username, "username_auth": profile.username, "mail": mail,
+        "agent_name": agent_name,
+        "agent_description": agent_description,
+        "url": agent_url,
+        "username": username,
+        "username_auth": profile.username,
+        "mail": mail,
         "submit_time": submission_time.isoformat(),
     }
     logger.debug(f"agent {agent_name}: Contact info: {contact_info}")
