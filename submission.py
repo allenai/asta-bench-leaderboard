@@ -95,7 +95,7 @@ def add_new_eval(
         degree_of_control: str | None,
         path_to_file: tempfile._TemporaryFileWrapper | None,
         username: str,
-        mail: str,
+        email: str,
         profile: gr.OAuthProfile,
 ):
     if not agent_name:
@@ -145,10 +145,11 @@ def add_new_eval(
         for row in contact_infos.get(val_or_test, []) if row["username_auth"] == profile.username
     )
     if user_submission_dates and (submission_time - user_submission_dates[-1] < timedelta(days=1)):
+        logger.info(f"agent {agent_name}: Denied submission because user {username} submitted recently")
         return format_error("You already submitted once in the last 24h for this split; please try again later.")
 
-    logger.debug(f"agent {agent_name}: Email validation {mail}")
-    _, parsed_mail = parseaddr(mail)
+    logger.debug(f"agent {agent_name}: Email validation {email}")
+    _, parsed_mail = parseaddr(email)
     if "@" not in parsed_mail:
         return format_warning("Please provide a valid email address.")
 
@@ -186,14 +187,14 @@ def add_new_eval(
 
     submission_name = f"{safe_username}_{safe_agent_name}_{submission_time.strftime('%Y-%m-%d_%H-%M-%S')}"
 
-    logger.info("agent {agent_name}: Writing submission metadata")
+    logger.debug(f"agent {agent_name}: Generate submission.json")
     subm_meta = SubmissionMetadata(
         agent_name=agent_name,
         agent_description=agent_description,
         agent_url=agent_url,
         openness=openness,
         tool_usage=degree_of_control,
-        username=profile.username,
+        username=username,
         submit_time=submission_time,
     )
     with open(os.path.join(extracted_dir, SUBMISSION_METADATA_FILENAME), "w", encoding="utf-8") as fp:
@@ -208,15 +209,9 @@ def add_new_eval(
         return submission_error(f"Failed to upload raw submission: {e}")
 
     logger.info(f"agent {agent_name}: Save contact information")
-    contact_info = {
-        "agent_name": agent_name,
-        "agent_description": agent_description,
-        "url": agent_url,
-        "username": username,
-        "username_auth": profile.username,
-        "mail": mail,
-        "submit_time": submission_time.isoformat(),
-    }
+    contact_info = subm_meta.model_dump()
+    contact_info["username_auth"] = profile.username
+    contact_info["email"] = email
     logger.debug(f"agent {agent_name}: Contact info: {contact_info}")
     if val_or_test in contact_infos:
         contact_infos[val_or_test] = contact_infos[val_or_test].add_item(contact_info)
