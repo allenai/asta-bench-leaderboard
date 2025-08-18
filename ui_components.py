@@ -40,12 +40,12 @@ AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 # Global variables
 COMBINED_ICON_MAP = {
-    aliases.CANONICAL_OPENNESS_OPEN_WEIGHTS: {
+    aliases.CANONICAL_OPENNESS_OPEN_SOURCE_OPEN_WEIGHTS: {
         aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/os-ow-standard.svg",
         aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/os-ow-equivalent.svg",
         aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/os-ow-custom.svg",
     },
-    aliases.CANONICAL_OPENNESS_OPEN_CLOSED_WEIGHTS: {
+    aliases.CANONICAL_OPENNESS_OPEN_SOURCE_CLOSED_WEIGHTS: {
         aliases.CANONICAL_TOOL_USAGE_STANDARD: "assets/os-standard.svg",
         aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "assets/os-equivalent.svg",
         aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: "assets/os-custom.svg",
@@ -310,8 +310,8 @@ def create_legend_markdown(which_table: str) -> str:
                 <span class="tooltip-card">{pareto_tooltip_content}</span>
             </span>
             <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
-            <img src="{trophy_uri}" alt="On frontier" style="width: 25px; height: 25px;">
-            <span>On frontier</span>
+            <img src="{trophy_uri}" alt="On Frontier" style="width: 25px; height: 25px;">
+            <span>On Frontier</span>
         </div>
         </div>
     
