@@ -561,7 +561,7 @@ def create_benchmark_details_display(
         gr.HTML(f'''
             <h3 class="benchmark-title" id="{create_gradio_anchor_id(benchmark_name, validation)}">{benchmark_name} Leaderboard</h3>
             <div class="benchmark-description">{get_benchmark_description(benchmark_name, validation)}</div>
-            <button onclick="scroll_to_element('page-content-wrapper')" class="scroll-up-button">↑ Return to the aggregate {category_name} leaderboard</button>
+            <button onclick="scroll_to_element('page-content-wrapper')" class="scroll-up-button">Return to the aggregate {category_name} leaderboard</button>
         ''')
 
         # 3. Prepare the data for this specific benchmark's table and plot
