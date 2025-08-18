@@ -486,6 +486,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 .benchmark-main-subtitle{
     color: var(--color-primary-green);
     overflow: hidden;
+    padding-top: 120px;
 }
 .benchmark-title{
     color: var(--color-primary-pink);

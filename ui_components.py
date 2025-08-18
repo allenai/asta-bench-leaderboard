@@ -26,7 +26,6 @@ from config import (
     RESULTS_DATASET,
 )
 from content import (
-    BENCHMARK_DESCRIPTIONS,
     create_gradio_anchor_id,
     format_error,
     get_benchmark_description,
@@ -551,10 +550,7 @@ def create_benchmark_details_display(
         gr.Markdown(f"No detailed benchmarks found for the category: {category_name}")
         return
 
-    gr.HTML(f'<h2 style="padding-top: 120px;">{category_name} Detailed Benchmark Results</h2>')
-    gr.Markdown("---")
-    #TODO: need to update color to green
-    gr.HTML('<h2 class="benchmark-main-subtitle">Detailed Benchmark Results</h2>')
+    gr.HTML(f'<h2 class="benchmark-main-subtitle">{category_name} Detailed Benchmark Results</h2>')
     gr.Markdown("---")
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
