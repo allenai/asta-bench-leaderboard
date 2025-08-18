@@ -490,6 +490,8 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 }
 .benchmark-title{
     color: var(--color-primary-pink);
+    margin-top: 50px;
+        font-size: 20px;
 }
 .dark .benchmark-title{
     color: var(--color-primary-green);
