@@ -27,12 +27,12 @@ from config import (
     RESULTS_DATASET,
 )
 from content import (
-    scatter_disclaimer_html,
     format_error,
     format_log,
     format_warning,
     hf_uri_to_web_url,
     hyperlink,
+    SCATTER_DISCLAIMER,
 )
 
 api = HfApi()
@@ -167,6 +167,8 @@ def build_openness_tooltip_content() -> str:
 
 def build_pareto_tooltip_content() -> str:
     """Generates the inner HTML for the Pareto tooltip card with final copy."""
+    trophy_uri = get_svg_as_data_uri("assets/trophy.svg")
+    trophy_icon_html = f'<img src="{trophy_uri}" style="width: 25px; height: 25px; vertical-align: middle;">'
     return f"""
         <h3>On Pareto Frontier</h3>
         <p class="tooltip-description">The Pareto frontier represents the best balance between score and cost.</p>
@@ -175,7 +177,10 @@ def build_pareto_tooltip_content() -> str:
             <li>Offer the lowest cost for a given performance, or</li>
             <li>Deliver the best performance at a given cost.</li>
         </ul>
-        <p class="tooltip-description" style="margin-top: 12px;">These agents are marked with this icon: 🏆</p>
+        <div class="tooltip-description" style="margin-top: 12px; display: flex; align-items: center;">
+            <span>These agents are marked with this icon:</span>
+            <span>{trophy_icon_html}</span>
+        </div>
     """
 
 def build_tooling_tooltip_content() -> str:
@@ -295,6 +300,7 @@ def create_legend_markdown(which_table: str) -> str:
     This is used in the main leaderboard display.
     """
     descriptions_tooltip_content = build_descriptions_tooltip_content(which_table)
+    trophy_uri = get_svg_as_data_uri("assets/trophy.svg")
     legend_markdown = f"""
     <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; font-size: 14px; padding-bottom: 8px;">
             
@@ -304,7 +310,10 @@ def create_legend_markdown(which_table: str) -> str:
                 ⓘ
                 <span class="tooltip-card">{pareto_tooltip_content}</span>
             </span>
-            <div style="margin-top: 8px;"><span>🏆 On frontier</span></div>
+            <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+            <img src="{trophy_uri}" alt="On frontier" style="width: 25px; height: 25px;">
+            <span>On frontier</span>
+        </div>
         </div>
     
         <div> <!-- Container for the Openness section -->
@@ -424,12 +433,14 @@ def create_leaderboard_display(
     df_view, plots_dict = transformer.view(tag=category_name, use_plotly=True)
     pareto_df = get_pareto_df(df_view)
     # Get the list of agents on the frontier. We'll use this list later.
+    trophy_uri = get_svg_as_data_uri("assets/trophy.svg")
+    trophy_icon_html = f'<img src="{trophy_uri}" alt="On Pareto Frontier" title="On Pareto Frontier" style="width:25px; height:25px;">'
     if not pareto_df.empty and 'id' in pareto_df.columns:
         pareto_agent_names = pareto_df['id'].tolist()
     else:
         pareto_agent_names = []
     df_view['Pareto'] = df_view.apply(
-        lambda row: '🏆' if row['id'] in pareto_agent_names else '',
+        lambda row: trophy_icon_html if row['id'] in pareto_agent_names else '',
         axis=1
     )
     # Create mapping for Openness / tooling
@@ -472,7 +483,7 @@ def create_leaderboard_display(
     for col in df_headers:
         if col == "Logs" or "Cost" in col or "Score" in col:
             df_datatypes.append("markdown")
-        elif col in ["Agent","Icon","LLM Base"]:
+        elif col in ["Agent","Icon","LLM Base", "Pareto"]:
             df_datatypes.append("html")
         else:
             df_datatypes.append("str")
@@ -499,7 +510,7 @@ def create_leaderboard_display(
         value=scatter_plot,
         show_label=False
     )
-    gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
+    gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
     # Put table and key into an accordion
     with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
         dataframe_component = gr.DataFrame(
@@ -539,8 +550,8 @@ def create_benchmark_details_display(
         gr.Markdown(f"No detailed benchmarks found for the category: {category_name}")
         return
 
+    gr.HTML(f'<h2 style="padding-top: 120px;">{category_name} Detailed Benchmark Results</h2>')
     gr.Markdown("---")
-    gr.Markdown("## Detailed Benchmark Results")
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
         with gr.Row(elem_classes=["benchmark-header"]):
@@ -573,12 +584,14 @@ def create_benchmark_details_display(
         benchmark_table_df = full_df[existing_table_cols].copy()
         pareto_df = get_pareto_df(benchmark_table_df)
         # Get the list of agents on the frontier. We'll use this list later.
+        trophy_uri = get_svg_as_data_uri("assets/trophy.svg")
+        trophy_icon_html = f'<img src="{trophy_uri}" alt="On Pareto Frontier" title="On Pareto Frontier" style="width:25px; height:25px;">'
         if not pareto_df.empty and 'id' in pareto_df.columns:
             pareto_agent_names = pareto_df['id'].tolist()
         else:
             pareto_agent_names = []
         benchmark_table_df['Pareto'] = benchmark_table_df.apply(
-            lambda row: ' 🏆' if row['id'] in pareto_agent_names else '',
+            lambda row: trophy_icon_html if row['id'] in pareto_agent_names else '',
             axis=1
         )
 
@@ -643,7 +656,7 @@ def create_benchmark_details_display(
         for col in df_headers:
             if "Logs" in col or "Cost" in col or "Score" in col:
                 df_datatypes.append("markdown")
-            elif col in ["Agent","Icon", "LLM Base"]:
+            elif col in ["Agent", "Icon", "LLM Base", "Pareto"]:
                 df_datatypes.append("html")
             else:
                 df_datatypes.append("str")
@@ -662,7 +675,7 @@ def create_benchmark_details_display(
             name=benchmark_name
         )
         gr.Plot(value=benchmark_plot, show_label=False)
-        gr.HTML(value=scatter_disclaimer_html, elem_id="scatter-disclaimer")
+        gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
         # Put table and key into an accordion
         with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
             gr.DataFrame(
@@ -755,7 +768,7 @@ def create_sub_navigation_bar(tag_map: dict, category_name: str, validation: boo
     # This container will be our flexbox row.
     full_html = f"""
         <div class="sub-nav-bar-container">
-            <span class="sub-nav-label">Benchmarks:</span>
+            <span class="sub-nav-label">Benchmarks in this category:</span>
             {''.join(html_buttons)}
         </div>
     """

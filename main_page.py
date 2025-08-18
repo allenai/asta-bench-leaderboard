@@ -16,11 +16,11 @@ CACHED_VIEWERS = {}
 CACHED_TAG_MAPS = {}
 
 def build_page():
-    gr.Markdown(INTRO_PARAGRAPH, elem_id="intro-paragraph")
+    gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
     # --- Leaderboard Display Section ---
     gr.Markdown("---")
     CATEGORY_NAME = "Overall"
-    gr.Markdown(f"## Astabench {CATEGORY_NAME} Leaderboard")
+    gr.Markdown(f"## AstaBench {CATEGORY_NAME} Leaderboard")
 
     with gr.Tabs() as tabs:
         with gr.Tab("Results: Test Set") as test_tab:

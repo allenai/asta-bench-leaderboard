@@ -6,6 +6,7 @@ from ui_components import create_leaderboard_display, create_benchmark_details_d
 
 def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
     with gr.Column(elem_id="page-content-wrapper"):
+        gr.HTML(f'<h2>AstaBench {CATEGORY_NAME} Leaderboard <span style="font-weight: normal; color: inherit;">(Aggregate)</span></h2>', elem_id="main-header")
         validation_df, validation_tag_map = get_full_leaderboard_data("validation")
         test_df, test_tag_map = get_full_leaderboard_data("test")
         with gr.Column(elem_id="validation_nav_container", visible=False) as validation_nav_container:
@@ -13,7 +14,6 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
 
         with gr.Column(elem_id="test_nav_container", visible=True) as test_nav_container:
             create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
-        gr.HTML(f'<h2>AstaBench {CATEGORY_NAME} Leaderboard <span style="font-weight: normal; color: inherit;">(Aggregate)</span></h2>', elem_id="main-header")
         gr.Markdown(PAGE_DESCRIPTION, elem_id="category-intro")
         # --- This page now has two main sections: Validation and Test ---
         with gr.Tabs():
