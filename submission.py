@@ -210,8 +210,10 @@ def add_new_eval(
 
     logger.info(f"agent {agent_name}: Save contact information")
     contact_info = subm_meta.model_dump()
+    contact_info["submit_time"] = submission_time.isoformat()
     contact_info["username_auth"] = profile.username
     contact_info["email"] = email
+
     logger.debug(f"agent {agent_name}: Contact info: {contact_info}")
     if val_or_test in contact_infos:
         contact_infos[val_or_test] = contact_infos[val_or_test].add_item(contact_info)
