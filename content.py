@@ -636,6 +636,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 .info-list {
     padding-left: 20px;
 }
+
 /* Smooth scrolling for the entire page */
 html {
     scroll-behavior: smooth;
@@ -665,5 +666,62 @@ html {
 }
 #intro-paragraph {
     max-width: 90%;
+}
+/* Plot legend styles */
+.plot-legend-container {
+    height: 572px;
+    background-color: #fff;
+    padding: 24px 32px;
+}
+
+.dark .plot-legend-container {
+    background: rgba(250, 242, 233, 0.1);
+}
+
+#plot-legend-logo {
+    margin-bottom: 24px;
+}
+
+#plot-legend-logo img {
+    height: 19px;
+}
+
+.plot-legend-category-heading {
+    font-size: 16px;
+    font-weight: 700;    
+}
+
+.plot-legend-item {
+    margin-top: 8px;
+}
+
+.plot-legend-item-text {
+    display: inline-block;
+}
+
+.plot-legend-item-text .description {
+    color: #888;
+    font-size: 12px;
+}
+
+.plot-legend-item-svg {
+    display: inline-block;
+    vertical-align: top;
+    margin-top: 3px;
+    width: 14px;
+    height: 14px;
+    margin-right: 8px;
+}
+
+.plot-legend-tooling-svg {
+    height: 16px;
+    width: 16px;
+    margin-top: 2px;
+}
+
+#plot-legend-item-pareto-svg {
+    width: 18px;
+    height: 18px;
+    margin-right: 2px;
 }
 """

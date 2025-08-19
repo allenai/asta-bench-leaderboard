@@ -1,4 +1,10 @@
+import logging
+import sys
+
 import matplotlib
+from agenteval.cli import SUBMISSION_METADATA_FILENAME
+from agenteval.models import SubmissionMetadata
+
 matplotlib.use('Agg')
 
 import os
@@ -38,14 +44,13 @@ from content import (
     format_warning,
 )
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 api = HfApi()
 MAX_UPLOAD_BYTES = 100 * 1024**2
 AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
-
-# --- Global State for Viewers (simple caching) ---
-CACHED_VIEWERS = {}
-CACHED_TAG_MAPS = {}
 
 # --- Submission Logic (largely unchanged from original, ensure LeaderboardSubmission and other deps are fine) ---
 def try_load_dataset_submission(*args, **kwargs) -> DatasetDict: # Renamed to avoid conflict if LV has one
@@ -90,11 +95,21 @@ def add_new_eval(
         degree_of_control: str | None,
         path_to_file: tempfile._TemporaryFileWrapper | None,
         username: str,
-        mail: str,
+        email: str,
         profile: gr.OAuthProfile,
-        # We need global eval_results for checks; this might need rethinking if it's purely display driven now
-        # For now, let's assume we still load it for submission checks
 ):
+    if not agent_name:
+        return format_warning("Please provide an agent name.")
+
+    def submission_error(msg: str) -> str:
+        logger.debug(f"agent {agent_name}: {msg}")
+        return format_error(msg)
+
+    if path_to_file is None:
+        return format_warning("Please attach a .tar.gz file.")
+
+    logger.info(f"agent {agent_name}: Checking submission")
+
     # Load current eval_results for submission checks
     # This is a bit redundant if display part reloads it, but submission needs its own consistent view
     current_eval_results_for_submission = try_load_dataset_submission(
@@ -102,16 +117,13 @@ def add_new_eval(
         CONFIG_NAME,
         download_mode="force_redownload", # Or a less aggressive mode
         verification_mode=VerificationMode.NO_CHECKS,
-        trust_remote_code=True,
     )
-    if not agent_name:
-        return format_warning("Please provide an agent name.")
 
     submission_time = datetime.now(timezone.utc)
     if not username or username.strip() == "":
         username = profile.username # Default to HF username
 
-    # User account age check
+    logger.debug(f"agent {agent_name}: User account age check {profile.username}")
     try:
         user_data_resp = requests.get(f"https://huggingface.co/api/users/{profile.username}/overview")
         user_data_resp.raise_for_status()
@@ -120,10 +132,10 @@ def add_new_eval(
         if submission_time - created_at < timedelta(days=60):
             return format_error("This account is not authorized to submit here (account too new).")
     except Exception as e:
-        print(f"Error checking user account age: {e}")
-        return format_error("Could not verify account age. Please try again later.")
+        logger.warning(f"Error checking user account age: {e}")
+        return submission_error("Could not verify account age. Please try again later.")
 
-    # Submission frequency check
+    logger.debug(f"agent {agent_name}: Submission frequency check {profile.username}")
     contact_infos = try_load_dataset_submission(
         CONTACT_DATASET, CONFIG_NAME, download_mode="force_redownload",
         verification_mode=VerificationMode.NO_CHECKS, trust_remote_code=True
@@ -133,14 +145,15 @@ def add_new_eval(
         for row in contact_infos.get(val_or_test, []) if row["username_auth"] == profile.username
     )
     if user_submission_dates and (submission_time - user_submission_dates[-1] < timedelta(days=1)):
+        logger.info(f"agent {agent_name}: Denied submission because user {username} submitted recently")
         return format_error("You already submitted once in the last 24h for this split; please try again later.")
 
-    # Email validation
-    _, parsed_mail = parseaddr(mail)
+    logger.debug(f"agent {agent_name}: Email validation {email}")
+    _, parsed_mail = parseaddr(email)
     if "@" not in parsed_mail:
         return format_warning("Please provide a valid email address.")
 
-    # Duplicate submission check
+    logger.debug(f"agent {agent_name}: Duplicate submission check")
     if val_or_test in current_eval_results_for_submission and len(current_eval_results_for_submission[val_or_test]) > 0:
         existing_submissions = current_eval_results_for_submission[val_or_test].to_dict().get("submission", [])
         for sub_item in existing_submissions:
@@ -148,63 +161,76 @@ def add_new_eval(
                     sub_item.get("username", "").lower() == username.lower()):
                 return format_warning("This agent name by this user has already been submitted to this split.")
 
-    if path_to_file is None:
-        return format_warning("Please attach a .tar.gz file.")
-
     safe_username = sanitize_path_component(username)
     safe_agent_name = sanitize_path_component(agent_name)
     extracted_dir = os.path.join(EXTRACTED_DATA_DIR, f"{safe_username}_{safe_agent_name}")
 
-    # File extraction
-    if not LOCAL_DEBUG:
-        try:
-            if os.path.exists(extracted_dir): shutil.rmtree(extracted_dir)
-            os.makedirs(extracted_dir, exist_ok=True)
-            with tarfile.open(path_to_file.name, "r:gz") as tar:
-                members_extracted = 0
-                for member in tar.getmembers():
-                    if not member.isreg(): continue
-                    fname = os.path.basename(member.name)
-                    if not fname or fname.startswith("."): continue
-                    fobj = tar.extractfile(member)
-                    if not fobj: continue
-                    with open(os.path.join(extracted_dir, fname), "wb") as out:
-                        out.write(fobj.read())
-                    members_extracted +=1
-                if members_extracted == 0:
-                    return format_error("Submission tarball is empty or contains no valid files.")
-        except Exception as e:
-            return format_error(f"Error extracting file: {e}. Ensure it's a valid .tar.gz.")
-    else: print("mock extracted file", flush=True)
-
+    logger.debug(f"agent {agent_name}: File extraction to {extracted_dir}")
+    try:
+        if os.path.exists(extracted_dir): shutil.rmtree(extracted_dir)
+        os.makedirs(extracted_dir, exist_ok=True)
+        with tarfile.open(path_to_file.name, "r:gz") as tar:
+            members_extracted = 0
+            for member in tar.getmembers():
+                if not member.isreg(): continue
+                fname = os.path.basename(member.name)
+                if not fname or fname.startswith("."): continue
+                fobj = tar.extractfile(member)
+                if not fobj: continue
+                with open(os.path.join(extracted_dir, fname), "wb") as out:
+                    out.write(fobj.read())
+                members_extracted +=1
+            if members_extracted == 0:
+                return submission_error("Submission tarball is empty or contains no valid files.")
+    except Exception as e:
+        return submission_error(f"Error extracting file: {e}. Ensure it's a valid .tar.gz.")
 
     submission_name = f"{safe_username}_{safe_agent_name}_{submission_time.strftime('%Y-%m-%d_%H-%M-%S')}"
 
-    # 1. Upload raw (unscored) submission files
-    if not LOCAL_DEBUG:
-        try:
-            checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET, CONFIG_NAME, val_or_test, submission_name)
-        except ValueError as e: return format_error(str(e))
-        except Exception as e: return format_error(f"Failed to upload raw submission: {e}")
-    else: print("mock uploaded raw submission", flush=True)
+    logger.debug(f"agent {agent_name}: Generate submission.json")
+    subm_meta = SubmissionMetadata(
+        agent_name=agent_name,
+        agent_description=agent_description,
+        agent_url=agent_url,
+        openness=openness,
+        tool_usage=degree_of_control,
+        username=username,
+        submit_time=submission_time,
+    )
+    with open(os.path.join(extracted_dir, SUBMISSION_METADATA_FILENAME), "w", encoding="utf-8") as fp:
+        fp.write(subm_meta.model_dump_json(indent=2))
 
-    # 2. Save contact information
-    contact_info = {
-        "agent_name": agent_name, "agent_description": agent_description, "url": agent_url,
-        "username": username, "username_auth": profile.username, "mail": mail,
-        "submit_time": submission_time.isoformat(),
-    }
+    logger.info(f"agent {agent_name}: Upload raw (unscored) submission files")
+    try:
+        checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET, CONFIG_NAME, val_or_test, submission_name)
+    except ValueError as e:
+        return submission_error(str(e))
+    except Exception as e:
+        return submission_error(f"Failed to upload raw submission: {e}")
+
+    logger.info(f"agent {agent_name}: Save contact information")
+    contact_info = subm_meta.model_dump()
+    contact_info["submit_time"] = submission_time.isoformat()
+    contact_info["username_auth"] = profile.username
+    contact_info["email"] = email
+
+    logger.debug(f"agent {agent_name}: Contact info: {contact_info}")
     if val_or_test in contact_infos:
         contact_infos[val_or_test] = contact_infos[val_or_test].add_item(contact_info)
     else:
         contact_infos[val_or_test] = Dataset.from_list([contact_info])
 
-    if not LOCAL_DEBUG:
-        try:
-            contact_infos.push_to_hub(CONTACT_DATASET, config_name=CONFIG_NAME)
-        except Exception as e: return format_warning(f"Submission recorded, but contact info failed to save: {e}")
-    else: print("mock uploaded contact info", flush=True)
+    try:
+        contact_infos.push_to_hub(CONTACT_DATASET, config_name=CONFIG_NAME)
+    except Exception as e:
+        return submission_error(f"Submission recorded, but contact info failed to save: {e}")
 
+    msg = f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split. "
+    logger.info(f"agent {agent_name}: {msg}")
+    return format_log(msg)
+
+def _deprecated_scoring_logic():
+    # No longer triggered on eval submission. Kept for quick reference for a little while (2025). TODO delete this.
 
     # 3. Process and score the submission
     eval_result_obj = None # Define to avoid NameError
@@ -258,13 +284,6 @@ def add_new_eval(
             return format_error(f"Failed to upload summary results to leaderboard: {e}")
     else: print("mock uploaded results to lb", flush=True)
 
-    # Invalidate viewer cache for the split that was updated
-    if val_or_test in CACHED_VIEWERS:
-        del CACHED_VIEWERS[val_or_test]
-    if val_or_test in CACHED_TAG_MAPS:
-        del CACHED_TAG_MAPS[val_or_test]
-
-
     return format_log(
         f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split. "
         "Please refresh the leaderboard in a few moments. It may take some time for changes to propagate."
@@ -310,6 +329,8 @@ def build_page():
         with gr.Column():
             pass # Keeps this row's content on the left side of the page.
     with gr.Row():
+        gr.LoginButton()
+    with gr.Row():
         with gr.Column():
             level_of_test_radio = gr.Radio(["validation", "test"], value="validation", label="Split")
             agent_name_tb = gr.Textbox(label="Agent Name")
@@ -328,7 +349,6 @@ def build_page():
                 file_types=[".gz", ".tar.gz"]
             )
     with gr.Row():
-        gr.LoginButton()
         submit_eval_button = gr.Button("Submit Evaluation")
     submission_result = gr.Markdown()
 

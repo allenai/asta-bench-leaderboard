@@ -76,15 +76,36 @@ for canonical_openness, openness_aliases in aliases.OPENNESS_ALIASES.items():
 
 
 OPENNESS_SVG_MAP = {
-    "Open Source + Open Weights": "assets/os-ow-legend.svg",
-    "Open Source + Closed Weights": "assets/os-legend.svg",
-    "API Available": "assets/api-legend.svg",
-    "Closed Source & UI only": "assets/c-legend.svg",
+    "Open source & open weights": {
+        "path": "assets/ellipse-pink.svg",
+        "description": "Code and models are open"
+    },
+    "Open source & closed weights": {
+        "path": "assets/ellipse-coral.svg", 
+        "description": "Code is open but uses closed-weight models"
+    },
+    "Closed source & API available": {
+        "path": "assets/ellipse-yellow.svg",
+        "description": "No access to code; API access only"
+    },
+    "Closed source & UI only": {
+        "path": "assets/ellipse-white.svg",
+        "description": "No access to code or API; UI access only"
+    },
 }
 TOOLING_SVG_MAP = {
-    "Standard": "assets/standard-legend.svg",
-    "Custom Interface": "assets/equivalent-legend.svg",
-    "Fully Custom": "assets/custom-legend.svg",
+    "Standard": {
+        "path": "assets/five-point-star.svg",
+        "description": "Uses only tools explicitly provided in state.tools"
+    },
+    "Custom interface": {
+        "path": "assets/four-point-star.svg",
+        "description": "Custom tools for accessing an equivalent underlying environment"
+    },
+    "Fully custom": {
+        "path": "assets/three-point-star.svg",
+        "description": "Uses tools beyond constraints of Standard or Custom interface"
+    },
 }
 
 def get_svg_as_data_uri(path: str) -> str:
@@ -129,8 +150,13 @@ def create_svg_html(value, svg_map):
         return ""
 
     path_info = svg_map[value]
+    # Handle both old string format and new object format
+    if isinstance(path_info, dict):
+        path = path_info["path"]
+    else:
+        path = path_info
 
-    src = get_svg_as_data_uri(path_info)
+    src = get_svg_as_data_uri(path)
     # Generate the HTML for the single icon, with NO text.
     if src:
         return f'<img src="{src}" style="width: 16px; height: 16px; vertical-align: middle;" alt="{value}" title="{value}">'
@@ -147,11 +173,10 @@ def build_openness_tooltip_content() -> str:
         "Closed Source + UI Only": "No access to code or API; UI  access only",
     }
     html_items = []
-    for name, path in OPENNESS_SVG_MAP.items():
-        uri = get_svg_as_data_uri(path)
+    for name, info in OPENNESS_SVG_MAP.items():
+        uri = get_svg_as_data_uri(info["path"])
         desc = descriptions.get(name, "")
 
-        # Create the HTML for a single row in the tooltip legend
         html_items.append(f"""
             <div class="tooltip-legend-item">
                 <img src="{uri}" alt="{name}">
@@ -196,8 +221,8 @@ def build_tooling_tooltip_content() -> str:
         </ul>
     """
     html_items = []
-    for name, path in TOOLING_SVG_MAP.items():
-        uri = get_svg_as_data_uri(path)
+    for name, info in TOOLING_SVG_MAP.items():
+        uri = get_svg_as_data_uri(info["path"])
         desc = descriptions.get(name, "")
 
         # Check if this is the special case that needs a sub-list
@@ -266,8 +291,8 @@ openness_html = " ".join([create_svg_html(name, OPENNESS_SVG_MAP) for name in OP
 tooling_html = " ".join([create_svg_html(name, TOOLING_SVG_MAP) for name in TOOLING_SVG_MAP])
 # Create HTML for the "Openness" legend items
 openness_html_items = []
-for name, path in OPENNESS_SVG_MAP.items():
-    uri = get_svg_as_data_uri(path)
+for name, info in OPENNESS_SVG_MAP.items():
+    uri = get_svg_as_data_uri(info["path"])
     # Each item is now its own flexbox container to guarantee alignment
     openness_html_items.append(
         f'<div style="display: flex; align-items: center; white-space: nowrap;">'
@@ -279,8 +304,8 @@ openness_html = " ".join(openness_html_items)
 
 # Create HTML for the "Tooling" legend items
 tooling_html_items = []
-for name, path in TOOLING_SVG_MAP.items():
-    uri = get_svg_as_data_uri(path)
+for name, info in TOOLING_SVG_MAP.items():
+    uri = get_svg_as_data_uri(info["path"])
     tooling_html_items.append(
         f'<div style="display: flex; align-items: center; white-space: nowrap;">'
         f'<img src="{uri}" alt="{name}" title="{name}" style="width:16px; height:16px; margin-right: 4px; flex-shrink: 0;">'
@@ -354,6 +379,68 @@ def create_legend_markdown(which_table: str) -> str:
     </div>
     """
     return legend_markdown
+
+# Create HTML for plot legend with SVG icons and keys
+openness_legend_items = []
+for name, info in OPENNESS_SVG_MAP.items():
+    uri = get_svg_as_data_uri(info["path"])
+    if uri:
+        openness_legend_items.append(
+            f'<div class="plot-legend-item">'
+                f'<img class="plot-legend-item-svg" src="{uri}" alt="{name}" title="{name}">'
+                f'<div class="plot-legend-item-text">'
+                    f'<div>'
+                        f'<span>{name}</span>'
+                    f'</div>'
+                    f'<span class="description">{info["description"]}</span>'
+                f'</div>'
+            f'</div>'
+        )
+
+tooling_legend_items = []
+for name, info in TOOLING_SVG_MAP.items():
+    uri = get_svg_as_data_uri(info["path"])
+    if uri:
+        tooling_legend_items.append(
+            f'<div class="plot-legend-item">'
+                f'<img class="plot-legend-item-svg plot-legend-tooling-svg" src="{uri}" alt="{name}" title="{name}">'
+                f'<div class="plot-legend-item-text">'
+                    f'<div>'
+                        f'<span>{name}</span>'
+                    f'</div>'
+                    f'<span class="description">{info["description"]}</span>'
+                f'</div>'
+            f'</div>'
+        )
+
+plot_legend_html = f"""
+    <div class="plot-legend-container">
+        <div id="plot-legend-logo">
+            <img src="{get_svg_as_data_uri("assets/logo.svg")}">
+        </div>
+        <div style="margin-bottom: 16px;">
+            <span class="plot-legend-category-heading">Pareto</span>
+            <div style="margin-top: 8px;">
+                <div class="plot-legend-item">
+                    <img id="plot-legend-item-pareto-svg" class="plot-legend-item-svg" src="{get_svg_as_data_uri("assets/pareto.svg")}">
+                    <span>On frontier</span>
+                </div>
+            </div>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <span class="plot-legend-category-heading">Agent Openness</span>
+            <div style="margin-top: 8px;">
+                {''.join(openness_legend_items)}
+            </div>
+        </div>
+        <div>
+            <span class="plot-legend-category-heading">Agent Tooling</span>
+            <div style="margin-top: 8px;">
+                {''.join(tooling_legend_items)}
+            </div>
+        </div>
+    </div>
+""";
 
 # --- Global State for Viewers (simple caching) ---
 CACHED_VIEWERS = {}
@@ -505,11 +592,16 @@ def create_leaderboard_display(
     # 5. Combine all the lists to create the final, fully dynamic list.
     final_column_widths = fixed_start_widths + dynamic_widths + fixed_end_widths
 
-    plot_component = gr.Plot(
-        value=scatter_plot,
-        show_label=False
-    )
+    with gr.Row():
+        with gr.Column(scale=3):
+            plot_component = gr.Plot(
+                value=scatter_plot,
+                show_label=False
+            )
+        with gr.Column(scale=1):
+            gr.HTML(value=plot_legend_html)
     gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
+
     # Put table and key into an accordion
     with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
         dataframe_component = gr.DataFrame(
@@ -668,8 +760,13 @@ def create_benchmark_details_display(
             agent_col="Agent",
             name=benchmark_name
         )
-        gr.Plot(value=benchmark_plot, show_label=False)
+        with gr.Row():
+            with gr.Column(scale=3):
+                gr.Plot(value=benchmark_plot, show_label=False) 
+            with gr.Column(scale=1):
+                gr.HTML(value=plot_legend_html)
         gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
+
         # Put table and key into an accordion
         with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
             gr.DataFrame(

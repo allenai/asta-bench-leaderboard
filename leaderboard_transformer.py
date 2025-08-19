@@ -445,6 +445,7 @@ def _plot_scatter_plotly(
                 y=frontier_df['y'],
                 mode='lines',
                 name='Efficiency Frontier',
+                showlegend=False,
                 line=dict(color='#0FCB8C', width=2, dash='dash'),
                 hoverinfo='skip'
             ))
@@ -516,31 +517,6 @@ def _plot_scatter_plotly(
                 line=dict(width=1, color='deeppink')
             )
         ))
-    # ---- Add logic for making the legend -----------
-    for i, category in enumerate(colors_for_legend):
-        fig.add_trace(go.Scatter(
-            x=[None], y=[None],
-            mode='markers',
-            name=category,
-            legendgroup="openness_group",
-            legendgrouptitle_text="Agent Openness" if i == 0 else None,
-            marker=dict(
-                color=color_map.get(category, 'grey'),
-                symbol='circle',
-                size=12
-            )
-        ))
-
-    # Part B: Dummy traces for the SHAPES ("Agent Tooling")
-    for i, shape_name in enumerate(shapes_for_legend):
-        fig.add_trace(go.Scatter(
-            x=[None], y=[None],
-            mode='markers',
-            name=shape_name,
-            legendgroup="tooling_group",
-            legendgrouptitle_text="Agent Tooling" if i == 0 else None,
-            marker=dict(color='black', symbol=shape_map.get(shape_name), size=12)
-        ))
 
     # --- Section 8: Configure Layout  ---
     xaxis_config = dict(title=x_axis_label, rangemode="tozero")
@@ -567,12 +543,13 @@ def _plot_scatter_plotly(
         legend=dict(
             bgcolor='#FAF2E9',
         ),
+        height=572,
         hoverlabel=dict(
             bgcolor="#105257",
             font_size=12,
             font_family="Manrope",
             font_color="#d3dedc",
-        )
+        ),
     )
     fig.add_layout_image(
         dict(
