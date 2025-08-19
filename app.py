@@ -1,4 +1,7 @@
 # app.py
+import logging
+logging.basicConfig(level=logging.WARNING)
+
 import gradio as gr
 import urllib.parse
 
