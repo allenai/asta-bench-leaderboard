@@ -17,40 +17,20 @@ TITLE = """<h1 align="left" id="space-title">AstaBench Leaderboard</h1>"""
 
 INTRO_PARAGRAPH = """
 <p>
-    Newer benchmarks may test agentic AI and isolated aspects of scientific reasoning, but none rigorously measure agentic AI or capture the full range of skills research demands. Agents can appear effective by simply retrying tasks—often at high computational cost and with inconsistent results. Scientific AI needs evaluations that reflect the real complexity of research.
+    <strong>AstaBench</strong> provides an aggregated view of agent performance and efficiency across all benchmarks in all four categories. We report:
 </p>
-<br>
-<p>
-    AstaBench fills that gap: a suite of open benchmarks for evaluating scientific AI assistants on core scientific tasks that require novel reasoning. The suite includes over 8,000 tasks across 11 benchmarks, organized into four core categories: Literature Understanding, Code & Execution, Data Analysis, and End-to-End Discovery.
-</p>
-<br>
-<p>
-    The <strong>AstaBench Leaderboard</strong> below provides a high-level summary of agent performance and efficiency. It includes:
-</p>
+
 <ul class="info-list">
     <li>
-        An <strong>overall score</strong>, computed as a macro average of the four category-level macro averages, ensuring each domain contributes equally—regardless of how many benchmarks each category includes. This provides a fair and balanced comparison across agents with varying capabilities.
+        <strong>Overall score:</strong> A macro-average of the four category-level average scores. Each category contributes equally, regardless of how many benchmarks it includes. This ensures fair comparisons across agents with different domain strengths.
     </li>
     <li>
-        An <strong>overall average cost per task</strong>, consistently aggregated across all categories, to reflect the real efficiency of each agent under comparable conditions.
+        <strong>Overall cost:</strong> A macro-average of the agent’s cost per problem across all categories, in USD. Each category contributes equally.
     </li>
 </ul>
-<br>
+
 <p>
-    To support domain-specific insight, AstaBench also provides per-category leaderboards:
-</p>
-<ul class="info-list">
-    <li>Literature Understanding</li>
-    <li>Code & Execution</li>
-    <li>Data Analysis</li>
-    <li>End-to-End Discovery</li>
-</ul>
-<br>
-<p>
-    Each category page includes a summary table (average score and cost per problem for that domain), as well as per-benchmark leaderboards for detailed comparisons on specific tasks.
-</p>
-<p>
-    🔍 Learn more in the AstaBench technical blog post
+    This view is designed for quick comparison of general-purpose scientific agents. For more details on how we calculate scores and cost, please see the <a href="/about" style="color: #0FCB8C; text-decoration: underline;">About</a> Page.
 </p>
 """
 SCATTER_DISCLAIMER = """
@@ -659,5 +639,31 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 /* Smooth scrolling for the entire page */
 html {
     scroll-behavior: smooth;
+}
+/* Home Page Styling */
+.diagram-placeholder {
+    width: 100%;
+    height: 100%; 
+    min-height: 250px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #FAF2E9; 
+    color: #F0529C;          
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+}
+/* 2. Responsive behavior for smaller screens */
+@media (max-width: 900px) {
+    #intro-row {
+        flex-direction: column;
+    }
+}
+#home-page-content-wrapper{
+    margin-top: 40px;
+}
+#intro-row #intro-paragraph {
+    max-width: 90%;
 }
 """
