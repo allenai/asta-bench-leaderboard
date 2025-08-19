@@ -180,3 +180,5 @@ cython_debug/
 .mise.toml
 .vscode/
 .gradio/
+
+.claude
