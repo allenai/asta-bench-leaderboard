@@ -669,7 +669,7 @@ html {
 }
 /* Plot legend styles */
 .plot-legend-container {
-    height: 572px;
+    min-height: 572px;
     background-color: #fff;
     padding: 24px 32px;
 }
@@ -692,12 +692,10 @@ html {
 }
 
 .plot-legend-item {
+    display: flex;      
     margin-top: 8px;
 }
 
-.plot-legend-item-text {
-    display: inline-block;
-}
 
 .plot-legend-item-text .description {
     color: #888;
@@ -705,8 +703,6 @@ html {
 }
 
 .plot-legend-item-svg {
-    display: inline-block;
-    vertical-align: top;
     margin-top: 3px;
     width: 14px;
     height: 14px;
