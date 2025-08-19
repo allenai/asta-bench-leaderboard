@@ -663,7 +663,7 @@ html {
 #home-page-content-wrapper{
     margin-top: 40px;
 }
-#intro-row #intro-paragraph {
+#intro-paragraph {
     max-width: 90%;
 }
 """
