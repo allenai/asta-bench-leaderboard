@@ -90,20 +90,20 @@ OPENNESS_SVG_MAP = {
     },
     "Closed source & UI only": {
         "path": "assets/ellipse-white.svg",
-        "description": "No access to code or API; UI  access only"
+        "description": "No access to code or API; UI access only"
     },
 }
 TOOLING_SVG_MAP = {
     "Standard": {
-        "path": "assets/five-point-star-black.svg",
+        "path": "assets/five-point-star.svg",
         "description": "Uses only tools explicitly provided in state.tools"
     },
     "Custom interface": {
-        "path": "assets/four-point-star-black.svg",
+        "path": "assets/four-point-star.svg",
         "description": "Custom tools for accessing an equivalent underlying environment"
     },
-    "Fully Custom": {
-        "path": "assets/three-point-star-black.svg",
+    "Fully custom": {
+        "path": "assets/three-point-star.svg",
         "description": "Uses tools beyond constraints of Standard or Custom interface"
     },
 }
@@ -392,7 +392,7 @@ for name, info in OPENNESS_SVG_MAP.items():
                     f'<div>'
                         f'<span>{name}</span>'
                     f'</div>'
-                    f'<span style="font-size: 11px; color: #888;">{info["description"]}</span>'
+                    f'<span class="description">{info["description"]}</span>'
                 f'</div>'
             f'</div>'
         )
@@ -403,12 +403,12 @@ for name, info in TOOLING_SVG_MAP.items():
     if uri:
         tooling_legend_items.append(
             f'<div class="plot-legend-item">'
-                f'<img class="plot-legend-item-svg" src="{uri}" alt="{name}" title="{name}">'
+                f'<img class="plot-legend-item-svg plot-legend-tooling-svg" src="{uri}" alt="{name}" title="{name}">'
                 f'<div class="plot-legend-item-text">'
                     f'<div>'
                         f'<span>{name}</span>'
                     f'</div>'
-                    f'<span style="font-size: 11px; color: #888;">{info["description"]}</span>'
+                    f'<span class="description">{info["description"]}</span>'
                 f'</div>'
             f'</div>'
         )

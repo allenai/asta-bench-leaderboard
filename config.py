@@ -2,7 +2,7 @@ import os
 
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
 CONFIG_NAME = os.getenv("HF_CONFIG", "1.0.0-dev1") # This corresponds to 'config' in LeaderboardViewer
-IS_INTERNAL = "true"
+IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
 
 # Put all contact info in the same dataset so there's only one place to search. This is private to Ai2.
 CONTACT_DATASET = f"allenai/asta-bench-internal-contact-info"
@@ -18,8 +18,5 @@ else:
     RESULTS_DATASET = f"allenai/asta-bench-results"
     LEADERBOARD_PATH = f"allenai/asta-bench-leaderboard"
 
-if LOCAL_DEBUG:
-    DATA_DIR = os.path.join(os.path.dirname(__file__), "data", CONFIG_NAME)
-else:
-    DATA_DIR = "/home/user/data/" + CONFIG_NAME
+DATA_DIR = "/tmp/abl/data/" + CONFIG_NAME
 EXTRACTED_DATA_DIR = os.path.join(DATA_DIR, "extracted")

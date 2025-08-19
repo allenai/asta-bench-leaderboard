@@ -669,6 +669,10 @@ html {
     padding: 24px 32px;
 }
 
+.dark .plot-legend-container {
+    background: rgba(250, 242, 233, 0.1);
+}
+
 #plot-legend-logo {
     margin-bottom: 24px;
 }
@@ -690,6 +694,11 @@ html {
     display: inline-block;
 }
 
+.plot-legend-item-text .description {
+    color: #888;
+    font-size: 12px;
+}
+
 .plot-legend-item-svg {
     display: inline-block;
     vertical-align: top;
@@ -697,6 +706,12 @@ html {
     width: 14px;
     height: 14px;
     margin-right: 8px;
+}
+
+.plot-legend-tooling-svg {
+    height: 16px;
+    width: 16px;
+    margin-top: 2px;
 }
 
 #plot-legend-item-pareto-svg {
