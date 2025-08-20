@@ -97,7 +97,7 @@ def build_page():
             </ul>
             
             <p>
-                <em>Note: Cost values reflect pricing and infrastructure conditions at the time of each submission. We recognize that compute costs may change over time, and are actively working on methods to normalize cost data across submissions for fairer longitudinal comparisons.</em>
+                <em>Note: Cost values reflect pricing and infrastructure conditions at a fixed point in time. We recognize that compute costs may change over time and vary by provider, and are actively working on methods to keep costs up-to-date and normalized for fair comparisons.</em>
             </p>
             
             <h3>Coverage</h3>
@@ -117,14 +117,24 @@ def build_page():
         # --- Section 6: Learn More ---
         gr.HTML(
             """
-            <h2>Learn More</h2>
-            <ul class="info-list">
-                <li>AstaBench technical blog post</li>
-                <li>FAQ and submission guide</li>
-            </ul>
+            <div class="learn-more-section">
+                <h2>Learn More</h2>
+                <div class="link-buttons-container">
+                    
+                    <a href="https://allenai.org/blog/astabench" target="_blank" class="link-button">
+                        <span style="color:#0fcb8c;">AstaBench technical blog post</span>
+                        <span class="external-link-icon">↗</span>
+                    </a>
+                    
+                    <a href="/submit" target="_blank" class="link-button">
+                        <span style="color:#0fcb8c;">Submit an agent for evaluation</span>
+                        <span class="external-link-icon">↗</span>
+                    </a>
+                    
+                </div>
+            </div>
             """
         )
-
         # Floating feedback button
         floating_feedback_button_html = """
         <div>
