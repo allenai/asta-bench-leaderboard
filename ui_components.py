@@ -167,10 +167,10 @@ def build_openness_tooltip_content() -> str:
     Generates the inner HTML for the Agent Openness tooltip card,
     """
     descriptions = {
-        "Open Source + Open Weights": "Both code and ML models are open",
-        "Open Source + Closed Weights": "Code is open but uses an ML model with closed-weights",
-        "API Available": "No access to code; API access only",
-        "Closed Source + UI Only": "No access to code or API; UI  access only",
+        "Open source & open weights": "Both code and ML models are open",
+        "Open source & closed weights": "Code is open but uses an ML model with closed-weights",
+        "Closed source & API available": "No access to code; API access only",
+        "Closed source & UI only": "No access to code or API; UI  access only",
     }
     html_items = []
     for name, info in OPENNESS_SVG_MAP.items():
@@ -211,8 +211,8 @@ def build_tooling_tooltip_content() -> str:
     """Generates the inner HTML for the Agent Tooling tooltip card."""
     descriptions = {
         "Standard": "Uses only predefined tools from the evaluation environment (as defined in Inspect's state.tools).",
-        "Custom Interface": "Custom tools for accessing an equivalent underlying environment:",
-        "Fully Custom": "Uses tools beyond constraints of Standard or Custom interface",
+        "Custom interface": "Custom tools for accessing an equivalent underlying environment:",
+        "Fully custom": "Uses tools beyond constraints of Standard or Custom interface",
     }
     custom_interface_sub_list = """
         <ul class="tooltip-sub-list">
@@ -250,7 +250,7 @@ def build_descriptions_tooltip_content(table) -> str:
             <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
             <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
             <div class="tooltip-description-item"><b>Overall Score:</b> Macro-average of the four category-level average scores. Each category contributes equally.</div>
-            <div class="tooltip-description-item"><b>Overall Cost:</b> Macro-average cost per problem across all categories, in USD. Based on submission-time values. Each category contributes equally</div>
+            <div class="tooltip-description-item"><b>Overall Cost:</b> Macro-average cost per problem across all categories, in USD. Each category contributes equally.</div>
             <div class="tooltip-description-item"><b>Literature Understanding Score:</b> Macro-average score across Literature Understanding benchmarks.</div>
             <div class="tooltip-description-item"><b>Literature Understanding Cost:</b> Macro-average cost per problem (USD) across Literature Understanding benchmarks.</div>
             <div class="tooltip-description-item"><b>Code Execution Score:</b> Macro-average score across Code & Execution benchmarks.</div>
@@ -289,7 +289,7 @@ def build_descriptions_tooltip_content(table) -> str:
 # Dynamically generate the correct HTML for the legend parts
 openness_html = " ".join([create_svg_html(name, OPENNESS_SVG_MAP) for name in OPENNESS_SVG_MAP])
 tooling_html = " ".join([create_svg_html(name, TOOLING_SVG_MAP) for name in TOOLING_SVG_MAP])
-# Create HTML for the "Openness" legend items
+# Create HTML for the "Openness" legend items for table
 openness_html_items = []
 for name, info in OPENNESS_SVG_MAP.items():
     uri = get_svg_as_data_uri(info["path"])
@@ -302,7 +302,7 @@ for name, info in OPENNESS_SVG_MAP.items():
     )
 openness_html = " ".join(openness_html_items)
 
-# Create HTML for the "Tooling" legend items
+# Create HTML for the "Tooling" legend items for table
 tooling_html_items = []
 for name, info in TOOLING_SVG_MAP.items():
     uri = get_svg_as_data_uri(info["path"])
@@ -330,15 +330,17 @@ def create_legend_markdown(which_table: str) -> str:
             
         <div> <!-- Container for the Pareto section -->
             <b>Pareto</b>
-            <span class="tooltip-icon-legend">
+            <span class="tooltip-icon-legend tooltip-pin-left">
                 ⓘ
                 <span class="tooltip-card">{pareto_tooltip_content}</span>
             </span>
-            <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
-            <img src="{trophy_uri}" alt="On Frontier" style="width: 25px; height: 25px;">
-            <span>On Frontier</span>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">
+            <div style="display: flex; align-items: center; white-space: nowrap;">
+                <img src="{trophy_uri}" alt="On Frontier" style="width:16px; height:16px; margin-right: 4px; flex-shrink: 0;">
+                <span>On frontier</span>
+            </div>
         </div>
-        </div>
+    </div>
     
         <div> <!-- Container for the Openness section -->
             <b>Agent Openness</b>
@@ -350,7 +352,7 @@ def create_legend_markdown(which_table: str) -> str:
                     <div class="tooltip-items-container">{openness_tooltip_content}</div>
                 </span>
             </span>
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px;">{openness_html}</div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; margin-top: 8px;">{openness_html}</div>
         </div>
     
         <div> <!-- Container for the Tooling section -->
@@ -363,12 +365,12 @@ def create_legend_markdown(which_table: str) -> str:
                     <div class="tooltip-items-container">{tooling_tooltip_content}</div>
                 </span>
             </span>
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px;">{tooling_html}</div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; margin-top: 8px;">{tooling_html}</div>
         </div>
         
         <div><!-- Container for the Column Descriptions section -->
             <b>Column Descriptions</b>
-            <span class="tooltip-icon-legend">
+            <span class="tooltip-icon-legend tooltip-pin-right">
                 ⓘ
                 <span class="tooltip-card">
                     <h3>Column Descriptions</h3>
