@@ -539,27 +539,46 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     100% { transform: rotate(360deg); }
 }
     
-#custom-form-group {
+#submission-page-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+#submission-button {
+    max-width: fit-content;
+    font-size: 14px;
+}
+
+.custom-form-group {
     border: 1px solid #000 !important; 
     border-radius: 4px !important;
-    padding: 16px 16px 0px 0px !important;
+    padding: 24px !important;
     overflow: visible !important;    
 }
 
 #openness-label-html,
-#agent-tooling-label-html {
+#agent-tooling-label-html,
+#agent-info-label-html,
+#submitter-info-label-html,
+#username-label-html,
+#email-label-html,
+#role-label-html  {
     padding-left: 12px;
 }
 
-#custom-form-group fieldset {
-    padding-top: 0px !important;
+.form-label {
+    margin: 4px 0px 0px 6px;
+}
+
+.form-label-fieldset {
+    padding-top: 10px !important;
 }
 
 #agent-tooling-label-html {
     padding-top: 6px;
 }
 
-#custom-form-group,
+.custom-form-group,
 .styler {
     background: none;
 }

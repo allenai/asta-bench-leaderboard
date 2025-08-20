@@ -2,7 +2,7 @@ import os
 
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
 CONFIG_NAME = os.getenv("HF_CONFIG", "1.0.0-dev1") # This corresponds to 'config' in LeaderboardViewer
-IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
+IS_INTERNAL = "true"
 
 # Put all contact info in the same dataset so there's only one place to search. This is private to Ai2.
 CONTACT_DATASET = f"allenai/asta-bench-internal-contact-info"
