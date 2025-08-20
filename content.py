@@ -616,7 +616,34 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     line-height: 1.3;  
     display: flex;
     flex-direction: column;   
-}       
+} 
+@media (max-width: 800px) {
+    .tooltip-card {
+        transform: none;
+        left: 10px;
+        max-width: calc(100vw - 100px); 
+    }
+    .tooltip-icon-legend:hover::before {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+} 
+.tooltip-pin-left .tooltip-card {
+    left: 0;
+    transform: none;
+}   
+.tooltip-pin-right .tooltip-card {
+    right: 0;
+    left: auto;
+    transform: none;
+}
+.table-legend-item {  
+    display: flex; 
+    align-items: center; 
+    white-space: nowrap; 
+    margin-top: 8px; 
+    flex-wrap: wrap;
+}
 /* About Page CSS */
 #about-page-content-wrapper {
     margin-left: auto;
