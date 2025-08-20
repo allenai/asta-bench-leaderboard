@@ -516,7 +516,6 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     color: white;
     border: none;
     border-radius: 4px;
-    margin: 5px 0 0 24px;
     padding: 15px 20px;
     font-size: 16px;
     cursor: pointer;
@@ -628,7 +627,35 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     gap: 40px; 
     margin-top: 40px;
     opacity: 85%; 
+    margin-bottom: 60px;
 }
+.link-buttons-container {
+    display: flex;
+    flex-wrap: wrap; /* Allows buttons to stack on very narrow screens */
+    gap: 16px;     
+    margin-top: 16px;
+}
+.link-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-grow: 1; 
+    background-color: #083c40; 
+    padding: 16px 20px;
+    font-weight: 600;
+    border-radius: 12px;
+    text-decoration: none; 
+    transition: background-color 0.2s ease-in-out;
+}
+.link-button:hover {
+    background-color: #0a4c52; 
+}
+.external-link-icon {
+    font-size: 20px;
+    line-height: 1;
+    margin-left: 12px;
+}
+
 #leaderboard-accordion table {
     width: auto !important;
     margin-right: auto !important;
