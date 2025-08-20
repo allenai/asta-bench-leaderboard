@@ -636,7 +636,14 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     right: 0;
     left: auto;
     transform: none;
-}   
+}
+.table-legend-item {  
+    display: flex; 
+    align-items: center; 
+    white-space: nowrap; 
+    margin-top: 8px; 
+    flex-wrap: wrap;
+}
 /* About Page CSS */
 #about-page-content-wrapper {
     margin-left: auto;

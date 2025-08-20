@@ -334,13 +334,11 @@ def create_legend_markdown(which_table: str) -> str:
                 ⓘ
                 <span class="tooltip-card">{pareto_tooltip_content}</span>
             </span>
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 4px;">
-            <div style="display: flex; align-items: center; white-space: nowrap;">
-                <img src="{trophy_uri}" alt="On Frontier" style="width:16px; height:16px; margin-right: 4px; flex-shrink: 0;">
+            <div class="table-legend-item">
+                <img src="{trophy_uri}" alt="On Frontier" style="width:20px; height:20px; margin-right: 4px; flex-shrink: 0;">
                 <span>On frontier</span>
             </div>
         </div>
-    </div>
     
         <div> <!-- Container for the Openness section -->
             <b>Agent Openness</b>
@@ -352,7 +350,7 @@ def create_legend_markdown(which_table: str) -> str:
                     <div class="tooltip-items-container">{openness_tooltip_content}</div>
                 </span>
             </span>
-            <div style="display: flex; flex-wrap: wrap; align-items: center; margin-top: 8px;">{openness_html}</div>
+            <div class="table-legend-item">{openness_html}</div>
         </div>
     
         <div> <!-- Container for the Tooling section -->
@@ -365,7 +363,7 @@ def create_legend_markdown(which_table: str) -> str:
                     <div class="tooltip-items-container">{tooling_tooltip_content}</div>
                 </span>
             </span>
-            <div style="display: flex; flex-wrap: wrap; align-items: center; margin-top: 8px;">{tooling_html}</div>
+            <div class="table-legend-item">{tooling_html}</div>
         </div>
         
         <div><!-- Container for the Column Descriptions section -->
