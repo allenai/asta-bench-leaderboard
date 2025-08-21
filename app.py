@@ -86,6 +86,11 @@ theme = gr.themes.Base(
     block_border_color_dark="#9fead1",
     block_background_fill_dark="#032629",
     block_background_fill="#FAF2E9",
+    checkbox_label_text_color="#032629",
+    checkbox_label_background_fill="#D8D6CF",
+    checkbox_label_background_fill_dark="#254243",
+    checkbox_background_color_selected="#F0529C",
+    checkbox_background_color_selected_dark="#0FCB8C",
 )
 try:
     with open(LOGO_PATH, "r") as f:

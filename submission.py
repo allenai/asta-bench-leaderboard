@@ -429,8 +429,9 @@ def build_page():
             gr.HTML(value="""<h3>Agent tooling</h3>""", elem_classes="form-label")
             degree_of_control_radio = gr.Radio(["Standard","Equivalent", "Fully Custom"], elem_classes="form-label-fieldset",value=None, label="Choose based on the tools and the execution environment your agent used during evaluation.")
             gr.HTML(value="""<h3>Submission file</h3>""", elem_classes="form-label")
+            gr.HTML("<div id='submission-file-label'>Upload your run file, which is an archive prepared following the instructions in the <a href='https://github.com/allenai/asta-bench?tab=readme-ov-file#submitting-to-the-leaderboard' target='_blank'>README</a> (“Submitting to the Leaderboard”).</div>")
             file_upload_comp = gr.File(
-                label="Upload your run file, which is an archive prepared following the instructions in the AstaBench README (“Submitting to the Leaderboard”).",
+                show_label=False,
                 file_types=[".gz", ".tar.gz"]
             )
             submit_eval_button = gr.Button("Submit Evaluation", elem_id="submission-button")

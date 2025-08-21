@@ -544,6 +544,10 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     margin: 0 auto;
 }
 
+#submission-file-label {
+    padding: 10px;
+}
+
 #submission-button {
     max-width: fit-content;
     font-size: 14px;
