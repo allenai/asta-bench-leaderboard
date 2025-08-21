@@ -318,28 +318,28 @@ nav.svelte-ti537g.svelte-ti537g {
 .padding.svelte-phx28p {
     padding: 0 !important;
 }
-.dark .sub-nav-link-button {
-    color: #0fcb8c !important;
-}
 .sub-nav-bar-container {
     display: flex !important;
     flex-wrap: nowrap !important; 
     align-items: center !important; 
     gap: 20px !important;
 }
-.sub-nav-link-button {
+.dark .primary-link-button {
+    color: var(--color-primary-green);
+}
+.primary-link-button {
     background: none;
     border: none;
     padding: 0;
     margin: 0;
     font-family: inherit;
     font-size: 16px;
-    color: #F263A6; 
+    color: var(--color-primary-pink);
     text-decoration: none;
     cursor: pointer;
     white-space: nowrap;
 }
-.sub-nav-link-button:hover {
+.primary-link-button:hover {
     text-decoration: underline;
 }
 .sub-nav-label {
@@ -491,13 +491,9 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 .dark .benchmark-title{
     color: var(--color-primary-green);
 }
-.scroll-up-button {
+.benchmark-description {
     margin: 20px 0;
-    text-align: left;
-    text-decoration: underline;
-}
-.scroll-up-button:hover {
-    text-decoration: none;
+    max-width: 800px;
 }
 /*------ Submission Page CSS ------*/
 #submission-modal .modal-container {

@@ -46,7 +46,7 @@ def build_page():
                 Plus: a large suite of integrated agents and leaderboards with results from extensive evaluation of agents and models.
             </p>
             <p>
-                🔍 Learn more in the AstaBench technical blog post
+                🔍 Learn more in the <a href="https://allenai.org/blog/astabench" target="_blank" class="primary-link-button">AstaBench technical blog post</a>
             </p>
             """
         )
