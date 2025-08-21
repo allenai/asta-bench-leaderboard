@@ -257,7 +257,7 @@ class DataTransformer:
         # --- 3. Add Columns for Agent Openness and Tooling ---
         base_cols = ["id","Agent","Submitter","LLM Base","Source"]
         new_cols = ["Openness", "Agent Tooling"]
-        ending_cols = ["Logs"]
+        ending_cols = ["Date", "Logs"]
 
         metrics_to_display = [primary_score_col, f"{primary_metric} Cost"]
         for item in group_metrics:
