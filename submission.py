@@ -1,5 +1,5 @@
 import logging
-import sys
+import typing
 
 import matplotlib
 from agenteval.cli import SUBMISSION_METADATA_FILENAME
@@ -12,18 +12,11 @@ matplotlib.use('Agg')
 import os
 import shutil
 import tarfile
-import tempfile
 from datetime import datetime, timedelta, timezone
 from email.utils import parseaddr
-from pathlib import Path
 
 import gradio as gr
 import requests
-from agenteval import (
-    process_eval_logs,
-    upload_folder_to_hf,
-)
-from agenteval.leaderboard.models import LeaderboardSubmission
 from agenteval.leaderboard.upload import sanitize_path_component, _validate_path_component
 from datasets import Dataset, DatasetDict, VerificationMode, load_dataset
 from datasets.data_files import EmptyDatasetError
@@ -34,8 +27,6 @@ from config import (
     CONFIG_NAME,
     CONTACT_DATASET,
     EXTRACTED_DATA_DIR,
-    IS_INTERNAL,
-    LOCAL_DEBUG,
     RESULTS_DATASET,
     SUBMISSION_DATASET,
 )
@@ -90,6 +81,7 @@ def upload_submission(
     _validate_path_component(split, "split")
     _validate_path_component(submission_name, "submission_name")
     dataset_url = f"hf://datasets/{SUBMISSION_DATASET}/{CONFIG_NAME}/{split}/{submission_name}"
+    logger.info(f"Uploading dataset {dataset_url}")
     api.upload_folder(
         folder_path=folder_path,
         path_in_repo=f"{CONFIG_NAME}/{split}/{submission_name}",
@@ -111,7 +103,7 @@ def add_new_eval(
         agent_url: str,
         openness: str | None,
         degree_of_control: str | None,
-        path_to_file: tempfile._TemporaryFileWrapper | None,
+        path_to_file: typing.IO | None,
         username: str,
         role: str,
         email: str,
@@ -173,13 +165,13 @@ def add_new_eval(
     logger.debug(f"agent {agent_name}: Submission frequency check {profile.username}")
     contact_infos = try_load_dataset_submission(
         CONTACT_DATASET, CONFIG_NAME, download_mode="force_redownload",
-        verification_mode=VerificationMode.NO_CHECKS, trust_remote_code=True
+        verification_mode=VerificationMode.NO_CHECKS
     )
-    user_submission_dates = sorted(
-        datetime.fromisoformat(row["submit_time"])
-        for row in contact_infos.get(val_or_test, []) if row["username_auth"] == profile.username
-    )
-    if user_submission_dates and (submission_time - user_submission_dates[-1] < timedelta(days=1)):
+    if _is_last_submission_too_recent(
+        contact_rows=contact_infos.get(val_or_test, []),
+        username=profile.username,
+        submission_time=submission_time,
+    ):
         logger.info(f"agent {agent_name}: Denied submission because user {username} submitted recently")
         return (
             format_error("You already submitted once in the last 24h for this split; please try again later."),  # error_message
@@ -262,7 +254,7 @@ def add_new_eval(
 
     logger.info(f"agent {agent_name}: Upload raw (unscored) submission files")
     try:
-        upload_submission(extracted_dir, val_or_test, submission_name, profile.username)
+        dataset_url = upload_submission(extracted_dir, val_or_test, submission_name, profile.username)
     except ValueError as e:
         return (
             format_error(str(e)),                               # error_message
@@ -280,11 +272,11 @@ def add_new_eval(
 
     logger.info(f"agent {agent_name}: Save contact information")
     contact_info = subm_meta.model_dump()
-    contact_info["submit_time"] = submission_time.isoformat()
     contact_info["username_auth"] = profile.username
     contact_info["email"] = email
     contact_info["email_opt_in"] = email_opt_in
     contact_info["role"] = role
+    contact_info["dataset_url"] = dataset_url
 
     logger.debug(f"agent {agent_name}: Contact info: {contact_info}")
     if val_or_test in contact_infos:
@@ -293,7 +285,11 @@ def add_new_eval(
         contact_infos[val_or_test] = Dataset.from_list([contact_info])
 
     try:
-        contact_infos.push_to_hub(CONTACT_DATASET, config_name=CONFIG_NAME)
+        contact_infos.push_to_hub(
+            repo_id=CONTACT_DATASET,
+            config_name=CONFIG_NAME,
+            commit_message=f'Submission from hf user "{profile.username}" to "{dataset_url}"',
+        )
     except Exception as e:
         return (
             format_error(f"Submission recorded, but contact info failed to save: {e}"),  # error_message
@@ -304,7 +300,7 @@ def add_new_eval(
 
     logger.info(f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split.")
     return (
-        "",                                                 # error_message
+        "",                                                 # message
         gr.update(visible=False),                           # error_modal
         gr.update(visible=True),                            # success_modal
         gr.update(visible=False)                            # loading_modal
@@ -319,6 +315,14 @@ def _is_hf_acct_too_new(submission_time: datetime, username: str):
     return submission_time - created_at < timedelta(days=60)
 
 
+def _is_last_submission_too_recent(contact_rows, username, submission_time):
+    user_submission_dates = sorted(
+        datetime.fromisoformat(row["submit_time"])
+        for row in contact_rows if row["username_auth"] == username
+    )
+    return user_submission_dates and (submission_time - user_submission_dates[-1] < timedelta(days=1))
+
+
 openness_label_html = f"""<div>
     <b>Agent Openness</b>
     {build_openness_tooltip_content()}
@@ -329,7 +333,6 @@ agent_tooling_label_html = f"""<div>
     <b>Agent Tooling</b>
     {build_tooling_tooltip_content()}
 </div>"""
-
 
 
 heading_html = """
