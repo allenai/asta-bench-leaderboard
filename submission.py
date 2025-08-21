@@ -356,7 +356,7 @@ def _deprecated_scoring_logic():
 
 openness_label_html = """
 <div class="form-label-with-tooltip">
-    Openness of Agent
+    Agent Openness
     <span class="tooltip-icon" data-tooltip="• Closed: No API or code available
         • API Available: API available, but no code
         • Open Source: Code available, but no weights
@@ -388,34 +388,53 @@ heading_html = """
 
 # --- Submission Accordion ---
 def build_page():
-    with gr.Row():
-        with gr.Column():
-            gr.HTML(heading_html)
-        with gr.Column():
-            pass # Keeps this row's content on the left side of the page.
-    with gr.Row():
+    with gr.Column(elem_id="submission-page-container"):
+        gr.HTML(heading_html)
         gr.LoginButton()
-    with gr.Row():
-        with gr.Column():
-            level_of_test_radio = gr.Radio(["validation", "test"], value="validation", label="Split")
-            agent_name_tb = gr.Textbox(label="Agent Name")
-            agent_desc_tb = gr.Textbox(label="Agent Description")
-            agent_url_tb = gr.Textbox(label="URL to Agent Information")
-            with gr.Group(elem_id="custom-form-group"):
-                gr.HTML(value=openness_label_html, elem_id="openness-label-html")
-                openness_radio = gr.Radio(["Open Source","Open Source Open Weights", "API Available", "Closed"], value=None, label="")
-                gr.HTML(value=agent_tooling_label_html, elem_id="agent-tooling-label-html")
-                degree_of_control_radio = gr.Radio(["Standard","Equivalent", "Fully Custom"], value=None, label="")
-        with gr.Column():
-            username_tb = gr.Textbox(label="Organization or User Name (Defaults to HF username)")
-            mail_tb = gr.Textbox(label="Contact Email (Private, for submission issues)")
+        with gr.Group(elem_classes="custom-form-group"):
+            gr.HTML(value="""<h2>Submitter Information</h2>""", elem_id="submitter-info-label-html")
+            gr.HTML(value="""<h3>Username</h3>""", elem_classes="form-label")
+            username_tb = gr.Textbox(label="This will show on the leaderboard. By default, we’ll use your Hugging Face username; but you can enter your organization name instead (e.g., university, company, or lab).")
+            gr.HTML(value="""<h3>Role</h3>""", elem_classes="form-label")
+            role_selection = gr.Dropdown(label="Please select the role that most closely matches your current position. Helps us improve AstaBench for different user types. Not displayed on the leaderboard.",
+                interactive=True,
+                choices=[
+                    "Undergraduate Student",
+                    "Masters Student",
+                    "PhD Student",
+                    "Postdoctoral Researcher",
+                    "Academic Faculty (e.g., Professor, Lecturer)",
+                    "Industry Researcher (e.g., Research Scientist, Applied Scientist)",
+                    "Engineer or Developer (e.g., Software or ML Engineer)",
+                    "Data Scientist or Analyst",
+                    "Product or Program Manager",
+                    "Startup Founder or Independent Researcher",
+                    "Other"
+            ])
+            gr.HTML(value="""<h3>Contact email</h3>""", elem_classes="form-label")
+            mail_tb = gr.Textbox(label="We'll only use your email to communicate about your submission.")
+            mail_opt_in = gr.Checkbox(label="I’m open to being contacted by email for user research studies or feedback opportunities.")
+        with gr.Group(elem_classes="custom-form-group"):
+            gr.HTML(value="""<h2>Agent Information</h2>""", elem_id="agent-info-label-html")
+            gr.HTML(value="""<h3>Split</h3>""", elem_classes="form-label")
+            level_of_test_radio = gr.Radio(["Test set", "Validation set"], elem_classes="form-label-fieldset", value="validation", label="The Test Set is used for final leaderboard rankings. The Validation Set is for development and iteration. Choose based on your evaluation goal.")
+            gr.HTML(value="""<h3>Agent name</h3>""", elem_classes="form-label")
+            agent_name_tb = gr.Textbox(label="This is how your agent will appear on the leaderboard. Use a clear, descriptive name (e.g., Asta Scholar QA, Perplexity Deep Research). Omit model names (e.g. GPT-4, Mistral) as they’ll be shown automatically based on your logs.")
+            gr.HTML(value="""<h3>Agent description</h3>""", elem_classes="form-label")
+            agent_desc_tb = gr.Textbox(label="Briefly describe your agent’s approach, core strategies, or what makes it distinct. This description may appear on the leaderboard.")
+            gr.HTML(value="""<h3>URL</h3>""", elem_classes="form-label")
+            agent_url_tb = gr.Textbox(label="Link to more information about your agent (e.g. GitHub repo, blog post, or website). This optional link may be shown on the leaderboard to let others explore your agent in more depth.")
+            gr.HTML(value="""<h3>Agent openness</h3>""", elem_classes="form-label")
+            openness_radio = gr.Radio(["Open Source","Open Source Open Weights", "API Available", "Closed"], elem_classes="form-label-fieldset", value=None, label="This affects how your submission is categorized on the leaderboard. Choose based on the availability of your code, model weights, or APIs.")
+            gr.HTML(value="""<h3>Agent tooling</h3>""", elem_classes="form-label")
+            degree_of_control_radio = gr.Radio(["Standard","Equivalent", "Fully Custom"], elem_classes="form-label-fieldset",value=None, label="Choose based on the tools and the execution environment your agent used during evaluation.")
+            gr.HTML(value="""<h3>Submission file</h3>""", elem_classes="form-label")
+            gr.HTML("<div id='submission-file-label'>Upload your run file, which is an archive prepared following the instructions in the <a href='https://github.com/allenai/asta-bench?tab=readme-ov-file#submitting-to-the-leaderboard' target='_blank'>README</a> (“Submitting to the Leaderboard”).</div>")
             file_upload_comp = gr.File(
-                label="Submission File (.tar.gz ...)", # Shortened for brevity
+                show_label=False,
                 file_types=[".gz", ".tar.gz"]
             )
-    with gr.Row():
-        submit_eval_button = gr.Button("Submit Evaluation")
-
+            submit_eval_button = gr.Button("Submit Evaluation", elem_id="submission-button")
     # Modals for loading spinner, success and error messages
     with Modal(visible=False, elem_id="submission-modal") as loading_modal:
         with gr.Column(elem_id="submission-modal-content"):
@@ -445,7 +464,9 @@ def build_page():
             degree_of_control_radio,
             file_upload_comp,
             username_tb,
-            mail_tb
+            role_selection,
+            mail_tb,
+            mail_opt_in
         ],
         [error_message, error_modal, success_modal, loading_modal],
     )
