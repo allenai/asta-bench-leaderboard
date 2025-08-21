@@ -4,6 +4,7 @@ import sys
 import matplotlib
 from agenteval.cli import SUBMISSION_METADATA_FILENAME
 from agenteval.models import SubmissionMetadata
+from datasets.exceptions import DataFilesNotFoundError
 from gradio_modal import Modal
 
 matplotlib.use('Agg')
@@ -62,6 +63,8 @@ def try_load_dataset_submission(*args, **kwargs) -> DatasetDict: # Renamed to av
         return DatasetDict()
     except ValueError: # Handles cases where dataset is empty or ill-formed
         return DatasetDict()
+    except DataFilesNotFoundError:
+        return DatasetDict()
 
 def checked_upload_folder(
         api_hf: HfApi, # Renamed to avoid conflict with global api
@@ -100,7 +103,9 @@ def add_new_eval(
         degree_of_control: str | None,
         path_to_file: tempfile._TemporaryFileWrapper | None,
         username: str,
+        user_role_desc: str,
         email: str,
+        email_opt_in: bool,
         profile: gr.OAuthProfile,
 ):
     if not agent_name:
@@ -267,7 +272,9 @@ def add_new_eval(
     contact_info = subm_meta.model_dump()
     contact_info["submit_time"] = submission_time.isoformat()
     contact_info["username_auth"] = profile.username
+    contact_info["user_role_desc"] = user_role_desc
     contact_info["email"] = email
+    contact_info["email_opt_in"] = email_opt_in
 
     logger.debug(f"agent {agent_name}: Contact info: {contact_info}")
     if val_or_test in contact_infos:
@@ -365,7 +372,10 @@ def build_page():
         with gr.Group(elem_classes="custom-form-group"):
             gr.HTML(value="""<h2>Agent Information</h2>""", elem_id="agent-info-label-html")
             gr.HTML(value="""<h3>Split</h3>""", elem_classes="form-label")
-            level_of_test_radio = gr.Radio(["Test set", "Validation set"], elem_classes="form-label-fieldset", value="validation", label="The Test Set is used for final leaderboard rankings. The Validation Set is for development and iteration. Choose based on your evaluation goal.")
+            level_of_test_radio = gr.Radio(choices=[
+                ("Test set", "test"),
+                ("Validation set", "validation"),
+            ], elem_classes="form-label-fieldset", value="validation", label="The Test Set is used for final leaderboard rankings. The Validation Set is for development and iteration. Choose based on your evaluation goal.")
             gr.HTML(value="""<h3>Agent name</h3>""", elem_classes="form-label")
             agent_name_tb = gr.Textbox(label="This is how your agent will appear on the leaderboard. Use a clear, descriptive name (e.g., Asta Scholar QA, Perplexity Deep Research). Omit model names (e.g. GPT-4, Mistral) as they’ll be shown automatically based on your logs.")
             gr.HTML(value="""<h3>Agent description</h3>""", elem_classes="form-label")
