@@ -136,17 +136,16 @@ def add_new_eval(
 
     logger.debug(f"agent {agent_name}: User account age check {profile.username}")
     try:
-        user_data_resp = requests.get(f"https://huggingface.co/api/users/{profile.username}/overview")
-        user_data_resp.raise_for_status()
-        creation_date_str = user_data_resp.json()["createdAt"]
-        created_at = datetime.strptime(creation_date_str, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
-        if submission_time - created_at < timedelta(days=60):
-            return (
-                format_error("This account is not authorized to submit here (account too new)."),  # error_message
-                gr.update(visible=True),                            # error_modal
-                gr.update(visible=False),                           # success_modal
-                gr.update(visible=False)                            # loading_modal
-            )
+        # Account age check disabled for launch.
+        # https://github.com/allenai/astabench-issues/issues/419
+        # if _is_hf_acct_too_new(submission_time, profile.username):
+        #     return (
+        #         format_error("This account is not authorized to submit here (account too new)."),  # error_message
+        #         gr.update(visible=True),                            # error_modal
+        #         gr.update(visible=False),                           # success_modal
+        #         gr.update(visible=False)                            # loading_modal
+        #     )
+        pass
     except Exception as e:
         logger.warning(f"Error checking user account age: {e}")
         return (
@@ -294,65 +293,14 @@ def add_new_eval(
         gr.update(visible=False)                            # loading_modal
     )
 
-def _deprecated_scoring_logic():
-    # No longer triggered on eval submission. Kept for quick reference for a little while (2025). TODO delete this.
 
-    # 3. Process and score the submission
-    eval_result_obj = None # Define to avoid NameError
-    try:
-        json_path = Path(extracted_dir) / AGENTEVAL_MANIFEST_NAME
-        if not json_path.exists():
-            return format_error(f"Missing manifest {AGENTEVAL_MANIFEST_NAME} in submission.")
+def _is_hf_acct_too_new(submission_time: datetime, username: str):
+    user_data_resp = requests.get(f"https://huggingface.co/api/users/{username}/overview")
+    user_data_resp.raise_for_status()
+    creation_date_str = user_data_resp.json()["createdAt"]
+    created_at = datetime.strptime(creation_date_str, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
+    return submission_time - created_at < timedelta(days=60)
 
-        eval_result_obj = LeaderboardSubmission.model_validate_json(json_path.read_text(encoding="utf-8"))
-        if eval_result_obj.suite_config.version != CONFIG_NAME:
-            return format_error(f"Suite version mismatch: expected {CONFIG_NAME}, got {eval_result_obj.suite_config.version}.")
-        if eval_result_obj.split != val_or_test:
-            return format_error(f"Split mismatch: expected {val_or_test}, got {eval_result_obj.split}.")
-
-        # Re-compute results from logs for integrity
-        eval_result_obj.results = process_eval_logs(extracted_dir)[0] # Assuming process_eval_logs returns a tuple/list
-        eval_result_obj.save_json(str(json_path)) # Save the re-processed manifest
-
-    except Exception as e:
-        return format_error(f"Error scoring submission: {e}. Check manifest and log files.")
-
-    # 4. Upload scored submission files
-    logs_url_private_val, logs_url_public_val = None, None
-    scored_submission_name = f"{submission_name}_scored"
-    if not LOCAL_DEBUG:
-        try:
-            logs_url_private_val = checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET, CONFIG_NAME, val_or_test, scored_submission_name)
-            if val_or_test == "validation" and not IS_INTERNAL: # Public copy for validation
-                logs_url_public_val = checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET_PUBLIC, CONFIG_NAME, val_or_test, scored_submission_name)
-        except ValueError as e: return format_error(str(e))
-        except Exception as e: return format_error(f"Failed to upload scored submission: {e}")
-    else: print("mock uploaded scored submission", flush=True)
-
-
-    # Update LeaderboardSubmission with submission details
-    eval_result_obj.submission.agent_name = agent_name
-    eval_result_obj.submission.agent_description = agent_description
-    eval_result_obj.submission.agent_url = agent_url
-    eval_result_obj.submission.openness = openness
-    eval_result_obj.submission.degree_of_control = degree_of_control
-    eval_result_obj.submission.username = username
-    eval_result_obj.submission.submit_time = submission_time
-    eval_result_obj.submission.logs_url = logs_url_private_val
-    eval_result_obj.submission.logs_url_public = logs_url_public_val
-
-    # 5. Upload summary statistics to RESULTS_DATASET (for the leaderboard)
-    if not LOCAL_DEBUG:
-        try:
-            upload_summary_to_hf(api, eval_result_obj, RESULTS_DATASET, CONFIG_NAME, val_or_test, scored_submission_name)
-        except Exception as e:
-            return format_error(f"Failed to upload summary results to leaderboard: {e}")
-    else: print("mock uploaded results to lb", flush=True)
-
-    return format_log(
-        f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split. "
-        "Please refresh the leaderboard in a few moments. It may take some time for changes to propagate."
-    )
 
 openness_label_html = """
 <div class="form-label-with-tooltip">
