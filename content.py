@@ -67,6 +67,15 @@ The **End-to-End Discovery** category tests whether agents can carry out a compl
 Scores in this category are aggregated from two benchmarks, providing the first standardized way to evaluate automated scientific discovery (ASD) agents across all stages of the research process. Use the links above to explore individual benchmark pages.
 <br>
 """
+SUBMISSION_CONFIRMATION = """
+**Your agent has been submitted to AstaBench for evaluation.**
+<br><br>
+🙏 Thanks for contributing!
+<br><br>
+You'll receive an email shortly with confirmation and next steps. If there are any issues with your submission, our team will reach out within 5–7 business days.
+<br><br>
+We appreciate your support in advancing scientific AI.
+"""
 
 # External URLs for benchmark descriptions
 SCHOLAR_QA_CS_URL = "https://www.semanticscholar.org/paper/OpenScholar%3A-Synthesizing-Scientific-Literature-LMs-Asai-He/b40df4b273f255b3cb5639e220c8ab7b1bdb313e"
@@ -220,6 +229,12 @@ css = """
     --color-background-dark: var(--neutral-900); /* #032629 */
     --color-text-light: var(--neutral-50); /* #FAF2E9 */
 }
+
+/* Global Styles */
+h2 {
+    overflow: hidden;
+}
+
 #intro-paragraph {
     font-size: 18px;
     max-width: 60%;
@@ -485,6 +500,45 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     text-decoration: none;
 }
 /*------ Submission Page CSS ------*/
+#submission-modal .modal-container {
+    height: auto;
+    max-width: 600px;
+}
+
+#submission-modal-content {
+    padding: 20px;
+    background-color: inherit;
+    border-radius: 8px;
+    text-align: center;
+}
+
+#submission-modal-content p{
+    font-size: 16px;
+}
+
+.spinner-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+}
+    
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #dee2e6;
+    border-top: 5px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+    
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+    
 #custom-form-group {
     border: 1px solid #000 !important; 
     border-radius: 4px !important;
