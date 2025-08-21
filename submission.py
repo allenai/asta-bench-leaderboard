@@ -4,6 +4,7 @@ import sys
 import matplotlib
 from agenteval.cli import SUBMISSION_METADATA_FILENAME
 from agenteval.models import SubmissionMetadata
+from gradio_modal import Modal
 
 matplotlib.use('Agg')
 
@@ -39,6 +40,7 @@ from config import (
 from content import (
     CITATION_BUTTON_LABEL,
     CITATION_BUTTON_TEXT,
+    SUBMISSION_CONFIRMATION,
     format_error,
     format_log,
     format_warning,
@@ -86,6 +88,9 @@ def checked_upload_folder(
         submission_name=submission_name_ul,
     )
 
+def show_loading_spinner():
+    return gr.update(visible=True)
+
 def add_new_eval(
         val_or_test: str,
         agent_name: str | None,
@@ -99,14 +104,20 @@ def add_new_eval(
         profile: gr.OAuthProfile,
 ):
     if not agent_name:
-        return format_warning("Please provide an agent name.")
-
-    def submission_error(msg: str) -> str:
-        logger.debug(f"agent {agent_name}: {msg}")
-        return format_error(msg)
+        return (
+            format_warning("Please provide an agent name."),  # error_message
+            gr.update(visible=True),                            # error_modal
+            gr.update(visible=False),                           # success_modal
+            gr.update(visible=False)                            # loading_modal
+        )
 
     if path_to_file is None:
-        return format_warning("Please attach a .tar.gz file.")
+        return (
+            format_warning("Please attach a .tar.gz file."),  # error_message
+            gr.update(visible=True),                            # error_modal
+            gr.update(visible=False),                           # success_modal
+            gr.update(visible=False)                            # loading_modal
+        )
 
     logger.info(f"agent {agent_name}: Checking submission")
 
@@ -130,10 +141,20 @@ def add_new_eval(
         creation_date_str = user_data_resp.json()["createdAt"]
         created_at = datetime.strptime(creation_date_str, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
         if submission_time - created_at < timedelta(days=60):
-            return format_error("This account is not authorized to submit here (account too new).")
+            return (
+                format_error("This account is not authorized to submit here (account too new)."),  # error_message
+                gr.update(visible=True),                            # error_modal
+                gr.update(visible=False),                           # success_modal
+                gr.update(visible=False)                            # loading_modal
+            )
     except Exception as e:
         logger.warning(f"Error checking user account age: {e}")
-        return submission_error("Could not verify account age. Please try again later.")
+        return (
+            format_error("Could not verify account age. Please try again later."),  # error_message
+            gr.update(visible=True),                            # error_modal
+            gr.update(visible=False),                           # success_modal
+            gr.update(visible=False)                            # loading_modal
+        )
 
     logger.debug(f"agent {agent_name}: Submission frequency check {profile.username}")
     contact_infos = try_load_dataset_submission(
@@ -146,12 +167,22 @@ def add_new_eval(
     )
     if user_submission_dates and (submission_time - user_submission_dates[-1] < timedelta(days=1)):
         logger.info(f"agent {agent_name}: Denied submission because user {username} submitted recently")
-        return format_error("You already submitted once in the last 24h for this split; please try again later.")
+        return (
+            format_error("You already submitted once in the last 24h for this split; please try again later."),  # error_message
+            gr.update(visible=True),                            # error_modal
+            gr.update(visible=False),                           # success_modal
+            gr.update(visible=False)                            # loading_modal
+        )
 
     logger.debug(f"agent {agent_name}: Email validation {email}")
     _, parsed_mail = parseaddr(email)
     if "@" not in parsed_mail:
-        return format_warning("Please provide a valid email address.")
+        return (
+            format_warning("Please provide a valid email address."),  # error_message
+            gr.update(visible=True),                            # error_modal
+            gr.update(visible=False),                           # success_modal
+            gr.update(visible=False)                            # loading_modal
+        )
 
     logger.debug(f"agent {agent_name}: Duplicate submission check")
     if val_or_test in current_eval_results_for_submission and len(current_eval_results_for_submission[val_or_test]) > 0:
@@ -159,7 +190,12 @@ def add_new_eval(
         for sub_item in existing_submissions:
             if (sub_item.get("agent_name", "").lower() == agent_name.lower() and
                     sub_item.get("username", "").lower() == username.lower()):
-                return format_warning("This agent name by this user has already been submitted to this split.")
+                return (
+                    format_warning("This agent name by this user has already been submitted to this split."),  # error_message
+                    gr.update(visible=True),                            # error_modal
+                    gr.update(visible=False),                           # success_modal
+                    gr.update(visible=False)                            # loading_modal
+                )
 
     safe_username = sanitize_path_component(username)
     safe_agent_name = sanitize_path_component(agent_name)
@@ -181,9 +217,19 @@ def add_new_eval(
                     out.write(fobj.read())
                 members_extracted +=1
             if members_extracted == 0:
-                return submission_error("Submission tarball is empty or contains no valid files.")
+                return (
+                    format_error("Submission tarball is empty or contains no valid files."),  # error_message
+                    gr.update(visible=True),                            # error_modal
+                    gr.update(visible=False),                           # success_modal
+                    gr.update(visible=False)                            # loading_modal
+                )
     except Exception as e:
-        return submission_error(f"Error extracting file: {e}. Ensure it's a valid .tar.gz.")
+        return (
+            format_error(f"Error extracting file: {e}. Ensure it's a valid .tar.gz."),  # error_message
+            gr.update(visible=True),                            # error_modal
+            gr.update(visible=False),                           # success_modal
+            gr.update(visible=False)                            # loading_modal
+        )
 
     submission_name = f"{safe_username}_{safe_agent_name}_{submission_time.strftime('%Y-%m-%d_%H-%M-%S')}"
 
@@ -204,9 +250,19 @@ def add_new_eval(
     try:
         checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET, CONFIG_NAME, val_or_test, submission_name)
     except ValueError as e:
-        return submission_error(str(e))
+        return (
+            format_error(str(e)),                               # error_message
+            gr.update(visible=True),                            # error_modal
+            gr.update(visible=False),                           # success_modal
+            gr.update(visible=False)                            # loading_modal
+        )
     except Exception as e:
-        return submission_error(f"Failed to upload raw submission: {e}")
+        return (
+            format_error(f"Failed to upload raw submission: {e}"),  # error_message
+            gr.update(visible=True),                            # error_modal
+            gr.update(visible=False),                           # success_modal
+            gr.update(visible=False)                            # loading_modal
+        )
 
     logger.info(f"agent {agent_name}: Save contact information")
     contact_info = subm_meta.model_dump()
@@ -223,11 +279,20 @@ def add_new_eval(
     try:
         contact_infos.push_to_hub(CONTACT_DATASET, config_name=CONFIG_NAME)
     except Exception as e:
-        return submission_error(f"Submission recorded, but contact info failed to save: {e}")
+        return (
+            format_error(f"Submission recorded, but contact info failed to save: {e}"),  # error_message
+            gr.update(visible=True),                            # error_modal
+            gr.update(visible=False),                           # success_modal
+            gr.update(visible=False)                            # loading_modal
+        )
 
-    msg = f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split. "
-    logger.info(f"agent {agent_name}: {msg}")
-    return format_log(msg)
+    logger.info(f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split.")
+    return (
+        "",                                                 # error_message
+        gr.update(visible=False),                           # error_modal
+        gr.update(visible=True),                            # success_modal
+        gr.update(visible=False)                            # loading_modal
+    )
 
 def _deprecated_scoring_logic():
     # No longer triggered on eval submission. Kept for quick reference for a little while (2025). TODO delete this.
@@ -350,9 +415,26 @@ def build_page():
             )
     with gr.Row():
         submit_eval_button = gr.Button("Submit Evaluation")
-    submission_result = gr.Markdown()
+
+    # Modals for loading spinner, success and error messages
+    with Modal(visible=False, elem_id="submission-modal") as loading_modal:
+        with gr.Column(elem_id="submission-modal-content"):
+            gr.HTML('<div class="spinner-container"><div class="spinner"></div><p>Processing your submission...</p></div>')
+    
+    with Modal(visible=False, elem_id="submission-modal") as error_modal:
+        with gr.Column(elem_id="submission-modal-content"):
+            gr.Markdown("## ⚠️ Error")
+            error_message = gr.Markdown()
+
+    with Modal(visible=False, elem_id="submission-modal") as success_modal:
+        with gr.Column(elem_id="submission-modal-content"):
+            gr.Markdown(SUBMISSION_CONFIRMATION)
 
     submit_eval_button.click(
+        show_loading_spinner,
+        None,
+        [loading_modal],
+    ).then(
         add_new_eval,
         [
             level_of_test_radio,
@@ -365,7 +447,7 @@ def build_page():
             username_tb,
             mail_tb
         ],
-        submission_result,
+        [error_message, error_modal, success_modal, loading_modal],
     )
     with gr.Accordion("📙 Citation", open=False):
         gr.Textbox(value=CITATION_BUTTON_TEXT, label=CITATION_BUTTON_LABEL, elem_id="citation-button-main", interactive=False)
