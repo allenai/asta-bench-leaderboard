@@ -290,7 +290,7 @@ class DataTransformer:
             # Apply the function row-wise to create the new column
             attempted_column = df_view.apply(calculate_attempted, axis=1)
             # Insert the new column at a nice position (e.g., after "Date")
-            df_view.insert((cols - 1), "Categories Attempted", attempted_column)
+            df_view.insert((cols - 2), "Categories Attempted", attempted_column)
         else:
             total_benchmarks = len(group_metrics)
             def calculate_benchmarks_attempted(row):
@@ -303,7 +303,7 @@ class DataTransformer:
                 else:
                     return f"{count}/{total_benchmarks}"
             # Insert the new column, for example, after "Date"
-            df_view.insert((cols - 1), "Benchmarks Attempted", df_view.apply(calculate_benchmarks_attempted, axis=1))
+            df_view.insert((cols - 2), "Benchmarks Attempted", df_view.apply(calculate_benchmarks_attempted, axis=1))
 
         # --- 4. Generate the Scatter Plot for the Primary Metric ---
         plots: dict[str, go.Figure] = {}

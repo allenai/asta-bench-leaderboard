@@ -588,7 +588,7 @@ def create_leaderboard_display(
         if "Score" in col or "Cost" in col:
             num_score_cost_cols += 1
     dynamic_widths = [90] * num_score_cost_cols
-    fixed_end_widths = [90, 90, 50]
+    fixed_end_widths = [90, 100, 50]
     # 5. Combine all the lists to create the final, fully dynamic list.
     final_column_widths = fixed_start_widths + dynamic_widths + fixed_end_widths
 
@@ -657,7 +657,7 @@ def create_benchmark_details_display(
         benchmark_cost_col = f"{benchmark_name} Cost"
 
         # Define the columns needed for the detailed table
-        table_cols = ['Agent','Source','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'LLM Base', 'Date']
+        table_cols = ['Agent','Source','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'LLM Base']
 
         # Filter to only columns that actually exist in the full dataframe
         existing_table_cols = [col for col in table_cols if col in full_df.columns]
