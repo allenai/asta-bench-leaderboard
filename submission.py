@@ -1,8 +1,7 @@
 import logging
-import sys
 
 import matplotlib
-from agenteval.cli import SUBMISSION_METADATA_FILENAME
+from agenteval.cli import SUBMISSION_METADATA_FILENAME, EVAL_CONFIG_FILENAME
 from agenteval.models import SubmissionMetadata
 from datasets.exceptions import DataFilesNotFoundError
 from gradio_modal import Modal
@@ -15,15 +14,10 @@ import tarfile
 import tempfile
 from datetime import datetime, timedelta, timezone
 from email.utils import parseaddr
-from pathlib import Path
 
 import gradio as gr
 import requests
-from agenteval import (
-    process_eval_logs,
-    upload_folder_to_hf,
-)
-from agenteval.leaderboard.models import LeaderboardSubmission
+from agenteval import upload_folder_to_hf
 from agenteval.leaderboard.upload import sanitize_path_component
 from datasets import Dataset, DatasetDict, VerificationMode, load_dataset
 from datasets.data_files import EmptyDatasetError
@@ -33,8 +27,6 @@ from config import (
     CONFIG_NAME,
     CONTACT_DATASET,
     EXTRACTED_DATA_DIR,
-    IS_INTERNAL,
-    LOCAL_DEBUG,
     RESULTS_DATASET,
     SUBMISSION_DATASET,
 )
@@ -215,6 +207,8 @@ def add_new_eval(
                 if not member.isreg(): continue
                 fname = os.path.basename(member.name)
                 if not fname or fname.startswith("."): continue
+                # Keep only specific files as part of submissions.
+                if not fname.endswith(".eval") or fname == EVAL_CONFIG_FILENAME: continue
                 fobj = tar.extractfile(member)
                 if not fobj: continue
                 with open(os.path.join(extracted_dir, fname), "wb") as out:
