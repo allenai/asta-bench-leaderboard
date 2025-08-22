@@ -326,11 +326,11 @@ def create_legend_markdown(which_table: str) -> str:
     descriptions_tooltip_content = build_descriptions_tooltip_content(which_table)
     trophy_uri = get_svg_as_data_uri("assets/trophy.svg")
     legend_markdown = f"""
-    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0px; font-size: 13px; padding-bottom: 8px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 20px; font-size: 14px; padding-bottom: 8px;">
             
         <div> <!-- Container for the Pareto section -->
             <b>Pareto</b>
-            <span class="tooltip-icon-legend tooltip-pin-left">
+            <span class="tooltip-icon-legend">
                 ⓘ
                 <span class="tooltip-card">{pareto_tooltip_content}</span>
             </span>
@@ -368,7 +368,7 @@ def create_legend_markdown(which_table: str) -> str:
         
         <div><!-- Container for the Column Descriptions section -->
             <b>Column Descriptions</b>
-            <span class="tooltip-icon-legend tooltip-pin-right">
+            <span class="tooltip-icon-legend">
                 ⓘ
                 <span class="tooltip-card">
                     <h3>Column Descriptions</h3>
