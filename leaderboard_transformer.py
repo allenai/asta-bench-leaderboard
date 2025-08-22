@@ -383,14 +383,18 @@ def _plot_scatter_plotly(
         valid_cost_data = data_plot[data_plot[x_col_to_use].notna()].copy()
         missing_cost_data = data_plot[data_plot[x_col_to_use].isna()].copy()
 
-        if not valid_cost_data.empty:
-            max_reported_cost = valid_cost_data[x_col_to_use].max()
-            # ---Calculate where to place the missing data and the divider line ---
-            divider_line_x = max_reported_cost + (max_reported_cost/10)
-            new_x_for_missing = max_reported_cost + (max_reported_cost/5)
+        # Hardcode for all missing costs for now, but ideally try to fallback
+        # to the max cost in the same figure in another split, if that one has data...
+        max_reported_cost = valid_cost_data[x_col_to_use].max() if not valid_cost_data.empty else 10
 
+        # ---Calculate where to place the missing data and the divider line ---
+        divider_line_x = max_reported_cost + (max_reported_cost/10)
+        new_x_for_missing = max_reported_cost + (max_reported_cost/5)
+        if not missing_cost_data.empty:
+            missing_cost_data[x_col_to_use] = new_x_for_missing
+
+        if not valid_cost_data.empty:
             if not missing_cost_data.empty:
-                missing_cost_data[x_col_to_use] = new_x_for_missing
                 # --- Combine the two groups back together ---
                 data_plot = pd.concat([valid_cost_data, missing_cost_data])
             else:
@@ -398,7 +402,6 @@ def _plot_scatter_plotly(
         else:
             # ---Handle the case where ALL costs are missing ---
             if not missing_cost_data.empty:
-                missing_cost_data[x_col_to_use] = 0
                 data_plot = missing_cost_data
             else:
                 data_plot = pd.DataFrame()
