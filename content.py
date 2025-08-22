@@ -825,4 +825,10 @@ html {
     height: 18px;
     margin-right: 2px;
 }
+h3 .header-link-icon {
+    font-size: 12px;
+    vertical-align: text-top;
+    margin-left: 6px;
+    text-decoration: none;
+}
 """

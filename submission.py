@@ -337,7 +337,7 @@ heading_html = """
 <h2>🚀 Submit an agent for evaluation</h2>
 <p>Submit your agent to AstaBench for evaluation on real-world scientific tasks. Once submitted, your run will be reviewed by our team. If there are any issues, we’ll reach out within 5–7 business days. We’re working toward full automation, but in the meantime, human review helps ensure quality and trust.</p>
 <h3>How to run an evaluation</h3>
-<p>Please follow the steps in our <a href="https://github.com/allenai/asta-bench" target="_blank">README</a>. You’ll upload your run file at the end of this form.</p>
+<p>Please follow the steps in our <a href="https://github.com/allenai/asta-bench?tab=readme-ov-file#usage" target="_blank">README</a>. You’ll upload your run file at the end of this form.</p>
 """
 
 # --- Submission Accordion ---
