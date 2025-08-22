@@ -100,7 +100,9 @@ def add_new_eval(
         degree_of_control: str | None,
         path_to_file: tempfile._TemporaryFileWrapper | None,
         username: str,
+        role: str,
         email: str,
+        email_opt_in: bool,
         profile: gr.OAuthProfile,
 ):
     if not agent_name:
@@ -269,6 +271,9 @@ def add_new_eval(
     contact_info["submit_time"] = submission_time.isoformat()
     contact_info["username_auth"] = profile.username
     contact_info["email"] = email
+    contact_info["email_opt_in"] = email_opt_in,
+    contact_info["role"] = role,
+    contact_info
 
     logger.debug(f"agent {agent_name}: Contact info: {contact_info}")
     if val_or_test in contact_infos:
@@ -396,7 +401,7 @@ def build_page():
             gr.HTML(value="""<h3>Username</h3>""", elem_classes="form-label")
             username_tb = gr.Textbox(label="This will show on the leaderboard. By default, we’ll use your Hugging Face username; but you can enter your organization name instead (e.g., university, company, or lab).")
             gr.HTML(value="""<h3>Role</h3>""", elem_classes="form-label")
-            role_selection = gr.Dropdown(label="Please select the role that most closely matches your current position. Helps us improve AstaBench for different user types. Not displayed on the leaderboard.",
+            role = gr.Dropdown(label="Please select the role that most closely matches your current position. Helps us improve AstaBench for different user types. Not displayed on the leaderboard.",
                 interactive=True,
                 choices=[
                     "Undergraduate Student",
@@ -464,7 +469,7 @@ def build_page():
             degree_of_control_radio,
             file_upload_comp,
             username_tb,
-            role_selection,
+            role,
             mail_tb,
             mail_opt_in
         ],
