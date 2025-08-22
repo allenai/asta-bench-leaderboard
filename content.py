@@ -799,10 +799,13 @@ html {
     min-height: 572px;
     background-color: #fff;
     padding: 24px 32px;
+    border: 1px solid black;
+    border-radius: 4px;
 }
 
 .dark .plot-legend-container {
     background: rgba(250, 242, 233, 0.1);
+    border-color: rgb(159, 234, 209);
 }
 
 #plot-legend-logo {
