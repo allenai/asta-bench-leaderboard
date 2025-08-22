@@ -87,7 +87,7 @@ ORDER_MAP = {
 }
 
 
-def _safe_round(value, digits=2):
+def _safe_round(value, digits=3):
     """Rounds a number if it's a valid float/int, otherwise returns it as is."""
     return round(value, digits) if isinstance(value, (float, int)) and pd.notna(value) else value
 
@@ -278,13 +278,7 @@ class DataTransformer:
         if primary_metric == "Overall":
             def calculate_attempted(row):
                 main_categories = ['Literature Understanding', 'Code & Execution', 'Data Analysis', 'End-to-End Discovery']
-                count = sum(1 for category in main_categories if pd.notna(row.get(f"{category} Cost")))
-
-                # Return the formatted string with the correct emoji
-                if count == 4:
-                    return f"4/4"
-                if count == 0:
-                    return f"0/4"
+                count = sum(1 for category in main_categories if row.get(f"{category} Score") != 0.0)
                 return f"{count}/4"
 
             # Apply the function row-wise to create the new column
@@ -295,13 +289,8 @@ class DataTransformer:
             total_benchmarks = len(group_metrics)
             def calculate_benchmarks_attempted(row):
                 # Count how many benchmarks in this category have COST data reported
-                count = sum(1 for benchmark in group_metrics if pd.notna(row.get(f"{benchmark} Cost")))
-                if count == total_benchmarks:
-                    return f"{count}/{total_benchmarks} "
-                elif count == 0:
-                    return f"{count}/{total_benchmarks} "
-                else:
-                    return f"{count}/{total_benchmarks}"
+                count = sum(1 for benchmark in group_metrics if pd.notna(row.get(f"{benchmark} Score")))
+                return f"{count}/{total_benchmarks}"
             # Insert the new column, for example, after "Date"
             df_view.insert((cols - 2), "Benchmarks Attempted", df_view.apply(calculate_benchmarks_attempted, axis=1))
 
@@ -459,7 +448,7 @@ def _plot_scatter_plotly(
         h_pad = "   "
         parts = ["<br>"]
         parts.append(f"{h_pad}<b>{row[agent_col]}</b>{h_pad}<br>")
-        parts.append(f"{h_pad}Score: <b>{row[y_col]:.2f}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}Score: <b>{row[y_col]:.3f}</b>{h_pad}<br>")
         parts.append(f"{h_pad}{x_axis_label}: <b>${row[x_col]:.2f}</b>{h_pad}<br>")
         parts.append(f"{h_pad}Openness: <b>{row['Openness']}</b>{h_pad}<br>")
         parts.append(f"{h_pad}Tooling: <b>{row['Agent Tooling']}</b>{h_pad}")
@@ -531,15 +520,14 @@ def _plot_scatter_plotly(
         )
 
         # ---Adjust x-axis range to make room for the new points ---
-        xaxis_config['range'] = [0, (max_reported_cost + (max_reported_cost / 4))]
+        xaxis_config['range'] = [-0.2, (max_reported_cost + (max_reported_cost / 4))]
 
-    logo_data_uri = svg_to_data_uri("assets/just-icon.svg")
 
     fig.update_layout(
         template="plotly_white",
         title=f"AstaBench {name} Leaderboard",
         xaxis=xaxis_config, # Use the updated config
-        yaxis=dict(title="Average (mean) score", rangemode="tozero"),
+        yaxis=dict(title="Average (mean) score", range=[-0.2, None]),
         legend=dict(
             bgcolor='#FAF2E9',
         ),
@@ -551,17 +539,17 @@ def _plot_scatter_plotly(
             font_color="#d3dedc",
         ),
     )
-    fig.add_layout_image(
-        dict(
-            source=logo_data_uri,
-            xref="x domain", yref="y domain",
-            x=1.1, y=1.1,
-            sizex=0.2, sizey=0.2,
-            xanchor="left",
-            yanchor="bottom",
-            layer="above",
-        ),
-    )
+    # fig.add_layout_image(
+    #     dict(
+    #         source=logo_data_uri,
+    #         xref="x domain", yref="y domain",
+    #         x=1.1, y=1.1,
+    #         sizex=0.2, sizey=0.2,
+    #         xanchor="left",
+    #         yanchor="bottom",
+    #         layer="above",
+    #     ),
+    # )
 
     return fig
 
@@ -621,7 +609,7 @@ def format_score_column(df: pd.DataFrame, score_col_name: str) -> pd.DataFrame:
 
         # For all other numbers, format them for consistency.
         if isinstance(score_value, (int, float)):
-            return f"{score_value:.2f}"
+            return f"{score_value:.3f}"
 
         # Fallback for any unexpected non-numeric data
         return score_value

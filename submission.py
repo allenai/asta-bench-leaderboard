@@ -470,5 +470,6 @@ def build_page():
         ],
         [error_message, error_modal, success_modal, loading_modal],
     )
-    with gr.Accordion("📙 Citation", open=False):
-        gr.Textbox(value=CITATION_BUTTON_TEXT, label=CITATION_BUTTON_LABEL, elem_id="citation-button-main", interactive=False)
+    # hiding this for now till we have the real paper data
+    # with gr.Accordion("📙 Citation", open=False):
+    #     gr.Textbox(value=CITATION_BUTTON_TEXT, label=CITATION_BUTTON_LABEL, elem_id="citation-button-main", interactive=False)

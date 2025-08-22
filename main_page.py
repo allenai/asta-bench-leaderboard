@@ -57,8 +57,9 @@ def build_page():
             else:
                 gr.Markdown("No data available for validation split.")
 
-    with gr.Accordion("📙 Citation", open=False):
-        gr.Textbox(value=CITATION_BUTTON_TEXT, label=CITATION_BUTTON_LABEL, elem_id="citation-button-main", interactive=False)
+    # hiding this for now till we have the real paper data
+    # with gr.Accordion("📙 Citation", open=False):
+    #     gr.Textbox(value=CITATION_BUTTON_TEXT, label=CITATION_BUTTON_LABEL, elem_id="citation-button-main", interactive=False)
 
 
     # JavaScript to show the TEST nav, hide the VALIDATION nav, AND fix the plots.
