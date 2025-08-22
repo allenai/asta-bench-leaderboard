@@ -644,11 +644,16 @@ def create_benchmark_details_display(
     gr.Markdown("---")
     # 2. Loop through each benchmark and create its UI components
     for benchmark_name in benchmark_names:
-        gr.HTML(f'''
-            <h3 class="benchmark-title" id="{create_gradio_anchor_id(benchmark_name, validation)}">{benchmark_name} Leaderboard</h3>
+        anchor_id = create_gradio_anchor_id(benchmark_name, validation)
+        gr.HTML(
+            f"""
+            <div class="custom-header-wrapper">
+                <h3 class="benchmark-title" id="{anchor_id}">{benchmark_name} Leaderboard <a href="#{anchor_id}" class="header-link-icon">🔗</a></h3>
+            </div>
             <div class="benchmark-description">{get_benchmark_description(benchmark_name, validation)}</div>
             <button onclick="scroll_to_element('page-content-wrapper')" class="primary-link-button">Return to the aggregate {category_name} leaderboard</button>
-        ''')
+            """
+        )
 
         # 3. Prepare the data for this specific benchmark's table and plot
         benchmark_score_col = f"{benchmark_name} Score"
