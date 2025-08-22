@@ -40,7 +40,67 @@ redirect_script = """
     if (window.location.pathname === '/') { window.location.replace('/home'); }
 </script>
 """
+tooltip_script = """
+<script>
+function initializeSmartTooltips() {
+    // Find all tooltip trigger icons
+    const tooltipIcons = document.querySelectorAll('.tooltip-icon-legend');
 
+    tooltipIcons.forEach(icon => {
+        // Find the tooltip card associated with this icon
+        const tooltipCard = icon.querySelector('.tooltip-card');
+        if (!tooltipCard) return;
+
+        // Move the card to the end of the <body>. This is the KEY to escaping
+        // any parent containers that might clip it.
+        document.body.appendChild(tooltipCard);
+
+        // --- MOUSE HOVER EVENT ---
+        icon.addEventListener('mouseenter', () => {
+            // Get the exact position of the icon on the screen
+            const iconRect = icon.getBoundingClientRect();
+            // Get the dimensions of the tooltip card
+            const cardRect = tooltipCard.getBoundingClientRect();
+
+            // Calculate the ideal top position (above the icon with a 10px gap)
+            const top = iconRect.top - cardRect.height - 10;
+            
+            // --- Smart Centering Logic ---
+            // Start by calculating the perfect center
+            let left = iconRect.left + (iconRect.width / 2) - (cardRect.width / 2);
+
+            // Check if it's going off the left edge of the screen
+            if (left < 10) {
+                left = 10; // Pin it to the left with a 10px margin
+            }
+            // Check if it's going off the right edge of the screen
+            if (left + cardRect.width > window.innerWidth) {
+                left = window.innerWidth - cardRect.width - 10; // Pin it to the right
+            }
+
+            // Apply the calculated position and show the card
+            tooltipCard.style.top = `${top}px`;
+            tooltipCard.style.left = `${left}px`;
+            tooltipCard.classList.add('visible');
+        });
+
+        // --- MOUSE LEAVE EVENT ---
+        icon.addEventListener('mouseleave', () => {
+            // Hide the card
+            tooltipCard.classList.remove('visible');
+        });
+    });
+}
+
+// Poll the page until the tooltips exist, then run the initialization.
+const tooltipInterval = setInterval(() => {
+    if (document.querySelector('.tooltip-icon-legend')) {
+        clearInterval(tooltipInterval);
+        initializeSmartTooltips();
+    }
+}, 200);
+</script>
+"""
 # --- Theme Definition ---
 theme = gr.themes.Base(
     primary_hue=gr.themes.Color(c100="#CFF5E8", c200="#B7EFDD", c300="#9FEAD1", c400="#87E5C5", c50="#E7FAF3", c500="#6FE0BA", c600="#57DBAF", c700="#3FD5A3", c800="#27D09C", c900="#0FCB8C", c950="#0fcb8c"),
@@ -133,7 +193,7 @@ final_css = css + f"""
 }}
 """
 # --- Gradio App Definition ---
-demo = gr.Blocks(theme=theme, css=final_css, head=scroll_script + redirect_script)
+demo = gr.Blocks(theme=theme, css=final_css, head=scroll_script + redirect_script + tooltip_script)
 with demo.route("Home", "/home"):
     build_main_page()
 

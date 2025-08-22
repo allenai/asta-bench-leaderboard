@@ -615,19 +615,15 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     display: inline-block;
 }
 
-/* The HTML pop-up card.*/
+/* The HTML pop-up card tooltips.*/
 .tooltip-card {
     /* Hiding mechanism */
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s;
     pointer-events: none;
-
     /* Card appearance */
-    position: absolute;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
     z-index: 1000;
     background-color: #083c40;
     color: #e5e7eb;
@@ -637,12 +633,10 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     max-width: 400px;
     text-align: left;
 }
-
-.tooltip-icon-legend:hover .tooltip-card {
+.tooltip-card.visible {
     opacity: 1;
     visibility: visible;
-}
-
+} 
 .tooltip-card h3 {
     font-size: 18px; 
     color: #fff; 
@@ -689,26 +683,6 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     display: flex;
     flex-direction: column;   
 } 
-@media (max-width: 800px) {
-    .tooltip-card {
-        transform: none;
-        left: 10px;
-        max-width: calc(100vw - 100px); 
-    }
-    .tooltip-icon-legend:hover::before {
-        left: 50%;
-        transform: translateX(-50%);
-    }
-} 
-.tooltip-pin-left .tooltip-card {
-    left: 0;
-    transform: none;
-}   
-.tooltip-pin-right .tooltip-card {
-    right: 0;
-    left: auto;
-    transform: none;
-}
 .table-legend-item {  
     display: flex; 
     align-items: center; 
@@ -716,6 +690,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     margin-top: 8px; 
     flex-wrap: wrap;
 }
+
 /* About Page CSS */
 #about-page-content-wrapper {
     margin-left: auto;
