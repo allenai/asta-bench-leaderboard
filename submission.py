@@ -24,7 +24,7 @@ from agenteval import (
     upload_folder_to_hf,
 )
 from agenteval.leaderboard.models import LeaderboardSubmission
-from agenteval.leaderboard.upload import sanitize_path_component
+from agenteval.leaderboard.upload import sanitize_path_component, _validate_path_component
 from datasets import Dataset, DatasetDict, VerificationMode, load_dataset
 from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
@@ -65,30 +65,36 @@ def try_load_dataset_submission(*args, **kwargs) -> DatasetDict: # Renamed to av
     except DataFilesNotFoundError:
         return DatasetDict()
 
-def checked_upload_folder(
-        api_hf: HfApi, # Renamed to avoid conflict with global api
+def upload_submission(
         folder_path: str,
-        repo_id: str,
-        config_name_ul: str, # Renamed
-        split_ul: str, # Renamed
-        submission_name_ul: str, # Renamed
+        split: str,
+        submission_name: str,
+        hf_username: str,
 ) -> str:
     total = 0
     for root, _, files in os.walk(folder_path):
-        for f_ul in files: # Renamed
+        for f_ul in files:
             total += os.path.getsize(os.path.join(root, f_ul))
             if total > MAX_UPLOAD_BYTES:
                 raise ValueError(
-                    f"Upload too large: exceeds {MAX_UPLOAD_BYTES // (1024**2)} MB limit."
+                    f"Upload too large: exceeds {MAX_UPLOAD_BYTES // 1000000} MB limit."
                 )
-    return upload_folder_to_hf(
-        api=api_hf, # Use renamed parameter
+
+    # This is a copy of agenteval.upload.upload_folder_to_hf so we can use other api params.
+    # TODO in agenteval: When you mildly wrap another library call, always pass *args, **kwargs.
+    _validate_path_component(CONFIG_NAME, "config_name")
+    _validate_path_component(split, "split")
+    _validate_path_component(submission_name, "submission_name")
+    api.upload_folder(
         folder_path=folder_path,
-        repo_id=repo_id,
-        config_name=config_name_ul,
-        split=split_ul,
-        submission_name=submission_name_ul,
+        path_in_repo=f"{CONFIG_NAME}/{split}/{submission_name}",
+        repo_id=SUBMISSION_DATASET,
+        repo_type="dataset",
+        # Reminder: This may be going into a public dataset.
+        # Don't put private information in commit message such as email.
+        commit_message=f'Submission "{submission_name}" to split "{split}" from hf user "{hf_username}"',
     )
+    return f"hf://datasets/{SUBMISSION_DATASET}/{CONFIG_NAME}/{split}/{submission_name}"
 
 def show_loading_spinner():
     return gr.update(visible=True)
@@ -251,7 +257,7 @@ def add_new_eval(
 
     logger.info(f"agent {agent_name}: Upload raw (unscored) submission files")
     try:
-        checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET, CONFIG_NAME, val_or_test, submission_name)
+        upload_submission(extracted_dir, val_or_test, submission_name, profile.username)
     except ValueError as e:
         return (
             format_error(str(e)),                               # error_message
