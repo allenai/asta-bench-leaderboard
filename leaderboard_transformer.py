@@ -112,7 +112,7 @@ def _pretty_column_name(raw_col: str) -> str:
         'Logs': 'Logs',
         'Openness': 'Openness',
         'Agent tooling': 'Agent Tooling',
-        'LLM base': 'LLM Base',
+        'LLM base': 'Models Used',
         'Source': 'Source',
     }
 
@@ -255,7 +255,7 @@ class DataTransformer:
         df_view = df_sorted.copy()
 
         # --- 3. Add Columns for Agent Openness and Tooling ---
-        base_cols = ["id","Agent","Submitter","LLM Base","Source"]
+        base_cols = ["id","Agent","Submitter","Models Used","Source"]
         new_cols = ["Openness", "Agent Tooling"]
         ending_cols = ["Date", "Logs"]
 
@@ -361,7 +361,7 @@ def _plot_scatter_plotly(
 
     x_col_to_use = x
     y_col_to_use = y
-    llm_base = data["LLM Base"] if "LLM Base" in data.columns else "LLM Base"
+    llm_base = data["Models Used"] if "Models Used" in data.columns else "Models Used"
 
     # --- Section 2: Data Preparation---
     required_cols = [y_col_to_use, agent_col, "Openness", "Agent Tooling"]
@@ -443,33 +443,37 @@ def _plot_scatter_plotly(
             ))
 
     # --- Section 5: Prepare for Marker Plotting ---
-    def format_hover_text(row, agent_col, x_axis_label, x_col, y_col):
+    def format_hover_text(row, agent_col, x_axis_label, x_col, y_col, divider_line_x):
         """
         Builds the complete HTML string for the plot's hover tooltip.
-        Formats the 'LLM Base' column as a bulleted list if multiple.
+        Formats the 'Models Used' column as a bulleted list if multiple.
         """
         h_pad = "   "
         parts = ["<br>"]
         parts.append(f"{h_pad}<b>{row[agent_col]}</b>{h_pad}<br>")
         parts.append(f"{h_pad}Score: <b>{row[y_col]:.3f}</b>{h_pad}<br>")
-        parts.append(f"{h_pad}{x_axis_label}: <b>${row[x_col]:.2f}</b>{h_pad}<br>")
+        if divider_line_x > 0 and row[x_col] >= divider_line_x:
+            # If no cost, display "Missing" for the cost.
+            parts.append(f"{h_pad}{x_axis_label}: <b>Missing</b>{h_pad}<br>")
+        else:
+            parts.append(f"{h_pad}{x_axis_label}: <b>${row[x_col]:.2f}</b>{h_pad}<br>")
         parts.append(f"{h_pad}Openness: <b>{row['Openness']}</b>{h_pad}<br>")
         parts.append(f"{h_pad}Tooling: <b>{row['Agent Tooling']}</b>{h_pad}")
 
         # Add extra vertical space (line spacing) before the next section
         parts.append("<br>")
-        # Clean and format LLM Base column
-        llm_base_value = row['LLM Base']
+        # Clean and format Models Used column
+        llm_base_value = row['Models Used']
         llm_base_value = clean_llm_base_list(llm_base_value)
         if isinstance(llm_base_value, list) and llm_base_value:
-            parts.append(f"{h_pad}LLM Base:{h_pad}<br>")
+            parts.append(f"{h_pad}Models Used:{h_pad}<br>")
             # Create a list of padded bullet points
             list_items = [f"{h_pad}  • <b>{item}</b>{h_pad}" for item in llm_base_value]
             # Join them with line breaks
             parts.append('<br>'.join(list_items))
         else:
             # Handle the non-list case with padding
-            parts.append(f"{h_pad}LLM Base: <b>{llm_base_value}</b>{h_pad}")
+            parts.append(f"{h_pad}Models Used: <b>{llm_base_value}</b>{h_pad}")
         # Add a final line break for bottom "padding"
         parts.append("<br>")
         # Join all the parts together into the final HTML string
@@ -481,7 +485,8 @@ def _plot_scatter_plotly(
             agent_col=agent_col,
             x_axis_label=x_axis_label,
             x_col=x_col_to_use,
-            y_col=y_col_to_use
+            y_col=y_col_to_use,
+            divider_line_x=divider_line_x
         ),
         axis=1
     )
@@ -542,17 +547,6 @@ def _plot_scatter_plotly(
             font_color="#d3dedc",
         ),
     )
-    # fig.add_layout_image(
-    #     dict(
-    #         source=logo_data_uri,
-    #         xref="x domain", yref="y domain",
-    #         x=1.1, y=1.1,
-    #         sizex=0.2, sizey=0.2,
-    #         xanchor="left",
-    #         yanchor="bottom",
-    #         layer="above",
-    #     ),
-    # )
 
     return fig
 

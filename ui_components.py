@@ -246,7 +246,7 @@ def build_descriptions_tooltip_content(table) -> str:
         return """
             <div class="tooltip-description-item"><b>Agent:</b> Name of the evaluated agent.</div>
             <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
-            <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
+            <div class="tooltip-description-item"><b>Models Used:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
             <div class="tooltip-description-item"><b>Overall Score:</b> Macro-average of the four category-level average scores. Each category contributes equally.</div>
             <div class="tooltip-description-item"><b>Overall Cost:</b> Macro-average cost per problem across all categories, in USD. Each category contributes equally.</div>
             <div class="tooltip-description-item"><b>Literature Understanding Score:</b> Macro-average score across Literature Understanding benchmarks.</div>
@@ -264,7 +264,7 @@ def build_descriptions_tooltip_content(table) -> str:
         return f"""
             <div class="tooltip-description-item"><b>Agent:</b> Name of the evaluated agent.</div>
             <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
-            <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
+            <div class="tooltip-description-item"><b>Models Used:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
             <div class="tooltip-description-item"><b>{table} Score:</b> Macro-average score across {table} benchmarks.</div>
             <div class="tooltip-description-item"><b>{table} Cost:</b> Macro-average cost per problem (USD) across {table} benchmarks.</div>
             <div class="tooltip-description-item"><b>Benchmark Score:</b> Average (mean) score on the benchmark.</div>
@@ -277,7 +277,7 @@ def build_descriptions_tooltip_content(table) -> str:
         return f"""
             <div class="tooltip-description-item"><b>Agent:</b> Name of the evaluated agent.</div>
             <div class="tooltip-description-item"><b>Submitter:</b> Organization or individual who submitted the agent for evaluation.</div>
-            <div class="tooltip-description-item"><b>LLM Base:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
+            <div class="tooltip-description-item"><b>Models Used:</b> Model(s) used by the agent. Hover over ⓘ to view all.</div>
             <div class="tooltip-description-item"><b>Benchmark Attempted:</b> Indicates whether the agent attempted this benchmark.</div>
             <div class="tooltip-description-item"><b>{table} Score:</b> Score achieved by the agent on this benchmark.</div>
             <div class="tooltip-description-item"><b>{table} Cost:</b> Cost incurred by the agent to solve this benchmark (in USD).</div>
@@ -543,9 +543,9 @@ def create_leaderboard_display(
         if "Score" in col:
             df_view = format_score_column(df_view, col)
     scatter_plot = plots_dict.get('scatter_plot', go.Figure())
-    #Make pretty and format the LLM Base column
-    df_view['LLM Base'] = df_view['LLM Base'].apply(clean_llm_base_list)
-    df_view['LLM Base'] = df_view['LLM Base'].apply(format_llm_base_with_html)
+    #Make pretty and format the Models Used column
+    df_view['Models Used'] = df_view['Models Used'].apply(clean_llm_base_list)
+    df_view['Models Used'] = df_view['Models Used'].apply(format_llm_base_with_html)
     # append the repro url to the end of the agent name
     if 'Source' in df_view.columns:
         df_view['Agent'] = df_view.apply(
@@ -567,7 +567,7 @@ def create_leaderboard_display(
     for col in df_headers:
         if col == "Logs" or "Cost" in col or "Score" in col:
             df_datatypes.append("markdown")
-        elif col in ["Agent","Icon","LLM Base", "Pareto"]:
+        elif col in ["Agent","Icon","Models Used", "Pareto"]:
             df_datatypes.append("html")
         else:
             df_datatypes.append("str")
@@ -655,7 +655,7 @@ def create_benchmark_details_display(
         benchmark_cost_col = f"{benchmark_name} Cost"
 
         # Define the columns needed for the detailed table
-        table_cols = ['Agent','Source','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'LLM Base']
+        table_cols = ['Agent','Source','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'Models Used']
 
         # Filter to only columns that actually exist in the full dataframe
         existing_table_cols = [col for col in table_cols if col in full_df.columns]
@@ -684,9 +684,9 @@ def create_benchmark_details_display(
             axis=1  # IMPORTANT: axis=1 tells pandas to process row-by-row
         )
 
-        #Make pretty and format the LLM Base column
-        benchmark_table_df['LLM Base'] = benchmark_table_df['LLM Base'].apply(clean_llm_base_list)
-        benchmark_table_df['LLM Base'] = benchmark_table_df['LLM Base'].apply(format_llm_base_with_html)
+        #Make pretty and format the Models Used column
+        benchmark_table_df['Models Used'] = benchmark_table_df['Models Used'].apply(clean_llm_base_list)
+        benchmark_table_df['Models Used'] = benchmark_table_df['Models Used'].apply(format_llm_base_with_html)
         # append the repro url to the end of the agent name
         if 'Source' in benchmark_table_df.columns:
             benchmark_table_df['Agent'] = benchmark_table_df.apply(
@@ -719,7 +719,7 @@ def create_benchmark_details_display(
             'Icon',
             'Agent',
             'Submitter',
-            'LLM Base',
+            'Models Used',
             'Attempted Benchmark',
             benchmark_score_col,
             benchmark_cost_col,
@@ -741,7 +741,7 @@ def create_benchmark_details_display(
         for col in df_headers:
             if "Logs" in col or "Cost" in col or "Score" in col:
                 df_datatypes.append("markdown")
-            elif col in ["Agent", "Icon", "LLM Base", "Pareto"]:
+            elif col in ["Agent", "Icon", "Models Used", "Pareto"]:
                 df_datatypes.append("html")
             else:
                 df_datatypes.append("str")
@@ -857,7 +857,7 @@ def create_sub_navigation_bar(tag_map: dict, category_name: str, validation: boo
 
 def format_llm_base_with_html(value):
     """
-    Formats the 'LLM Base' cell value.
+    Formats the 'Models Used' cell value.
     If the value is a list with more than 1 element, it returns an
       HTML <span> with the full list in a hover-over tooltip.
     If it's a single-element list, it returns just that element.
