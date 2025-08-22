@@ -647,9 +647,7 @@ def create_benchmark_details_display(
         anchor_id = create_gradio_anchor_id(benchmark_name, validation)
         gr.HTML(
             f"""
-            <div class="custom-header-wrapper">
                 <h3 class="benchmark-title" id="{anchor_id}">{benchmark_name} Leaderboard <a href="#{anchor_id}" class="header-link-icon">🔗</a></h3>
-            </div>
             <div class="benchmark-description">{get_benchmark_description(benchmark_name, validation)}</div>
             <button onclick="scroll_to_element('page-content-wrapper')" class="primary-link-button">Return to the aggregate {category_name} leaderboard</button>
             """
