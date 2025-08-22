@@ -35,8 +35,6 @@ from content import (
 )
 
 api = HfApi()
-MAX_UPLOAD_BYTES = 100 * 1024**2
-AGENTEVAL_MANIFEST_NAME = "agenteval.json"
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 # Global variables
 COMBINED_ICON_MAP = {
