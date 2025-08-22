@@ -207,7 +207,7 @@ def add_new_eval(
                 fname = os.path.basename(member.name)
                 if not fname or fname.startswith("."): continue
                 # Keep only specific files as part of submissions.
-                if not fname.endswith(".eval") or fname == EVAL_CONFIG_FILENAME: continue
+                if not (fname.endswith(".eval") or fname == EVAL_CONFIG_FILENAME): continue
                 fobj = tar.extractfile(member)
                 if not fobj: continue
                 with open(os.path.join(extracted_dir, fname), "wb") as out:
