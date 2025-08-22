@@ -51,8 +51,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 api = HfApi()
-MAX_UPLOAD_BYTES = 100 * 1024**2
-AGENTEVAL_MANIFEST_NAME = "agenteval.json"
+MAX_UPLOAD_BYTES = 5e9
 os.makedirs(EXTRACTED_DATA_DIR, exist_ok=True)
 
 # --- Submission Logic (largely unchanged from original, ensure LeaderboardSubmission and other deps are fine) ---
@@ -390,7 +389,7 @@ def build_page():
             gr.HTML("<div id='submission-file-label'>Upload your run file, which is an archive prepared following the instructions in the <a href='https://github.com/allenai/asta-bench?tab=readme-ov-file#submitting-to-the-leaderboard' target='_blank'>README</a> (“Submitting to the Leaderboard”).</div>")
             file_upload_comp = gr.File(
                 show_label=False,
-                file_types=[".gz", ".tar.gz"]
+                file_types=[".gz", ".tar.gz"],
             )
             submit_eval_button = gr.Button("Submit Evaluation", elem_id="submission-button")
     # Modals for loading spinner, success and error messages
