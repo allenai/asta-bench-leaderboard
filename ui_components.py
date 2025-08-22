@@ -596,7 +596,7 @@ def create_leaderboard_display(
         with gr.Column(scale=3):
             plot_component = gr.Plot(
                 value=scatter_plot,
-                show_label=False
+                show_label=False,
             )
         with gr.Column(scale=1):
             gr.HTML(value=plot_legend_html)
