@@ -230,11 +230,6 @@ css = """
     --color-text-light: var(--neutral-50); /* #FAF2E9 */
 }
 
-/* Global Styles */
-h2 {
-    overflow: hidden;
-}
-
 #intro-paragraph {
     font-size: 18px;
     max-width: 60%;
@@ -510,6 +505,10 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 
 #submission-modal-content p{
     font-size: 16px;
+}
+
+#submission-modal-content h2{
+    overflow: hidden;
 }
 
 .spinner-container {

@@ -93,6 +93,14 @@ def checked_upload_folder(
 def show_loading_spinner():
     return gr.update(visible=True)
 
+def update_error_modal(error_message: str):
+    return (
+        error_message, 
+        gr.update(visible=True),   #error_modal
+        gr.update(visible=False),  #success_modal
+        gr.update(visible=False)   #loading_modal
+    )
+
 def add_new_eval(
         val_or_test: str,
         agent_name: str | None,
@@ -107,21 +115,12 @@ def add_new_eval(
         email_opt_in: bool,
         profile: gr.OAuthProfile,
 ):
-    if not agent_name:
-        return (
-            format_warning("Please provide an agent name."),  # error_message
-            gr.update(visible=True),                            # error_modal
-            gr.update(visible=False),                           # success_modal
-            gr.update(visible=False)                            # loading_modal
-        )
+    _, parsed_mail = parseaddr(email)
+    if "@" not in parsed_mail:
+        return (update_error_modal(format_warning("Please provide a valid email address.")))
 
-    if path_to_file is None:
-        return (
-            format_warning("Please attach a .tar.gz file."),  # error_message
-            gr.update(visible=True),                            # error_modal
-            gr.update(visible=False),                           # success_modal
-            gr.update(visible=False)                            # loading_modal
-        )
+    if not agent_name:
+        return (update_error_modal(format_warning("Please provide an agent name.")))
 
     logger.info(f"agent {agent_name}: Checking submission")
 
@@ -143,21 +142,13 @@ def add_new_eval(
         # Account age check disabled for launch.
         # https://github.com/allenai/astabench-issues/issues/419
         # if _is_hf_acct_too_new(submission_time, profile.username):
-        #     return (
-        #         format_error("This account is not authorized to submit here (account too new)."),  # error_message
-        #         gr.update(visible=True),                            # error_modal
-        #         gr.update(visible=False),                           # success_modal
-        #         gr.update(visible=False)                            # loading_modal
-        #     )
+        #     return ERROR
         pass
     except Exception as e:
         logger.warning(f"Error checking user account age: {e}")
-        return (
-            format_error("Could not verify account age. Please try again later."),  # error_message
-            gr.update(visible=True),                            # error_modal
-            gr.update(visible=False),                           # success_modal
-            gr.update(visible=False)                            # loading_modal
-        )
+        return (update_error_modal(
+            format_error("Could not verify account age. Please try again later.")
+        ))
 
     logger.debug(f"agent {agent_name}: Submission frequency check {profile.username}")
     contact_infos = try_load_dataset_submission(
@@ -170,36 +161,23 @@ def add_new_eval(
     )
     if user_submission_dates and (submission_time - user_submission_dates[-1] < timedelta(days=1)):
         logger.info(f"agent {agent_name}: Denied submission because user {username} submitted recently")
-        return (
-            format_error("You already submitted once in the last 24h for this split; please try again later."),  # error_message
-            gr.update(visible=True),                            # error_modal
-            gr.update(visible=False),                           # success_modal
-            gr.update(visible=False)                            # loading_modal
-        )
+        return (update_error_modal(
+            format_error("You already submitted once in the last 24h for this split; please try again later.")
+        ))
 
-    logger.debug(f"agent {agent_name}: Email validation {email}")
-    _, parsed_mail = parseaddr(email)
-    if "@" not in parsed_mail:
-        return (
-            format_warning("Please provide a valid email address."),  # error_message
-            gr.update(visible=True),                            # error_modal
-            gr.update(visible=False),                           # success_modal
-            gr.update(visible=False)                            # loading_modal
-        )
-
+    if path_to_file is None:
+        return (update_error_modal(format_warning("Please attach a .tar.gz file.")))
+    
     logger.debug(f"agent {agent_name}: Duplicate submission check")
     if val_or_test in current_eval_results_for_submission and len(current_eval_results_for_submission[val_or_test]) > 0:
         existing_submissions = current_eval_results_for_submission[val_or_test].to_dict().get("submission", [])
         for sub_item in existing_submissions:
             if (sub_item.get("agent_name", "").lower() == agent_name.lower() and
                     sub_item.get("username", "").lower() == username.lower()):
-                return (
-                    format_warning("This agent name by this user has already been submitted to this split."),  # error_message
-                    gr.update(visible=True),                            # error_modal
-                    gr.update(visible=False),                           # success_modal
-                    gr.update(visible=False)                            # loading_modal
-                )
-
+                return (update_error_modal(
+                    format_warning("This agent name by this user has already been submitted to this split.")
+                ))
+    
     safe_username = sanitize_path_component(username)
     safe_agent_name = sanitize_path_component(agent_name)
     extracted_dir = os.path.join(EXTRACTED_DATA_DIR, f"{safe_username}_{safe_agent_name}")
@@ -220,19 +198,13 @@ def add_new_eval(
                     out.write(fobj.read())
                 members_extracted +=1
             if members_extracted == 0:
-                return (
-                    format_error("Submission tarball is empty or contains no valid files."),  # error_message
-                    gr.update(visible=True),                            # error_modal
-                    gr.update(visible=False),                           # success_modal
-                    gr.update(visible=False)                            # loading_modal
-                )
+                return (update_error_modal(
+                    format_error("Submission tarball is empty or contains no valid files.")
+                ))
     except Exception as e:
-        return (
-            format_error(f"Error extracting file: {e}. Ensure it's a valid .tar.gz."),  # error_message
-            gr.update(visible=True),                            # error_modal
-            gr.update(visible=False),                           # success_modal
-            gr.update(visible=False)                            # loading_modal
-        )
+        return (update_error_modal(
+            format_error(f"Error extracting file: {e}. Ensure it's a valid .tar.gz.")
+        ))
 
     submission_name = f"{safe_username}_{safe_agent_name}_{submission_time.strftime('%Y-%m-%d_%H-%M-%S')}"
 
@@ -253,19 +225,13 @@ def add_new_eval(
     try:
         checked_upload_folder(api, extracted_dir, SUBMISSION_DATASET, CONFIG_NAME, val_or_test, submission_name)
     except ValueError as e:
-        return (
-            format_error(str(e)),                               # error_message
-            gr.update(visible=True),                            # error_modal
-            gr.update(visible=False),                           # success_modal
-            gr.update(visible=False)                            # loading_modal
-        )
+        return (update_error_modal(
+            format_error(str(e))
+        ))
     except Exception as e:
-        return (
-            format_error(f"Failed to upload raw submission: {e}"),  # error_message
-            gr.update(visible=True),                            # error_modal
-            gr.update(visible=False),                           # success_modal
-            gr.update(visible=False)                            # loading_modal
-        )
+        return (update_error_modal(
+            format_error(f"Failed to upload raw submission: {e}")
+        ))
 
     logger.info(f"agent {agent_name}: Save contact information")
     contact_info = subm_meta.model_dump()
@@ -284,12 +250,7 @@ def add_new_eval(
     try:
         contact_infos.push_to_hub(CONTACT_DATASET, config_name=CONFIG_NAME)
     except Exception as e:
-        return (
-            format_error(f"Submission recorded, but contact info failed to save: {e}"),  # error_message
-            gr.update(visible=True),                            # error_modal
-            gr.update(visible=False),                           # success_modal
-            gr.update(visible=False)                            # loading_modal
-        )
+        return (update_error_modal(format_error("Submission recorded, but contact info failed to save")))
 
     logger.info(f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split.")
     return (
@@ -365,7 +326,7 @@ def build_page():
                     "Startup Founder or Independent Researcher",
                     "Other"
             ])
-            gr.HTML(value="""<h3>Contact email</h3>""", elem_classes="form-label")
+            gr.HTML(value="""<h3>Contact email *</h3>""", elem_classes="form-label")
             mail_tb = gr.Textbox(label="We'll only use your email to communicate about your submission.")
             mail_opt_in = gr.Checkbox(label="I’m open to being contacted by email for user research studies or feedback opportunities.")
         with gr.Group(elem_classes="custom-form-group"):
@@ -375,7 +336,7 @@ def build_page():
                 ("Test set", "test"),
                 ("Validation set", "validation"),
             ], elem_classes="form-label-fieldset", value="validation", label="The Test Set is used for final leaderboard rankings. The Validation Set is for development and iteration. Choose based on your evaluation goal.")
-            gr.HTML(value="""<h3>Agent name</h3>""", elem_classes="form-label")
+            gr.HTML(value="""<h3>Agent name *</h3>""", elem_classes="form-label")
             agent_name_tb = gr.Textbox(label="This is how your agent will appear on the leaderboard. Use a clear, descriptive name (e.g., Asta Scholar QA, Perplexity Deep Research). Omit model names (e.g. GPT-4, Mistral) as they’ll be shown automatically based on your logs.")
             gr.HTML(value="""<h3>Agent description</h3>""", elem_classes="form-label")
             agent_desc_tb = gr.Textbox(label="Briefly describe your agent’s approach, core strategies, or what makes it distinct. This description may appear on the leaderboard.")
@@ -385,7 +346,7 @@ def build_page():
             openness_radio = gr.Radio(["Open Source","Open Source Open Weights", "API Available", "Closed"], elem_classes="form-label-fieldset", value=None, label="This affects how your submission is categorized on the leaderboard. Choose based on the availability of your code, model weights, or APIs.")
             gr.HTML(value="""<h3>Agent tooling</h3>""", elem_classes="form-label")
             degree_of_control_radio = gr.Radio(["Standard","Equivalent", "Fully Custom"], elem_classes="form-label-fieldset",value=None, label="Choose based on the tools and the execution environment your agent used during evaluation.")
-            gr.HTML(value="""<h3>Submission file</h3>""", elem_classes="form-label")
+            gr.HTML(value="""<h3>Submission file *</h3>""", elem_classes="form-label")
             gr.HTML("<div id='submission-file-label'>Upload your run file, which is an archive prepared following the instructions in the <a href='https://github.com/allenai/asta-bench?tab=readme-ov-file#submitting-to-the-leaderboard' target='_blank'>README</a> (“Submitting to the Leaderboard”).</div>")
             file_upload_comp = gr.File(
                 show_label=False,
