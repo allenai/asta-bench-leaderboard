@@ -102,7 +102,7 @@ TOOLING_SVG_MAP = {
     },
     aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: {
         "path": "assets/three-point-star.svg",
-        "description": f"Uses tools beyond constraints of {aliases.CANONICAL_TOOL_USAGE_STANDARD} or {aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM}"
+        "description": f"Uses tools beyond constraints of {aliases.CANONICAL_TOOL_USAGE_STANDARD} or {aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE}"
     },
 }
 
