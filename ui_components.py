@@ -210,7 +210,7 @@ def build_tooling_tooltip_content() -> str:
     descriptions = {
         aliases.CANONICAL_TOOL_USAGE_STANDARD: "Uses only predefined tools from the evaluation environment (as defined in Inspect's state.tools).",
         aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: "Custom tools for accessing an equivalent underlying environment:",
-        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: f"Uses tools beyond constraints of {aliases.CANONICAL_TOOL_USAGE_STANDARD} or {alises.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE}",
+        aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: f"Uses tools beyond constraints of {aliases.CANONICAL_TOOL_USAGE_STANDARD} or {aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE}",
     }
     custom_interface_sub_list = """
         <ul class="tooltip-sub-list">
