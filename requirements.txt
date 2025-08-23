@@ -1,4 +1,4 @@
-agent-eval==0.1.38
+agent-eval==0.1.42
 aiobotocore==2.22.0
 aiofiles==24.1.0
 aiohappyeyeballs==2.6.1
