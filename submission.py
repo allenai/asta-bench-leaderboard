@@ -29,6 +29,7 @@ from datasets import Dataset, DatasetDict, VerificationMode, load_dataset
 from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
+import aliases
 from config import (
     CONFIG_NAME,
     CONTACT_DATASET,
@@ -316,25 +317,25 @@ def _is_hf_acct_too_new(submission_time: datetime, username: str):
     return submission_time - created_at < timedelta(days=60)
 
 
-openness_label_html = """
+openness_label_html = f"""
 <div class="form-label-with-tooltip">
     Agent Openness
-    <span class="tooltip-icon" data-tooltip="• Closed: No API or code available
-        • API Available: API available, but no code
-        • Open Source: Code available, but no weights
-        • Open Source + Open Weights: Code and weights available"
+    <span class="tooltip-icon" data-tooltip="• {aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY}: No API or code available
+        • {aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE}: API available, but no code
+        • {aliases.CANONICAL_OPENNESS_OPEN_SOURCE_CLOSED_WEIGHTS}: Code available, but no weights
+        • {aliases.CANONICAL_OPENNESS_OPEN_SOURCE_OPEN_WEIGHTS}: Code and weights available"
     >
         ⓘ
     </span>
 </div>
 """
 
-agent_tooling_label_html = """
+agent_tooling_label_html = f"""
 <div class="form-label-with-tooltip">
     Agent Tooling
-    <span class="tooltip-icon" data-tooltip="• Standard: Only uses tools explicitly provided in state.tools
-        • Equivalent: Uses custom tools with identical or more restricted capabilities
-        • Fully Custom: Uses tools beyond constraints of Standard or Equivalent"
+    <span class="tooltip-icon" data-tooltip="• {aliases.CANONICAL_TOOL_USAGE_STANDARD}: Only uses tools explicitly provided in state.tools
+        • {aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE}: Uses custom tools with identical or more restricted capabilities
+        • {aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM}: Uses tools beyond constraints of {aliases.CANONICAL_TOOL_USAGE_STANDARD} or {aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE}"
     >
         ⓘ
     </span>
@@ -390,9 +391,9 @@ def build_page():
             gr.HTML(value="""<h3>URL</h3>""", elem_classes="form-label")
             agent_url_tb = gr.Textbox(label="Link to more information about your agent (e.g. GitHub repo, blog post, or website). This optional link may be shown on the leaderboard to let others explore your agent in more depth.")
             gr.HTML(value="""<h3>Agent openness</h3>""", elem_classes="form-label")
-            openness_radio = gr.Radio(["Open Source","Open Source Open Weights", "API Available", "Closed"], elem_classes="form-label-fieldset", value=None, label="This affects how your submission is categorized on the leaderboard. Choose based on the availability of your code, model weights, or APIs.")
+            openness_radio = gr.Radio([aliases.CANONICAL_OPENNESS_OPEN_SOURCE_CLOSED_WEIGHTS, aliases.CANONICAL_OPENNESS_OPEN_SOURCE_OPEN_WEIGHTS, aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE, aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY], elem_classes="form-label-fieldset", value=None, label="This affects how your submission is categorized on the leaderboard. Choose based on the availability of your code, model weights, or APIs.")
             gr.HTML(value="""<h3>Agent tooling</h3>""", elem_classes="form-label")
-            degree_of_control_radio = gr.Radio(["Standard","Equivalent", "Fully Custom"], elem_classes="form-label-fieldset",value=None, label="Choose based on the tools and the execution environment your agent used during evaluation.")
+            degree_of_control_radio = gr.Radio([aliases.CANONICAL_TOOL_USAGE_STANDARD, aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE, aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM], elem_classes="form-label-fieldset",value=None, label="Choose based on the tools and the execution environment your agent used during evaluation.")
             gr.HTML(value="""<h3>Submission file</h3>""", elem_classes="form-label")
             gr.HTML("<div id='submission-file-label'>Upload your run file, which is an archive prepared following the instructions in the <a href='https://github.com/allenai/asta-bench?tab=readme-ov-file#submitting-to-the-leaderboard' target='_blank'>README</a> (“Submitting to the Leaderboard”).</div>")
             file_upload_comp = gr.File(

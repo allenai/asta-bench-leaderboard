@@ -74,35 +74,35 @@ for canonical_openness, openness_aliases in aliases.OPENNESS_ALIASES.items():
 
 
 OPENNESS_SVG_MAP = {
-    "Open source & open weights": {
+    aliases.CANONICAL_OPENNESS_OPEN_SOURCE_OPEN_WEIGHTS: {
         "path": "assets/ellipse-pink.svg",
         "description": "Code and models are open"
     },
-    "Open source & closed weights": {
+    aliases.CANONICAL_OPENNESS_OPEN_SOURCE_CLOSED_WEIGHTS: {
         "path": "assets/ellipse-coral.svg", 
         "description": "Code is open but uses closed-weight models"
     },
-    "Closed source & API available": {
+    aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE: {
         "path": "assets/ellipse-yellow.svg",
         "description": "No access to code; API access only"
     },
-    "Closed source & UI only": {
+    aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY: {
         "path": "assets/ellipse-white.svg",
         "description": "No access to code or API; UI access only"
     },
 }
 TOOLING_SVG_MAP = {
-    "Standard": {
+    aliases.CANONICAL_TOOL_USAGE_STANDARD: {
         "path": "assets/five-point-star.svg",
         "description": "Uses only tools explicitly provided in state.tools"
     },
-    "Custom interface": {
+    aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE: {
         "path": "assets/four-point-star.svg",
         "description": "Custom tools for accessing an equivalent underlying environment"
     },
-    "Fully custom": {
+    aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM: {
         "path": "assets/three-point-star.svg",
-        "description": "Uses tools beyond constraints of Standard or Custom interface"
+        "description": f"Uses tools beyond constraints of {aliases.CANONICAL_TOOL_USAGE_STANDARD} or {aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE}"
     },
 }
 
@@ -213,7 +213,7 @@ def build_tooling_tooltip_content() -> str:
         desc = info["description"]
 
         # Check if this is the special case that needs a sub-list
-        sub_list_html = custom_interface_sub_list if name == "Custom Interface" else ""
+        sub_list_html = custom_interface_sub_list if name == aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE else ""
 
         html_items.append(f"""
             <div class="tooltip-legend-item">
