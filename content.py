@@ -478,7 +478,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 }
 /* Divider line between header and category nav */
 .nav-holder nav::after {
-    content: '';
+    content: ''; /* Required for pseudo-elements to appear */
     background-color: #C9C9C3;
     height: 1px; 
     grid-row: 2 !important;
