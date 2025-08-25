@@ -185,7 +185,17 @@ def build_openness_tooltip_content() -> str:
             </div>
         """)
 
-    return "".join(html_items)
+    joined_items = "".join(html_items)
+
+    return f"""<span class="tooltip-icon-legend">
+        ⓘ
+        <span class="tooltip-card">
+            <h3>Agent Openness</h3>
+            <p class="tooltip-description">Indicates how transparent and reproducible an agent is.</p>
+            <div class="tooltip-items-container">{joined_items}</div>
+        </span>
+    </span>"""
+
 
 def build_pareto_tooltip_content() -> str:
     """Generates the inner HTML for the Pareto tooltip card with final copy."""
@@ -237,7 +247,16 @@ def build_tooling_tooltip_content() -> str:
             </div>
         """)
 
-    return "".join(html_items)
+    joined_items = "".join(html_items)
+
+    return f"""<span class="tooltip-icon-legend">
+        ⓘ
+        <span class="tooltip-card">
+            <h3>Agent Tooling</h3>
+            <p class="tooltip-description">Describes the tool usage and execution environment of the agent during evaluation.</p>
+            <div class="tooltip-items-container">{joined_items}</div>
+        </span>
+    </span>"""
 
 
 def build_descriptions_tooltip_content(table) -> str:
@@ -340,27 +359,13 @@ def create_legend_markdown(which_table: str) -> str:
     
         <div> <!-- Container for the Openness section -->
             <b>Agent Openness</b>
-            <span class="tooltip-icon-legend">
-                ⓘ
-                <span class="tooltip-card">
-                    <h3>Agent Openness</h3>
-                    <p class="tooltip-description">Indicates how transparent and reproducible an agent is.</p>
-                    <div class="tooltip-items-container">{openness_tooltip_content}</div>
-                </span>
-            </span>
+            {openness_tooltip_content}
             <div class="table-legend-item">{openness_html}</div>
         </div>
     
         <div> <!-- Container for the Tooling section -->
             <b>Agent Tooling</b>
-            <span class="tooltip-icon-legend">
-                ⓘ
-                <span class="tooltip-card">
-                    <h3>Agent Tooling</h3>
-                    <p class="tooltip-description">Describes the tool usage and execution environment of the agent during evaluation.</p>
-                    <div class="tooltip-items-container">{tooling_tooltip_content}</div>
-                </span>
-            </span>
+            {tooling_tooltip_content}
             <div class="table-legend-item">{tooling_html}</div>
         </div>
         
