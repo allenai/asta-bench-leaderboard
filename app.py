@@ -238,10 +238,10 @@ if __name__ == "__main__":
     if LOCAL_DEBUG:
         print("Launching in LOCAL_DEBUG mode.")
         def get_initial_global_tag_choices(): return ["Overall"]
-        demo.launch(debug=True, allowed_paths=["assets"])
+        demo.launch(debug=True, allowed_paths=["assets"], favicon_path="assets/favicon/favicon.ico")
     else:
         print("Launching in Space mode.")
         # For Spaces, share=False is typical unless specific tunneling is needed.
         # debug=True can be set to False for a "production" Space.
-        demo.launch(server_name="0.0.0.0", server_port=7860, debug=True, share=False, allowed_paths=["assets"])
+        demo.launch(server_name="0.0.0.0", server_port=7860, debug=True, share=False, allowed_paths=["assets"], favicon_path="assets/favicon/favicon.ico")
 
