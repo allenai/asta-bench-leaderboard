@@ -164,16 +164,10 @@ def build_openness_tooltip_content() -> str:
     """
     Generates the inner HTML for the Agent Openness tooltip card,
     """
-    descriptions = {
-        "Open source & open weights": "Both code and ML models are open",
-        "Open source & closed weights": "Code is open but uses an ML model with closed-weights",
-        "Closed source & API available": "No access to code; API access only",
-        "Closed source & UI only": "No access to code or API; UI  access only",
-    }
     html_items = []
     for name, info in OPENNESS_SVG_MAP.items():
         uri = get_svg_as_data_uri(info["path"])
-        desc = descriptions.get(name, "")
+        desc = info["description"]
 
         html_items.append(f"""
             <div class="tooltip-legend-item">
@@ -207,11 +201,6 @@ def build_pareto_tooltip_content() -> str:
 
 def build_tooling_tooltip_content() -> str:
     """Generates the inner HTML for the Agent Tooling tooltip card."""
-    descriptions = {
-        "Standard": "Uses only predefined tools from the evaluation environment (as defined in Inspect's state.tools).",
-        "Custom interface": "Custom tools for accessing an equivalent underlying environment:",
-        "Fully custom": "Uses tools beyond constraints of Standard or Custom interface",
-    }
     custom_interface_sub_list = """
         <ul class="tooltip-sub-list">
             <li>Literature tasks: Information access is limited to date-restricted usage of the Asta MCP tools.</li>
@@ -221,7 +210,7 @@ def build_tooling_tooltip_content() -> str:
     html_items = []
     for name, info in TOOLING_SVG_MAP.items():
         uri = get_svg_as_data_uri(info["path"])
-        desc = descriptions.get(name, "")
+        desc = info["description"]
 
         # Check if this is the special case that needs a sub-list
         sub_list_html = custom_interface_sub_list if name == "Custom Interface" else ""
