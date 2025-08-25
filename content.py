@@ -251,12 +251,20 @@ gradio-app {
 h2 {
     overflow: hidden;
 }
-
-#intro-paragraph {
-    font-size: 18px;
-    max-width: 60%;
-    padding-left: 25px;
+#intro-row {
+    gap: 40px;
 }
+#intro-paragraph p,
+#intro-paragraph li {
+    font-size: 16px; 
+    line-height: 1.8; 
+}
+
+#intro-paragraph ul {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
 #about-content {
     font-size: 18px;
     max-width: 60%;
@@ -337,9 +345,9 @@ nav.svelte-ti537g.svelte-ti537g {
 }
 .sub-nav-bar-container {
     display: flex !important;
-    flex-wrap: nowrap !important; 
+    flex-wrap: wrap !important; 
     align-items: center !important; 
-    gap: 20px !important;
+    gap: 7px !important;
 }
 .dark .primary-link-button {
     color: var(--color-primary-green);
@@ -794,19 +802,15 @@ html {
     scroll-behavior: smooth;
 }
 /* Home Page Styling */
-.diagram-placeholder {
-    width: 100%;
-    height: 100%; 
-    min-height: 250px; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #FAF2E9; 
-    color: #F0529C;          
-    border-radius: 8px;
-    font-size: 14px;
-    text-align: center;
+#diagram-image {
+    height: 100%;
 }
+#diagram-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+}
+
 /* 2. Responsive behavior for smaller screens */
 @media (max-width: 900px) {
     #intro-row {
