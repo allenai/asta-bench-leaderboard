@@ -37,7 +37,7 @@ Please follow the steps below to push changes to the leaderboards on Hugging Fac
 
 Before pushing, make sure to merge your changes to the `main` branch of this repository. (following the standard GitHub workflow of creating a branch, making changes, and then merging it back to `main`).
 
-Before pushing for the first time, you'll need to add the Hugging Face remote repositories if you haven't done so already. You can do this by running the following command:
+Before pushing for the first time, you'll need to add the Hugging Face remote repositories if you haven't done so already. You can do this by running the following commands:
 
 ```bash
 git remote add huggingface https://huggingface.co/spaces/allenai/asta-bench-internal-leaderboard
