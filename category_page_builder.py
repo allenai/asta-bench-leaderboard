@@ -3,18 +3,54 @@ import pandas as pd
 
 # Import our UI factories and the data loader
 from ui_components import create_leaderboard_display, create_benchmark_details_display, get_full_leaderboard_data, create_sub_navigation_bar
+CATEGORY_DIAGRAM_MAP = {
+    "Literature Understanding": "assets/literature-understanding.png",
+    "Code & Execution": "assets/code-execution.png",
+    "Data Analysis": "assets/data-analysis.png",
+    "End-to-End Discovery": "assets/end-to-end-discovery.png"
+}
+
 
 def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
     with gr.Column(elem_id="page-content-wrapper"):
-        gr.HTML(f'<h2>AstaBench {CATEGORY_NAME} Leaderboard <span style="font-weight: normal; color: inherit;">(Aggregate)</span></h2>', elem_id="main-header")
+
+        # --- Step 1: Load the data needed for the nav bars FIRST ---
+        # This must happen before we start building the UI that uses it.
         validation_df, validation_tag_map = get_full_leaderboard_data("validation")
         test_df, test_tag_map = get_full_leaderboard_data("test")
-        with gr.Column(elem_id="validation_nav_container", visible=False) as validation_nav_container:
-            create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME, validation=True)
 
-        with gr.Column(elem_id="test_nav_container", visible=True) as test_nav_container:
-            create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
-        gr.Markdown(PAGE_DESCRIPTION, elem_id="category-intro")
+        # --- Step 2: The Top Section (Title, Description, and Diagram) ---
+        with gr.Row(elem_id="intro-row"):
+
+            # --- The Left Column ---
+            with gr.Column(scale=1):
+
+                # 1. The main title (as you have it)
+                gr.HTML(f'<h2>AstaBench {CATEGORY_NAME} Leaderboard <span style="font-weight: normal; color: inherit;">(Aggregate)</span></h2>', elem_id="main-header")
+
+                # 2. THE FIX: The Benchmark Navigation is now HERE.
+                with gr.Column(elem_id="validation_nav_container", visible=False) as validation_nav_container:
+                    create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME, validation=True)
+
+                with gr.Column(elem_id="test_nav_container", visible=True) as test_nav_container:
+                    create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
+
+                # 3. The page description now follows the benchmark nav.
+                gr.Markdown(PAGE_DESCRIPTION, elem_id="intro-paragraph")
+
+            # --- The Right Column ---
+            with gr.Column(scale=1):
+                image_path = CATEGORY_DIAGRAM_MAP.get(CATEGORY_NAME)
+                if image_path:
+                    gr.Image(
+                        value=image_path,
+                        show_label=False,
+                        show_download_button=False,
+                        show_fullscreen_button=False,
+                        interactive=False,
+                        elem_id="diagram-image"
+                    )
+
         # --- This page now has two main sections: Validation and Test ---
         with gr.Tabs():
             with gr.Tab("Results: Test Set") as test_tab:
