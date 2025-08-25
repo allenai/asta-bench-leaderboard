@@ -41,6 +41,7 @@ from config import (
 from content import (
     CITATION_BUTTON_LABEL,
     CITATION_BUTTON_TEXT,
+    LEGAL_DISCLAIMER_TEXT,
     SUBMISSION_CONFIRMATION,
     format_error,
     format_log,
@@ -411,14 +412,34 @@ def build_page():
     with Modal(visible=False, elem_id="submission-modal") as success_modal:
         with gr.Column(elem_id="submission-modal-content"):
             gr.Markdown(SUBMISSION_CONFIRMATION)
+    with Modal(visible=False, elem_id="submission-modal") as disclaimer_modal:
+        with gr.Column(elem_id="legal-modal-content"):
+            gr.HTML(LEGAL_DISCLAIMER_TEXT)
+            with gr.Row():
+                agree_button = gr.Button("I agree to the terms and conditions above", variant="primary")
+
+    def accept_and_load():
+        return [
+            gr.update(visible=False), # Hide disclaimer_modal
+            gr.update(visible=True)   # Show loading_modal
+        ]
+
+    def show_disclaimer():
+        return gr.update(visible=True)
 
     submit_eval_button.click(
-        show_loading_spinner,
-        None,
-        [loading_modal],
+        fn=show_disclaimer,
+        inputs=None,
+        outputs=[disclaimer_modal]
+    )
+
+    agree_button.click(
+        fn=accept_and_load,
+        inputs=None,
+        outputs=[disclaimer_modal, loading_modal],
     ).then(
-        add_new_eval,
-        [
+        fn=add_new_eval,
+        inputs=[
             level_of_test_radio,
             agent_name_tb,
             agent_desc_tb,
@@ -431,7 +452,7 @@ def build_page():
             mail_tb,
             mail_opt_in
         ],
-        [error_message, error_modal, success_modal, loading_modal],
+        outputs=[error_message, error_modal, success_modal, loading_modal],
     )
     # hiding this for now till we have the real paper data
     # with gr.Accordion("📙 Citation", open=False):

@@ -181,6 +181,17 @@ CITATION_BUTTON_TEXT = r"""@article{asta-bench,
     secondaryClass={cs.CL}
 }"""
 
+LEGAL_DISCLAIMER_TEXT = """
+<h2>Terms and Conditions</h2>
+<p>
+    The Allen Institute for Artificial Intelligence (Ai2) maintains this repository for agent evaluation submissions to AstaBench. To keep AstaBench fair and auditable, all evaluation logs and associated submission files will be made publicly available. This includes your benchmark inputs, model output responses, and other data and information related to your submission as needed to verify the results.
+</p>
+<br>
+<p>
+    Your submissions to AstaBench will be posted, scored, and ranked on the leaderboard at <a href="https://huggingface.co/spaces/allenai/asta-bench-leaderboard" target="_blank" rel="noopener noreferrer">https://huggingface.co/spaces/allenai/asta-bench-leaderboard</a>. You agree you have the rights to the materials you submit and that you will not share any personal, sensitive, proprietary, or confidential information.
+</p>
+"""
+
 def format_error(msg):
     return f"<p style='color: red; font-size: 20px; text-align: center;'>{msg}</p>"
 
@@ -196,7 +207,6 @@ def format_log(msg):
 def hyperlink(link_url: str, text: str = "🔗") -> str:
     if not link_url or not isinstance(link_url, str):
         return str(text) # Or simply "" if link_url is bad
-    # Using a simpler style here for broad compatibility, your original style is fine too.
     return f'<a target="_blank" href="{link_url}">{text}</a>'
 
 
@@ -512,6 +522,20 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     font-size: 16px;
 }
 
+#legal-modal-content {
+    padding: 30px;
+    background-color: inherit;
+    border-radius: 8px;
+    text-align: left;
+    font-size: 14px;
+}
+
+#legal-modal-content h2 {
+    text-align: center;
+}
+#legal-modal-content button {
+    width: fit-content;
+}
 .spinner-container {
     display: flex;
     flex-direction: column;
