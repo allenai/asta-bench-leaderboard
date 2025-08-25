@@ -611,6 +611,7 @@ def create_leaderboard_display(
             column_widths=final_column_widths,
             elem_classes=["wrap-header-df"],
             show_search="search",
+            elem_id="main-leaderboard"
         )
         legend_markdown = create_legend_markdown(category_name)
         gr.HTML(value=legend_markdown, elem_id="legend-markdown")

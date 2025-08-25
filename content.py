@@ -831,4 +831,10 @@ h3 .header-link-icon {
     margin-left: 6px;
     text-decoration: none;
 }
+
+/* Targets all "overall stats" columns in the main leaderboard for each category */
+#main-leaderboard td:nth-child(6) .prose,
+#main-leaderboard td:nth-child(7) .prose {
+    font-weight: 700 !important;
+}
 """
