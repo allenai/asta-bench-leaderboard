@@ -504,9 +504,15 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     grid-row: 3 !important;
     justify-self: center !important;
     width: fit-content !important;
-    padding-right: 20px !important;
     white-space: nowrap;
     flex-shrink: 0;
+}
+
+.nav-holder nav a[href*="literature-understanding"],
+.nav-holder nav a[href*="code-execution"],
+.nav-holder nav a[href*="data-analysis"],
+.nav-holder nav a[href*="discovery"] {
+    padding-right: 20px !important;
 }
 
 .nav-holder nav a[href*="overall"] { grid-column: 1 !important; }
