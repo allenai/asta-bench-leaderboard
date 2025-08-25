@@ -221,8 +221,6 @@ with demo.route("About", "/about"):
 with demo.route("🚀 Submit an Agent", "/submit"):
     build_submission_page()
 
-with demo.route("Overall", "/overall"):
-    build_main_page()
 
 # --- Scheduler and Launch
 def restart_space_job():

@@ -491,27 +491,19 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 .nav-holder nav a[href*="literature-understanding"],
 .nav-holder nav a[href*="code-execution"],
 .nav-holder nav a[href*="data-analysis"],
-.nav-holder nav a[href*="discovery"],
-.nav-holder nav a[href*="overall"] {
+.nav-holder nav a[href*="discovery"] {
     grid-row: 3 !important;
     justify-self: center !important;
     width: fit-content !important;
     white-space: nowrap;
     flex-shrink: 0;
-}
-
-.nav-holder nav a[href*="literature-understanding"],
-.nav-holder nav a[href*="code-execution"],
-.nav-holder nav a[href*="data-analysis"],
-.nav-holder nav a[href*="discovery"] {
     padding-right: 20px !important;
 }
 
-.nav-holder nav a[href*="overall"] { grid-column: 1 !important; }
-.nav-holder nav a[href*="literature-understanding"] { grid-column: 2 !important; }
-.nav-holder nav a[href*="code-execution"] { grid-column: 3 !important; }
-.nav-holder nav a[href*="data-analysis"] { grid-column: 4 !important; }
-.nav-holder nav a[href*="discovery"] { grid-column: 5 !important; }
+.nav-holder nav a[href*="literature-understanding"] { grid-column: 1 !important; }
+.nav-holder nav a[href*="code-execution"] { grid-column: 2 !important; }
+.nav-holder nav a[href*="data-analysis"] { grid-column: 3 !important; }
+.nav-holder nav a[href*="discovery"] { grid-column: 4 !important; }
 
 /* Navigation hover styles */
 .nav-holder nav a[href*="about"]:hover,
@@ -519,8 +511,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 .nav-holder nav a[href*="literature-understanding"]:hover,
 .nav-holder nav a[href*="code-execution"]:hover,
 .nav-holder nav a[href*="data-analysis"]:hover,
-.nav-holder nav a[href*="discovery"]:hover,
-.nav-holder nav a[href*="overall"]:hover {
+.nav-holder nav a[href*="discovery"]:hover {
     background-color: #FDF9F4;
 }
 
@@ -529,8 +520,7 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 .dark .nav-holder nav a[href*="literature-understanding"]:hover,
 .dark .nav-holder nav a[href*="code-execution"]:hover,
 .dark .nav-holder nav a[href*="data-analysis"]:hover,
-.dark .nav-holder nav a[href*="discovery"]:hover,
-.dark .nav-holder nav a[href*="overall"]:hover {
+.dark .nav-holder nav a[href*="discovery"]:hover {
     background-color: #1C3A3C;
 }
 .benchmark-main-subtitle{
