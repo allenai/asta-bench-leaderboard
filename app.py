@@ -1,5 +1,6 @@
 # app.py
 import logging
+
 logging.basicConfig(level=logging.WARNING)
 
 import gradio as gr
@@ -193,7 +194,12 @@ final_css = css + f"""
 }}
 """
 # --- Gradio App Definition ---
-demo = gr.Blocks(theme=theme, css=final_css, head=scroll_script + redirect_script + tooltip_script)
+demo = gr.Blocks(
+    theme=theme,
+    css=final_css,
+    head=scroll_script + redirect_script + tooltip_script,
+    title="AstaBench Leaderboards",
+)
 with demo.route("Home", "/home"):
     build_main_page()
 

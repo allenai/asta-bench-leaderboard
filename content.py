@@ -240,6 +240,13 @@ css = """
     --color-text-light: var(--neutral-50); /* #FAF2E9 */
 }
 
+/* This makes space for the huggingface header bar which must shown on HF spaces. */
+/* FIXME Media queries don't seem to survive rendering. */
+/* @media (min-width: 768px) { ... } */
+gradio-app {
+    padding-top: 65px;
+}
+
 /* Global Styles */
 h2 {
     overflow: hidden;
