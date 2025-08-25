@@ -549,7 +549,7 @@ def create_leaderboard_display(
     # append the repro url to the end of the agent name
     if 'Source' in df_view.columns:
         df_view['Agent'] = df_view.apply(
-            lambda row: f"{row['Agent']} {row['Source']}" if row['Source'] else row['Agent'],
+            lambda row: f"{row['Agent']} {row['Source']}" if pd.notna(row['Source']) and row['Source'] else row['Agent'],
             axis=1
         )
 
