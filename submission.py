@@ -319,6 +319,19 @@ def _is_hf_acct_too_new(submission_time: datetime, username: str):
     return submission_time - created_at < timedelta(days=60)
 
 
+openness_label_html = f"""<div>
+    <b>Agent Openness</b>
+    {build_openness_tooltip_content()}
+</div>"""
+
+
+agent_tooling_label_html = f"""<div>
+    <b>Agent Tooling</b>
+    {build_tooling_tooltip_content()}
+</div>"""
+
+
+
 heading_html = """
 <h2>🚀 Submit an agent for evaluation</h2>
 <p>Submit your agent to AstaBench for evaluation on real-world scientific tasks. Once submitted, your run will be reviewed by our team. If there are any issues, we’ll reach out within 5–7 business days. We’re working toward full automation, but in the meantime, human review helps ensure quality and trust.</p>
@@ -367,9 +380,9 @@ def build_page():
             agent_desc_tb = gr.Textbox(label="Briefly describe your agent’s approach, core strategies, or what makes it distinct. This description may appear on the leaderboard.")
             gr.HTML(value="""<h3>URL</h3>""", elem_classes="form-label")
             agent_url_tb = gr.Textbox(label="Link to more information about your agent (e.g. GitHub repo, blog post, or website). This optional link may be shown on the leaderboard to let others explore your agent in more depth.")
-            gr.HTML(value=build_openness_tooltip_content(), elem_classes="form-label")
+            gr.HTML(value=openness_label_html, elem_classes="form-label")
             openness_radio = gr.Radio([aliases.CANONICAL_OPENNESS_OPEN_SOURCE_CLOSED_WEIGHTS, aliases.CANONICAL_OPENNESS_OPEN_SOURCE_OPEN_WEIGHTS, aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE, aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY], elem_classes="form-label-fieldset", value=None, label="This affects how your submission is categorized on the leaderboard. Choose based on the availability of your code, model weights, or APIs.")
-            gr.HTML(value=build_tooling_tooltip_content(), elem_classes="form-label")
+            gr.HTML(value=agent_tooling_label_html, elem_classes="form-label")
             degree_of_control_radio = gr.Radio([aliases.CANONICAL_TOOL_USAGE_STANDARD, aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE, aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM], elem_classes="form-label-fieldset",value=None, label="Choose based on the tools and the execution environment your agent used during evaluation.")
             gr.HTML(value="""<h3>Submission file</h3>""", elem_classes="form-label")
             gr.HTML("<div id='submission-file-label'>Upload your run file, which is an archive prepared following the instructions in the <a href='https://github.com/allenai/asta-bench?tab=readme-ov-file#submitting-to-the-leaderboard' target='_blank'>README</a> (“Submitting to the Leaderboard”).</div>")
