@@ -221,7 +221,6 @@ with demo.route("About", "/about"):
 with demo.route("🚀 Submit an Agent", "/submit"):
     build_submission_page()
 
-
 # --- Scheduler and Launch
 def restart_space_job():
     print("Scheduler: Attempting to restart space.")
@@ -233,7 +232,6 @@ def restart_space_job():
     scheduler = BackgroundScheduler(timezone="UTC")
     scheduler.add_job(restart_space_job, "interval", hours=1)
     scheduler.start()
-
 
 # Launch the Gradio app
 if __name__ == "__main__":
