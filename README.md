@@ -29,20 +29,28 @@ python app.py
 This will start a local server that you can access in your web browser at `http://localhost:7860`.
 
 ## Hugging Face Integration
-This repo is already integrated with Hugging Face, please follow the steps below to push changes to the leaderboard on Hugging Face.
-First make sure to merge your changes to the `main` branch of this repository. (following the standard GitHub workflow of creating a branch, making changes, and then merging it back to `main`).
-First you need to add the Hugging Face remote repository if you haven't done so already. You can do this by running the following command:
+The repo backs two Hugging Face leaderboard spaces:
+- https://huggingface.co/spaces/allenai/asta-bench-internal-leaderboard
+- https://huggingface.co/spaces/allenai/asta-bench-leaderboard
+
+Please follow the steps below to push changes to the leaderboards on Hugging Face.
+
+Before pushing, make sure to merge your changes to the `main` branch of this repository. (following the standard GitHub workflow of creating a branch, making changes, and then merging it back to `main`).
+
+Before pushing for the first time, you'll need to add the Hugging Face remote repositories if you haven't done so already. You can do this by running the following command:
 
 ```bash
 git remote add huggingface https://huggingface.co/spaces/allenai/asta-bench-internal-leaderboard
+git remote add huggingface-public https://huggingface.co/spaces/allenai/asta-bench-leaderboard
 ```
-You can verify that the remote has been added by running:
+You can verify that the remotes have been added by running:
 
 ```bash
 git remote -v
 ```
-Then, to push the changes to the Hugging Face leaderboard, you can use the following command:
+Then, to push the changes to the Hugging Face leaderboards, you can use the following commands:
 
 ```bash
 git push huggingface main:main   
+git push huggingface-public main:main
 ```
