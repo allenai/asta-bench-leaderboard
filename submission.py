@@ -48,6 +48,8 @@ from content import (
     format_log,
     format_warning,
 )
+from ui_components import build_openness_tooltip_content, build_tooling_tooltip_content
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -317,31 +319,6 @@ def _is_hf_acct_too_new(submission_time: datetime, username: str):
     return submission_time - created_at < timedelta(days=60)
 
 
-openness_label_html = f"""
-<div class="form-label-with-tooltip">
-    Agent Openness
-    <span class="tooltip-icon" data-tooltip="• {aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY}: No API or code available
-        • {aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE}: API available, but no code
-        • {aliases.CANONICAL_OPENNESS_OPEN_SOURCE_CLOSED_WEIGHTS}: Code available, but no weights
-        • {aliases.CANONICAL_OPENNESS_OPEN_SOURCE_OPEN_WEIGHTS}: Code and weights available"
-    >
-        ⓘ
-    </span>
-</div>
-"""
-
-agent_tooling_label_html = f"""
-<div class="form-label-with-tooltip">
-    Agent Tooling
-    <span class="tooltip-icon" data-tooltip="• {aliases.CANONICAL_TOOL_USAGE_STANDARD}: Only uses tools explicitly provided in state.tools
-        • {aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE}: Uses custom tools with identical or more restricted capabilities
-        • {aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM}: Uses tools beyond constraints of {aliases.CANONICAL_TOOL_USAGE_STANDARD} or {aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE}"
-    >
-        ⓘ
-    </span>
-</div>
-"""
-
 heading_html = """
 <h2>🚀 Submit an agent for evaluation</h2>
 <p>Submit your agent to AstaBench for evaluation on real-world scientific tasks. Once submitted, your run will be reviewed by our team. If there are any issues, we’ll reach out within 5–7 business days. We’re working toward full automation, but in the meantime, human review helps ensure quality and trust.</p>
@@ -391,8 +368,10 @@ def build_page():
             gr.HTML(value="""<h3>URL</h3>""", elem_classes="form-label")
             agent_url_tb = gr.Textbox(label="Link to more information about your agent (e.g. GitHub repo, blog post, or website). This optional link may be shown on the leaderboard to let others explore your agent in more depth.")
             gr.HTML(value="""<h3>Agent openness</h3>""", elem_classes="form-label")
+            gr.HTML(value=build_openness_tooltip_content(), elem_id="openness-label-html")
             openness_radio = gr.Radio([aliases.CANONICAL_OPENNESS_OPEN_SOURCE_CLOSED_WEIGHTS, aliases.CANONICAL_OPENNESS_OPEN_SOURCE_OPEN_WEIGHTS, aliases.CANONICAL_OPENNESS_CLOSED_API_AVAILABLE, aliases.CANONICAL_OPENNESS_CLOSED_UI_ONLY], elem_classes="form-label-fieldset", value=None, label="This affects how your submission is categorized on the leaderboard. Choose based on the availability of your code, model weights, or APIs.")
             gr.HTML(value="""<h3>Agent tooling</h3>""", elem_classes="form-label")
+            gr.HTML(value=build_tooling_tooltip_content(), elem_id="agent-tooling-label-html")
             degree_of_control_radio = gr.Radio([aliases.CANONICAL_TOOL_USAGE_STANDARD, aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE, aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM], elem_classes="form-label-fieldset",value=None, label="Choose based on the tools and the execution environment your agent used during evaluation.")
             gr.HTML(value="""<h3>Submission file</h3>""", elem_classes="form-label")
             gr.HTML("<div id='submission-file-label'>Upload your run file, which is an archive prepared following the instructions in the <a href='https://github.com/allenai/asta-bench?tab=readme-ov-file#submitting-to-the-leaderboard' target='_blank'>README</a> (“Submitting to the Leaderboard”).</div>")
