@@ -495,6 +495,25 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     grid-row: 2 !important;
     grid-column: 1 / -1 !important;
 }
+
+.nav-holder nav a[href*="about"]:hover,
+.nav-holder nav a[href*="submit"]:hover,
+.nav-holder nav a[href*="literature-understanding"]:hover,
+.nav-holder nav a[href*="code-execution"]:hover,
+.nav-holder nav a[href*="data-analysis"]:hover,
+.nav-holder nav a[href*="discovery"]:hover {
+    background-color: #FDF9F4;
+}
+
+.dark .nav-holder nav a[href*="about"]:hover,
+.dark .nav-holder nav a[href*="submit"]:hover,
+.dark .nav-holder nav a[href*="literature-understanding"]:hover,
+.dark .nav-holder nav a[href*="code-execution"]:hover,
+.dark .nav-holder nav a[href*="data-analysis"]:hover,
+.dark .nav-holder nav a[href*="discovery"]:hover {
+    background-color: #1C3A3C;
+}
+
 .benchmark-main-subtitle{
     color: var(--color-primary-green);
     overflow: hidden;
