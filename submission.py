@@ -86,6 +86,7 @@ def upload_submission(
     _validate_path_component(CONFIG_NAME, "config_name")
     _validate_path_component(split, "split")
     _validate_path_component(submission_name, "submission_name")
+    dataset_url = f"hf://datasets/{SUBMISSION_DATASET}/{CONFIG_NAME}/{split}/{submission_name}"
     api.upload_folder(
         folder_path=folder_path,
         path_in_repo=f"{CONFIG_NAME}/{split}/{submission_name}",
@@ -93,9 +94,9 @@ def upload_submission(
         repo_type="dataset",
         # Reminder: This may be going into a public dataset.
         # Don't put private information in commit message such as email.
-        commit_message=f'Submission "{submission_name}" to split "{split}" from hf user "{hf_username}"',
+        commit_message=f'Submission from hf user "{hf_username}" to "{dataset_url}"',
     )
-    return f"hf://datasets/{SUBMISSION_DATASET}/{CONFIG_NAME}/{split}/{submission_name}"
+    return dataset_url
 
 def show_loading_spinner():
     return gr.update(visible=True)
