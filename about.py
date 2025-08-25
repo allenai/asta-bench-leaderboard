@@ -37,7 +37,6 @@ def build_page():
                 AstaBench includes a rigorous agents evaluation framework and a suite of benchmarks consisting of over 2,400 problems across 11 benchmarks, organized into four core categories:
             </p>
             <ul class="info-list">
-                <li>Overall</li>
                 <li>Literature Understanding</li>
                 <li>Code & Execution</li>
                 <li>Data Analysis</li>
