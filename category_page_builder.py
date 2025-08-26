@@ -3,18 +3,41 @@ import pandas as pd
 
 # Import our UI factories and the data loader
 from ui_components import create_leaderboard_display, create_benchmark_details_display, get_full_leaderboard_data, create_sub_navigation_bar
+CATEGORY_DIAGRAM_MAP = {
+    "Literature Understanding": "assets/literature-understanding.svg",
+    "Code & Execution": "assets/code-execution.svg",
+    "Data Analysis": "assets/data-analysis.svg",
+    "End-to-End Discovery": "assets/end-to-end-discovery.svg",
+}
 
 def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
     with gr.Column(elem_id="page-content-wrapper"):
-        gr.HTML(f'<h2>AstaBench {CATEGORY_NAME} Leaderboard <span style="font-weight: normal; color: inherit;">(Aggregate)</span></h2>', elem_id="main-header")
         validation_df, validation_tag_map = get_full_leaderboard_data("validation")
         test_df, test_tag_map = get_full_leaderboard_data("test")
-        with gr.Column(elem_id="validation_nav_container", visible=False) as validation_nav_container:
-            create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME, validation=True)
+        with gr.Row(elem_id="intro-row"):
 
-        with gr.Column(elem_id="test_nav_container", visible=True) as test_nav_container:
-            create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
-        gr.Markdown(PAGE_DESCRIPTION, elem_id="category-intro")
+            with gr.Column(scale=1):
+                gr.HTML(f'<h2>AstaBench {CATEGORY_NAME} Leaderboard <span style="font-weight: normal; color: inherit;">(Aggregate)</span></h2>', elem_id="main-header")
+                with gr.Column(elem_id="validation_nav_container", visible=False) as validation_nav_container:
+                    create_sub_navigation_bar(validation_tag_map, CATEGORY_NAME, validation=True)
+
+                with gr.Column(elem_id="test_nav_container", visible=True) as test_nav_container:
+                    create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
+
+                gr.Markdown(PAGE_DESCRIPTION, elem_id="intro-category-paragraph")
+
+            # --- The Right Column ---
+            with gr.Column(scale=1):
+                image_path = CATEGORY_DIAGRAM_MAP.get(CATEGORY_NAME)
+                if image_path:
+                    gr.Image(
+                        value=image_path,
+                        show_label=False,
+                        show_download_button=False,
+                        show_fullscreen_button=False,
+                        interactive=False,
+                        elem_id="diagram-image"
+                    )
         # --- This page now has two main sections: Validation and Test ---
         with gr.Tabs():
             with gr.Tab("Results: Test Set") as test_tab:
