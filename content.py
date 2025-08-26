@@ -823,7 +823,8 @@ html {
     }
 }
 #home-page-content-wrapper{
-    margin-top: 40px;
+    margin: 40px;
+    max-width: 60%;
 }
 #intro-paragraph {
     max-width: 90%;
