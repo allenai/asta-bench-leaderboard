@@ -257,6 +257,28 @@ h2 {
     max-width: 60%;
     padding-left: 25px;
 }
+
+#intro-paragraph p,
+#intro-paragraph li {
+    font-size: 16px; 
+    line-height: 1.8; 
+}
+
+#intro-paragraph ul {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+#diagram-image {
+    height: 100%;
+}
+
+#diagram-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+}
+
 #about-content {
     font-size: 18px;
     max-width: 60%;
@@ -340,9 +362,9 @@ nav.svelte-ti537g.svelte-ti537g {
 }
 .sub-nav-bar-container {
     display: flex !important;
-    flex-wrap: nowrap !important; 
+    flex-wrap: wrap !important; 
     align-items: center !important; 
-    gap: 20px !important;
+    gap: 10px !important;
 }
 .dark .primary-link-button {
     color: var(--color-primary-green);
@@ -824,9 +846,6 @@ html {
 #home-page-content-wrapper{
     margin: 40px;
     max-width: 60%;
-}
-#intro-paragraph {
-    max-width: 90%;
 }
 /* Plot legend styles */
 .plot-legend-container {
