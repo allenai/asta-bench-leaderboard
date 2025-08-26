@@ -27,6 +27,7 @@ def build_page():
                 interactive=False,
                 show_download_button=False,
                 show_fullscreen_button=False,
+                show_share_button=False,
                 elem_id="diagram-image"
             )
 
