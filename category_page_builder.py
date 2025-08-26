@@ -35,6 +35,7 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
                         show_label=False,
                         show_download_button=False,
                         show_fullscreen_button=False,
+                        show_share_button=False,
                         interactive=False,
                         elem_id="diagram-image"
                     )
