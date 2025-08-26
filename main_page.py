@@ -18,17 +18,10 @@ CACHED_TAG_MAPS = {}
 def build_page():
     with gr.Column(elem_id="home-page-content-wrapper"):
         with gr.Row(elem_id="intro-row"):
-            with gr.Column(scale=1):
+            with gr.Column(scale=6):
                 gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
-            with gr.Column(scale=1):
-                gr.Image(
-                    value="assets/overall.png",
-                    show_label=False,
-                    show_download_button=False,
-                    show_fullscreen_button=False,
-                    interactive=False,
-                    elem_id="diagram-image"
-                )
+            with gr.Column(scale=4):
+                gr.HTML('<div class="diagram-placeholder">Future Diagram</div>')
 
     # --- Leaderboard Display Section ---
     gr.Markdown("---")
