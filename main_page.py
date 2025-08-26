@@ -16,20 +16,19 @@ CACHED_VIEWERS = {}
 CACHED_TAG_MAPS = {}
 
 def build_page():
-    with gr.Column(elem_id="home-page-content-wrapper"):
-        with gr.Row(elem_id="intro-row"):
-            with gr.Column(scale=1):
-                gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
+    with gr.Row(elem_id="intro-row"):
+        with gr.Column(scale=1):
+            gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
 
-            with gr.Column(scale=1):
-                gr.Image(
-                    value="assets/overall.svg",
-                    show_label=False,
-                    interactive=False,
-                    show_download_button=False,
-                    show_fullscreen_button=False,
-                    elem_id="diagram-image"
-                )
+        with gr.Column(scale=1):
+            gr.Image(
+                value="assets/overall.svg",
+                show_label=False,
+                interactive=False,
+                show_download_button=False,
+                show_fullscreen_button=False,
+                elem_id="diagram-image"
+            )
 
     # --- Leaderboard Display Section ---
     gr.Markdown("---")

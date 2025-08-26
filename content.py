@@ -254,8 +254,9 @@ h2 {
 
 #intro-paragraph {
     font-size: 18px;
-    max-width: 60%;
-    padding-left: 25px;
+    max-width: 90%;
+    padding-left: 35px;
+    margin-top: 20px;
 }
 
 #intro-paragraph p,
@@ -277,6 +278,22 @@ h2 {
     width: 100%;
     height: 100%;
     object-fit: cover; 
+}
+#intro-category-paragraph {
+    font-size: 18px;
+    max-width: 90%;
+    margin-top: 20px;
+}
+
+#intro-category-paragraph p,
+#intro-category-paragraph li {
+    font-size: 16px; 
+    line-height: 1.8; 
+}
+
+#intro-category-paragraph ul {
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 #about-content {
@@ -842,10 +859,6 @@ html {
     #intro-row {
         flex-direction: column;
     }
-}
-#home-page-content-wrapper{
-    margin: 40px;
-    max-width: 60%;
 }
 /* Plot legend styles */
 .plot-legend-container {

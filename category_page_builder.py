@@ -24,7 +24,7 @@ def build_category_page(CATEGORY_NAME, PAGE_DESCRIPTION):
                 with gr.Column(elem_id="test_nav_container", visible=True) as test_nav_container:
                     create_sub_navigation_bar(test_tag_map, CATEGORY_NAME)
 
-                gr.Markdown(PAGE_DESCRIPTION, elem_id="intro-paragraph")
+                gr.Markdown(PAGE_DESCRIPTION, elem_id="intro-category-paragraph")
 
             # --- The Right Column ---
             with gr.Column(scale=1):
