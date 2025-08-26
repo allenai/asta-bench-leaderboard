@@ -318,6 +318,9 @@ thead.svelte-1e98i6s th {
 nav.svelte-ti537g.svelte-ti537g {
     justify-content: flex-start;
 }
+.nav-holder {
+    padding-left: 20px !important;
+}
 #legend-markdown span {
     margin-right: 15px !important; 
 }
@@ -451,43 +454,21 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 /* Main Nav bar styling */
 .nav-holder nav {
     display: grid !important;
-    grid-template-columns: auto auto auto auto 1fr auto auto !important;
+    grid-template-columns: auto auto auto auto auto 1fr auto auto !important;
     gap: 10px 20px !important; /* Vertical and horizontal spacing */
     width: 100% !important;
     align-items: center;
 }
 .nav-holder nav a[href*="about"] {
     grid-row: 1 !important;
-    grid-column: 6 !important;
+    grid-column: 7 !important;
 }
 .nav-holder nav a[href*="submit"] {
     grid-row: 1 !important;
-    grid-column: 7 !important;
+    grid-column: 8 !important;
+    white-space: nowrap !important;
 }
-.nav-holder nav a[href*="literature-understanding"] {
-    grid-row: 3 !important;
-    grid-column: 1 !important;
-    width: fit-content !important;
-    justify-self: center !important;
-}
-.nav-holder nav a[href*="code-execution"] {
-    grid-row: 3 !important;
-    grid-column: 2 !important;
-    padding-right: 20px !important;
-    justify-self: center !important; 
-}
-.nav-holder nav a[href*="data-analysis"] {
-    grid-row: 3 !important;
-    grid-column: 3 !important;
-    padding-right: 20px !important;
-    justify-self: center !important;
-}
-.nav-holder nav a[href*="discovery"] {
-    grid-row: 3 !important;
-    grid-column: 4 !important;
-    padding-right: 20px !important;
-    justify-self: center !important;
-}
+/* Divider line between header and category nav */
 .nav-holder nav::after {
     content: ''; /* Required for pseudo-elements to appear */
     background-color: #C9C9C3;
@@ -496,6 +477,35 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     grid-column: 1 / -1 !important;
 }
 
+/* Horizontal scrolling for navigation */
+.nav-holder nav {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.nav-holder nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* Category navigation buttons in row 3 */
+.nav-holder nav a[href*="literature-understanding"],
+.nav-holder nav a[href*="code-execution"],
+.nav-holder nav a[href*="data-analysis"],
+.nav-holder nav a[href*="discovery"] {
+    grid-row: 3 !important;
+    justify-self: center !important;
+    width: fit-content !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-right: 20px !important;
+}
+
+.nav-holder nav a[href*="literature-understanding"] { grid-column: 1 !important; }
+.nav-holder nav a[href*="code-execution"] { grid-column: 2 !important; }
+.nav-holder nav a[href*="data-analysis"] { grid-column: 3 !important; }
+.nav-holder nav a[href*="discovery"] { grid-column: 4 !important; }
+
+/* Navigation hover styles */
 .nav-holder nav a[href*="about"]:hover,
 .nav-holder nav a[href*="submit"]:hover,
 .nav-holder nav a[href*="literature-understanding"]:hover,
@@ -513,7 +523,6 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
 .dark .nav-holder nav a[href*="discovery"]:hover {
     background-color: #1C3A3C;
 }
-
 .benchmark-main-subtitle{
     color: var(--color-primary-green);
     overflow: hidden;
