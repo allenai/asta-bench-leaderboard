@@ -20,8 +20,6 @@ def build_page():
         with gr.Row(elem_id="intro-row"):
             with gr.Column(scale=6):
                 gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
-            with gr.Column(scale=4):
-                gr.HTML('<div class="diagram-placeholder"></div>')
 
     # --- Leaderboard Display Section ---
     gr.Markdown("---")
