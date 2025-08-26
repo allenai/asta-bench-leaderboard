@@ -17,9 +17,7 @@ CACHED_TAG_MAPS = {}
 
 def build_page():
     with gr.Column(elem_id="home-page-content-wrapper"):
-        with gr.Row(elem_id="intro-row"):
-            with gr.Column(scale=6):
-                gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
+        gr.HTML(INTRO_PARAGRAPH, elem_id="intro-paragraph")
 
     # --- Leaderboard Display Section ---
     gr.Markdown("---")
