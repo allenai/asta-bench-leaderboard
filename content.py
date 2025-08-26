@@ -497,7 +497,6 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     width: fit-content !important;
     white-space: nowrap;
     flex-shrink: 0;
-    padding-right: 20px !important;
 }
 
 .nav-holder nav a[href*="literature-understanding"] { grid-column: 1 !important; }
