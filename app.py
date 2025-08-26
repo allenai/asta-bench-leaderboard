@@ -237,7 +237,6 @@ def restart_space_job():
 if __name__ == "__main__":
     if LOCAL_DEBUG:
         print("Launching in LOCAL_DEBUG mode.")
-        def get_initial_global_tag_choices(): return ["Overall"]
         demo.launch(debug=True, allowed_paths=["assets"], favicon_path="assets/favicon/favicon.ico")
     else:
         print("Launching in Space mode.")
