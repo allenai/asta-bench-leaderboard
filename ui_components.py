@@ -601,9 +601,9 @@ def create_leaderboard_display(
                 value=scatter_plot,
                 show_label=False,
             )
+            gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
         with gr.Column(scale=1):
             gr.HTML(value=plot_legend_html)
-    gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
     # Put table and key into an accordion
     with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
@@ -771,9 +771,9 @@ def create_benchmark_details_display(
         with gr.Row():
             with gr.Column(scale=3):
                 gr.Plot(value=benchmark_plot, show_label=False) 
+                gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
             with gr.Column(scale=1):
                 gr.HTML(value=plot_legend_html)
-        gr.Markdown(value=SCATTER_DISCLAIMER, elem_id="scatter-disclaimer")
 
         # Put table and key into an accordion
         with gr.Accordion("Show / Hide Table View", open=True, elem_id="leaderboard-accordion"):
