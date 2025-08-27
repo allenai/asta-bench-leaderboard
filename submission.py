@@ -388,7 +388,7 @@ def build_page():
             gr.HTML(value=agent_tooling_label_html, elem_classes="form-label")
             degree_of_control_radio = gr.Radio([aliases.CANONICAL_TOOL_USAGE_STANDARD, aliases.CANONICAL_TOOL_USAGE_CUSTOM_INTERFACE, aliases.CANONICAL_TOOL_USAGE_FULLY_CUSTOM], elem_classes="form-label-fieldset",value=None, label="Choose based on the tools and the execution environment your agent used during evaluation.")
             gr.HTML(value="""<h3>Submission file</h3>""", elem_classes="form-label")
-            gr.HTML("<div id='submission-file-label'>Upload your run file, which is an archive prepared following the instructions in the <a href='https://github.com/allenai/asta-bench?tab=readme-ov-file#submitting-to-the-leaderboard' target='_blank'>README</a> (“Submitting to the Leaderboard”).</div>")
+            gr.HTML("<div id='submission-file-label'>Upload your run as a .tar.gz archive prepared using the steps in the <a href='https://github.com/allenai/asta-bench?tab=readme-ov-file#submitting-to-the-leaderboard' target='_blank'>README</a> (“Submitting to the Leaderboard”).</div>")
             file_upload_comp = gr.File(
                 show_label=False,
                 file_types=[".gz", ".tar.gz"],
