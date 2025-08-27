@@ -317,8 +317,7 @@ def _is_hf_acct_too_new(submission_time: datetime, username: str):
 
 def _is_last_submission_too_recent(contact_rows, username, submission_time):
     user_submission_dates = sorted(
-        datetime.fromisoformat(row["submit_time"])
-        for row in contact_rows if row["username_auth"] == username
+        row["submit_time"] for row in contact_rows if row["username_auth"] == username
     )
     return user_submission_dates and (submission_time - user_submission_dates[-1] < timedelta(days=1))
 
