@@ -102,6 +102,42 @@ const tooltipInterval = setInterval(() => {
 }, 200);
 </script>
 """
+redirect_submission_on_close_script = """
+<script>
+function initializeRedirectObserver() {
+    const successModal = document.querySelector('#success-modal');
+    
+    if (successModal) {
+        const observer = new MutationObserver((mutationsList) => {
+            for (const mutation of mutationsList) {
+                // We only care about changes to the 'class' attribute.
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    
+                    // Check if the 'hide' class has been ADDED to the class list.
+                    // This is how Gradio hides the modal.
+                    if (successModal.classList.contains('hide')) {
+                        console.log("Success modal was closed. Redirecting to homepage...");
+                        // This is the command to redirect the browser.
+                        window.location.href = '/home';
+                    }
+                }
+            }
+        });
+
+        // Tell the observer to watch the modal for attribute changes.
+        observer.observe(successModal, { attributes: true });
+    }
+}
+
+// Polling mechanism to wait for Gradio to build the UI.
+const redirectInterval = setInterval(() => {
+    if (document.querySelector('#success-modal')) {
+        clearInterval(redirectInterval);
+        initializeRedirectObserver();
+    }
+}, 200);
+</script>
+"""
 # --- Theme Definition ---
 theme = gr.themes.Base(
     primary_hue=gr.themes.Color(c100="#CFF5E8", c200="#B7EFDD", c300="#9FEAD1", c400="#87E5C5", c50="#E7FAF3", c500="#6FE0BA", c600="#57DBAF", c700="#3FD5A3", c800="#27D09C", c900="#0FCB8C", c950="#0fcb8c"),
@@ -197,7 +233,7 @@ final_css = css + f"""
 demo = gr.Blocks(
     theme=theme,
     css=final_css,
-    head=scroll_script + redirect_script + tooltip_script,
+    head=scroll_script + redirect_script + tooltip_script + redirect_submission_on_close_script,
     title="AstaBench Leaderboards",
 )
 with demo.route("Home", "/home"):

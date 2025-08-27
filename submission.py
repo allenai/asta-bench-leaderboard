@@ -404,7 +404,7 @@ def build_page():
             gr.Markdown("## ⚠️ Error")
             error_message = gr.Markdown()
 
-    with Modal(visible=False, elem_id="submission-modal") as success_modal:
+    with Modal(visible=False, elem_id="success-modal") as success_modal:
         with gr.Column(elem_id="submission-modal-content"):
             gr.Markdown(SUBMISSION_CONFIRMATION)
     with Modal(visible=False, elem_id="submission-modal") as disclaimer_modal:

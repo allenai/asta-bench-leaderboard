@@ -579,19 +579,22 @@ span.wrap[tabindex="0"][role="button"][data-editable="false"] {
     max-width: 800px;
 }
 /*------ Submission Page CSS ------*/
-#submission-modal .modal-container {
+#submission-modal .modal-container,
+#success-modal .modal-container {
     height: auto;
     max-width: 600px;
 }
 
-#submission-modal-content {
+#submission-modal-content,
+#success-modal .submission-modal-content { 
     padding: 20px;
     background-color: inherit;
     border-radius: 8px;
     text-align: center;
 }
 
-#submission-modal-content p{
+#submission-modal-content p,
+#success-modal .submission-modal-content p {
     font-size: 16px;
 }
 
