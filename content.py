@@ -72,7 +72,7 @@ SUBMISSION_CONFIRMATION = """
 <br><br>
 🙏 Thanks for contributing!
 <br><br>
-You'll receive an email shortly with confirmation and next steps. If there are any issues with your submission, our team will reach out within 5–7 business days.
+You'll receive a confirmation email from our team within 2 business days with next steps. We will reach out to you directly if further information is needed.
 <br><br>
 We appreciate your support in advancing scientific AI.
 """
