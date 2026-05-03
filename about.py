@@ -114,23 +114,59 @@ def build_page():
         )
         gr.Markdown("---", elem_classes="divider-line")
 
-        # --- Section 6: Learn More ---
+        # --- Section 6: Citation ---
+        gr.HTML(
+            """
+            <h2>Citation</h2>
+            <p>
+                If you use AstaBench, please cite the <a href="https://openreview.net/forum?id=M7TNf5J26u" target="_blank" class="primary-link-button">AstaBench paper</a> (ICLR 2026):
+            </p>
+            <style>
+                #astabench-bibtex { scrollbar-width: auto; scrollbar-color: #9fead1 rgba(255,255,255,0.12); }
+                #astabench-bibtex::-webkit-scrollbar { -webkit-appearance: none; appearance: none; height: 12px; width: 12px; }
+                #astabench-bibtex::-webkit-scrollbar-track { background: rgba(255,255,255,0.12); border-radius: 6px; }
+                #astabench-bibtex::-webkit-scrollbar-thumb { background: #9fead1; border-radius: 6px; border: 2px solid rgba(0,0,0,0.4); }
+                #astabench-bibtex::-webkit-scrollbar-thumb:hover { background: #0fcb8c; }
+                #astabench-bibtex::-webkit-scrollbar-corner { background: transparent; }
+            </style>
+            <div style="border: 1px solid rgba(159,234,209,0.35); border-radius: 8px; background: rgba(0,0,0,0.25); padding: 8px 16px 12px; margin: 12px 0;">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: -8px;">
+                    <button type="button" aria-label="Copy citation" onclick="(function(b){const pre=document.getElementById('astabench-bibtex');navigator.clipboard.writeText(pre.innerText).then(()=>{const t=b.textContent;b.textContent='Copied!';setTimeout(()=>{b.textContent=t;},1500);});})(this)" style="padding: 4px 12px; font-size: 12px; font-family: inherit; border-radius: 6px; border: 1px solid #0fcb8c; background: rgba(15,203,140,0.15); color: #0fcb8c; cursor: pointer;">Copy</button>
+                </div>
+                <pre id="astabench-bibtex" style="overflow: auto; max-height: 220px; margin: 0; padding: 0; background: transparent; border: 0;"><code>@inproceedings{astabench,
+  title     = {Asta{B}ench: Rigorous Benchmarking of {AI} Agents with a Scientific Research Suite},
+  author    = {Jonathan Bragg and Mike D'Arcy and Nishant Balepur and Dan Bareket and Bhavana Dalvi Mishra and Sergey Feldman and Dany Haddad and Jena D. Hwang and Peter Jansen and Varsha Kishore and Bodhisattwa Prasad Majumder and Aakanksha Naik and Sigal Rahamimov and Kyle Richardson and Amanpreet Singh and Harshit Surana and Aryeh Tiktinsky and Rosni Vasu and Guy Wiener and Chloe Anastasiades and Stefanus Candra and Jason Dunkelberger and Daniel Emery and Rob Evans and Malachi Hamada and Regan Huff and Rodney Kinney and Matt Latzke and Jaron Lochner and Ruben Lozano-Aguilera and Ngoc-Uyen Nguyen and Smita Rao and Amber Tanaka and Brooke Vlahos and Peter Clark and Doug Downey and Yoav Goldberg and Ashish Sabharwal and Daniel S. Weld},
+  booktitle = {The Fourteenth International Conference on Learning Representations},
+  year      = {2026},
+  url       = {https://openreview.net/forum?id=M7TNf5J26u},
+}</code></pre>
+            </div>
+            """
+        )
+        gr.Markdown("---", elem_classes="divider-line")
+
+        # --- Section 7: Learn More ---
         gr.HTML(
             """
             <div class="learn-more-section">
                 <h2>Learn More</h2>
                 <div class="link-buttons-container">
-                    
+
+                    <a href="https://openreview.net/forum?id=M7TNf5J26u" target="_blank" class="link-button">
+                        <span style="color:#0fcb8c;">AstaBench paper (ICLR 2026)</span>
+                        <span class="external-link-icon">↗</span>
+                    </a>
+
                     <a href="https://allenai.org/blog/astabench" target="_blank" class="link-button">
                         <span style="color:#0fcb8c;">AstaBench technical blog post</span>
                         <span class="external-link-icon">↗</span>
                     </a>
-                    
+
                     <a href="/submit" target="_blank" class="link-button">
                         <span style="color:#0fcb8c;">Submit an agent for evaluation</span>
                         <span class="external-link-icon">↗</span>
                     </a>
-                    
+
                 </div>
             </div>
             """
