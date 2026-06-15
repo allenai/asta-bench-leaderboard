@@ -197,8 +197,49 @@ def transform_raw_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         if 'Score' in col or 'Cost' in col:
             transformed_df[col] = transformed_df[col].apply(_safe_round)
 
+    transformed_df = _disambiguate_duplicate_agents(transformed_df)
+
     logger.info("Raw DataFrame transformed: numbers rounded and columns renamed.")
     return transformed_df
+
+
+def _disambiguate_duplicate_agents(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ensures no two rows are visually indistinguishable on the leaderboard.
+
+    Rows sharing the same agent name, submitter, and models used would otherwise
+    render identically. Such collisions are genuine re-runs (a submitter can only
+    submit once per 24h per split), so we keep the earliest occurrence's bare name
+    and append a sequential suffix to the rest (e.g. "RoboPhD (2)"), mirroring
+    agenteval's "index" duplicate handling.
+    """
+    dedup_cols = ["Agent", "Submitter", "Models Used"]
+    if df.empty or not all(col in df.columns for col in dedup_cols):
+        return df
+
+    df = df.reset_index(drop=True)
+    key = (
+        df["Agent"].astype(str)
+        + "\x1f"
+        + df["Submitter"].astype(str)
+        + "\x1f"
+        + df["Models Used"].apply(
+            lambda v: ",".join(map(str, v)) if isinstance(v, (list, tuple)) else str(v)
+        )
+    )
+
+    # Order so the earliest submission keeps the bare name (Date strings are
+    # "YYYY-MM-DD", which sort chronologically).
+    order = (
+        df.sort_values("Date", kind="stable").index
+        if "Date" in df.columns
+        else df.index
+    )
+    occurrence = key.loc[order].groupby(key.loc[order]).cumcount().reindex(df.index)
+    df["Agent"] = df["Agent"].astype(str) + occurrence.apply(
+        lambda n: f" ({n + 1})" if n > 0 else ""
+    )
+    return df
 
 
 class DataTransformer:
