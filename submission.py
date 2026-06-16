@@ -27,7 +27,6 @@ from config import (
     CONFIG_NAME,
     CONTACT_DATASET,
     EXTRACTED_DATA_DIR,
-    RESULTS_DATASET,
     SUBMISSION_DATASET,
 )
 from content import (
@@ -128,15 +127,6 @@ def add_new_eval(
 
     logger.info(f"agent {agent_name}: Checking submission")
 
-    # Load current eval_results for submission checks
-    # This is a bit redundant if display part reloads it, but submission needs its own consistent view
-    current_eval_results_for_submission = try_load_dataset_submission(
-        RESULTS_DATASET,
-        CONFIG_NAME,
-        download_mode="force_redownload", # Or a less aggressive mode
-        verification_mode=VerificationMode.NO_CHECKS,
-    )
-
     submission_time = datetime.now(timezone.utc)
     if not username or username.strip() == "":
         username = profile.username # Default to HF username
@@ -190,18 +180,10 @@ def add_new_eval(
             gr.update(visible=False)                            # loading_modal
         )
 
-    logger.debug(f"agent {agent_name}: Duplicate submission check")
-    if val_or_test in current_eval_results_for_submission and len(current_eval_results_for_submission[val_or_test]) > 0:
-        existing_submissions = current_eval_results_for_submission[val_or_test].to_dict().get("submission", [])
-        for sub_item in existing_submissions:
-            if (sub_item.get("agent_name", "").lower() == agent_name.lower() and
-                    sub_item.get("username", "").lower() == username.lower()):
-                return (
-                    format_warning("This agent name by this user has already been submitted to this split."),  # error_message
-                    gr.update(visible=True),                            # error_modal
-                    gr.update(visible=False),                           # success_modal
-                    gr.update(visible=False)                            # loading_modal
-                )
+    # No agent-name uniqueness check: submissions get unique timestamped paths
+    # (so they can't overwrite each other) and the leaderboard disambiguates rows
+    # with identical agent name + submitter + models. Submitting the same agent
+    # name with different models is legitimate and should be allowed.
 
     safe_username = sanitize_path_component(username)
     safe_agent_name = sanitize_path_component(agent_name)
