@@ -6,9 +6,23 @@ signal when one appeared (see allenai/asta-bench-leaderboard#119,
 allenai/gas2own#86). This module wires a HuggingFace webhook into the existing
 Gradio Space so that every submission commit fans out to:
 
-  * Slack ``#asta-bench`` (no submitter email -- privacy), and
-  * email ``asta-support@allenai.org`` (subject carries HF username + agent name
-    so it is greppable in the mailbox; body includes the submitter email).
+  * Slack ``#asta-bench`` -- ambient awareness, and
+  * a triage ticket on the **S2 Forever / On-call board** (GitHub Project #64):
+    a GitHub issue opened on ``allenai/scholar`` (by S2 convention, tickets are
+    filed on ``scholar`` even when they reference code elsewhere), added to the
+    project and set to the ``Triage Needed`` status so it lands in front of
+    whoever is on-call.
+
+The ticket is the actionable channel that replaced an earlier email design: the
+GitHub API is reachable from the HF Space (an internal Ai2 SMTP relay is not),
+and a card on the board has a lifecycle (assignable, closeable) a
+fire-and-forget email did not. Submission volume is low (roughly one per month
+or fewer), so one ticket per submission is intentional and manageable; revisit
+if volume grows.
+
+Privacy: the submitter's email is **never** posted to Slack and **never** put in
+the (org-visible) ticket. It remains only in the private contact-info dataset,
+which the ticket points the on-call to.
 
 Deployment / secret wiring is documented in ``docs/submission-notifier.md``.
 
@@ -26,9 +40,7 @@ import json
 import logging
 import os
 import re
-import smtplib
 import tempfile
-from email.message import EmailMessage
 
 import requests
 from huggingface_hub import HfApi, hf_hub_download
@@ -48,7 +60,22 @@ NOTIFY_REPOS = {
 }
 
 SLACK_CHANNEL = os.getenv("NOTIFIER_SLACK_CHANNEL", "#asta-bench")
-EMAIL_TO = os.getenv("NOTIFIER_EMAIL_TO", "asta-support@allenai.org")
+
+# GitHub triage ticket. By S2 convention tickets are filed on allenai/scholar
+# even when the code lives elsewhere; the issue is then added to the S2 Forever /
+# On-call board (Project #64) under the "Triage Needed" status. All overridable
+# via env so the target can move without a code change. The board IDs are
+# resolved at runtime from the org + project number (see _resolve_project), so
+# they never go stale.
+ISSUE_REPO = os.getenv("NOTIFIER_GITHUB_REPO", "allenai/scholar")
+PROJECT_ORG = os.getenv("NOTIFIER_PROJECT_ORG", "allenai")
+PROJECT_NUMBER = int(os.getenv("NOTIFIER_PROJECT_NUMBER", "64"))
+PROJECT_STATUS = os.getenv("NOTIFIER_PROJECT_STATUS", "Triage Needed")
+
+# Token for opening the issue and editing the project. Needs repo + project
+# scope (a classic PAT with repo+project, or a fine-grained token with Issues:RW
+# and Projects:RW on allenai). Falls back to a generic GITHUB_TOKEN if present.
+GITHUB_TOKEN = os.getenv("NOTIFIER_GITHUB_TOKEN") or os.getenv("GITHUB_TOKEN")
 
 # The read-only token minted for the notifier (see #119). Falls back to the
 # Space's own HF_TOKEN so local/dev runs work without extra wiring.
@@ -164,31 +191,6 @@ def fetch_submission_metadata(coords):
     return {}
 
 
-def fetch_submitter_email(coords):
-    """Look up the submitter email from the private contact-info dataset.
-
-    Matches on ``dataset_url`` (unique per submission). Returns ``None`` if not
-    found or unreadable -- email notifications still go out, just without it.
-    """
-    try:
-        from datasets import load_dataset
-
-        ds = load_dataset(
-            "allenai/asta-bench-internal-contact-info",
-            coords["config"],
-            split=coords["split"],
-            token=HF_TOKEN,
-            download_mode="force_redownload",
-        )
-    except Exception as e:
-        logger.warning("notifier: could not load contact-info dataset: %s", e)
-        return None
-    for row in reversed(list(ds)):
-        if row.get("dataset_url") == coords["dataset_url"]:
-            return row.get("email")
-    return None
-
-
 # --- Message rendering ------------------------------------------------------
 
 
@@ -222,29 +224,41 @@ def build_slack_payload(coords, meta):
     return {"channel": SLACK_CHANNEL, "text": "\n".join(lines)}
 
 
-def build_email(coords, meta, submitter_email):
-    """(subject, body) for the asta-support notification email."""
+def build_issue(coords, meta):
+    """(title, body) for the on-call triage ticket.
+
+    PII-free: the submitter email is deliberately omitted because Project #64 is
+    org-visible. The on-call looks it up in the private contact-info dataset,
+    which the body points to.
+    """
     agent_name = _field(meta, "agent_name", default=coords["name"])
     username = _field(meta, "username", default=coords["username"])
-    subject = f"[AstaBench submission] {username} — {agent_name} ({coords['split']})"
+    title = f"AstaBench submission: {agent_name} ({coords['split']})"
     body = "\n".join(
         [
-            "A new submission landed on the AstaBench leaderboard.",
+            "A new submission landed on the AstaBench leaderboard and needs "
+            "triage by the on-call.",
             "",
-            f"Submitter (HF): {username}",
-            f"Submitter email: {submitter_email or '(not found)'}",
-            f"Agent name: {agent_name}",
-            f"Description: {_field(meta, 'agent_description')}",
-            f"Agent URL: {_field(meta, 'agent_url')}",
-            f"Track / split: {coords['split']} (config {coords['config']})",
-            f"Openness: {_field(meta, 'openness')}",
-            f"Tool usage: {_field(meta, 'tool_usage', 'degree_of_control')}",
-            f"Submitted: {_field(meta, 'submit_time')}",
+            f"- **Submitter (HF):** `{username}`",
+            f"- **Agent name:** {agent_name}",
+            f"- **Description:** {_field(meta, 'agent_description')}",
+            f"- **Agent URL:** {_field(meta, 'agent_url')}",
+            f"- **Track / split:** {coords['split']} (config `{coords['config']}`)",
+            f"- **Openness:** {_field(meta, 'openness')}",
+            f"- **Tool usage:** {_field(meta, 'tool_usage', 'degree_of_control')}",
+            f"- **Submitted:** {_field(meta, 'submit_time')}",
+            f"- **Submission folder:** {submission_folder_url(coords)}",
             "",
-            f"Submission folder: {submission_folder_url(coords)}",
+            "The submitter's email is intentionally omitted from this org-visible "
+            "ticket. It is recorded in the private contact-info dataset "
+            "`allenai/asta-bench-internal-contact-info` "
+            f"(config `{coords['config']}`, split `{coords['split']}`).",
+            "",
+            "_Filed automatically by the leaderboard submission notifier "
+            "(allenai/asta-bench-leaderboard#119)._",
         ]
     )
-    return subject, body
+    return title, body
 
 
 # --- Delivery ---------------------------------------------------------------
@@ -271,25 +285,117 @@ def send_slack(payload):
     raise RuntimeError("No SLACK_BOT_TOKEN or SLACK_WEBHOOK_URL configured")
 
 
-def send_email(subject, body):
-    host = os.getenv("SMTP_HOST")
-    if not host:
-        raise RuntimeError("No SMTP_HOST configured")
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = os.getenv("NOTIFIER_EMAIL_FROM", "asta-support@allenai.org")
-    msg["To"] = EMAIL_TO
-    msg.set_content(body)
-    port = int(os.getenv("SMTP_PORT", "587"))
-    with smtplib.SMTP(host, port, timeout=30) as smtp:
-        smtp.ehlo()
-        if os.getenv("SMTP_STARTTLS", "true").lower() == "true":
-            smtp.starttls()
-            smtp.ehlo()
-        user, password = os.getenv("SMTP_USERNAME"), os.getenv("SMTP_PASSWORD")
-        if user and password:
-            smtp.login(user, password)
-        smtp.send_message(msg)
+_GITHUB_API = "https://api.github.com"
+_GITHUB_GRAPHQL = "https://api.github.com/graphql"
+
+
+def _gh_headers():
+    if not GITHUB_TOKEN:
+        raise RuntimeError(
+            "No NOTIFIER_GITHUB_TOKEN (or GITHUB_TOKEN) configured for triage tickets"
+        )
+    return {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+
+def _graphql(query, variables):
+    resp = requests.post(
+        _GITHUB_GRAPHQL,
+        headers=_gh_headers(),
+        json={"query": query, "variables": variables},
+        timeout=20,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if data.get("errors"):
+        raise RuntimeError(f"GitHub GraphQL error: {data['errors']}")
+    return data["data"]
+
+
+def _resolve_project():
+    """Resolve (project_id, status_field_id, option_id) for the configured board.
+
+    Done at runtime from PROJECT_ORG / PROJECT_NUMBER / PROJECT_STATUS so the
+    node IDs can never go stale if the board is rebuilt.
+    """
+    data = _graphql(
+        """
+        query($org: String!, $number: Int!) {
+          organization(login: $org) {
+            projectV2(number: $number) {
+              id
+              field(name: "Status") {
+                ... on ProjectV2SingleSelectField {
+                  id
+                  options { id name }
+                }
+              }
+            }
+          }
+        }
+        """,
+        {"org": PROJECT_ORG, "number": PROJECT_NUMBER},
+    )
+    project = (data.get("organization") or {}).get("projectV2")
+    if not project:
+        raise RuntimeError(f"project #{PROJECT_NUMBER} not found in org {PROJECT_ORG}")
+    field = project.get("field")
+    if not field:
+        raise RuntimeError(
+            f"project #{PROJECT_NUMBER} has no single-select Status field"
+        )
+    option = next((o for o in field["options"] if o["name"] == PROJECT_STATUS), None)
+    if option is None:
+        raise RuntimeError(
+            f"status option {PROJECT_STATUS!r} not found on project #{PROJECT_NUMBER}"
+        )
+    return project["id"], field["id"], option["id"]
+
+
+def create_triage_ticket(title, body):
+    """Open the issue on ISSUE_REPO, add it to the board, set status; return URL."""
+    owner, repo = ISSUE_REPO.split("/", 1)
+    resp = requests.post(
+        f"{_GITHUB_API}/repos/{owner}/{repo}/issues",
+        headers=_gh_headers(),
+        json={"title": title, "body": body},
+        timeout=20,
+    )
+    resp.raise_for_status()
+    issue = resp.json()
+
+    project_id, status_field_id, option_id = _resolve_project()
+    added = _graphql(
+        """
+        mutation($project: ID!, $content: ID!) {
+          addProjectV2ItemById(input: {projectId: $project, contentId: $content}) {
+            item { id }
+          }
+        }
+        """,
+        {"project": project_id, "content": issue["node_id"]},
+    )
+    item_id = added["addProjectV2ItemById"]["item"]["id"]
+    _graphql(
+        """
+        mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+          updateProjectV2ItemFieldValue(input: {
+            projectId: $project, itemId: $item, fieldId: $field,
+            value: {singleSelectOptionId: $option}
+          }) { projectV2Item { id } }
+        }
+        """,
+        {
+            "project": project_id,
+            "item": item_id,
+            "field": status_field_id,
+            "option": option_id,
+        },
+    )
+    return issue["html_url"]
 
 
 # --- Orchestration ----------------------------------------------------------
@@ -325,7 +431,6 @@ def handle_commit(repo_id, head_sha=None):
         return False
 
     meta = fetch_submission_metadata(coords)
-    submitter_email = fetch_submitter_email(coords)
 
     ok = False
     try:
@@ -336,12 +441,17 @@ def handle_commit(repo_id, head_sha=None):
             "notifier: Slack delivery failed for %s: %s", coords["dataset_url"], e
         )
     try:
-        subject, body = build_email(coords, meta, submitter_email)
-        send_email(subject, body)
+        title, body = build_issue(coords, meta)
+        issue_url = create_triage_ticket(title, body)
+        logger.info(
+            "notifier: opened triage ticket %s for %s", issue_url, coords["dataset_url"]
+        )
         ok = True
     except Exception as e:
         logger.error(
-            "notifier: email delivery failed for %s: %s", coords["dataset_url"], e
+            "notifier: triage ticket creation failed for %s: %s",
+            coords["dataset_url"],
+            e,
         )
 
     # Only mark seen once at least one channel delivered, so a fully-failed

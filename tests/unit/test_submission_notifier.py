@@ -1,6 +1,6 @@
 """Unit tests for submission_notifier message construction and dedup.
 
-These are pure-function tests (no network / no HF / no Slack / no SMTP). The CI
+These are pure-function tests (no network / no HF / no Slack / no GitHub). The CI
 workflow only runs tests/integration, but these are runnable locally with:
 
     pytest tests/unit/ -v
@@ -74,20 +74,35 @@ def test_slack_payload_falls_back_to_coords_without_metadata():
     assert "alice_RoboPhD" in payload["text"]
 
 
-def test_email_subject_is_greppable_and_body_has_email():
+def test_issue_title_and_body_carry_metadata():
     coords = sn.parse_commit_message(SUBMISSIONS_COMMIT)
-    subject, body = sn.build_email(coords, META, "alice@example.com")
-    # Subject must carry HF username + agent name for mailbox grepping.
-    assert "alice" in subject
-    assert "RoboPhD" in subject
-    # Email body carries the submitter email (Slack does not).
-    assert "alice@example.com" in body
+    title, body = sn.build_issue(coords, META)
+    # Title carries agent name + split so the board card is self-describing.
+    assert "RoboPhD" in title
+    assert "test" in title
+    # Body carries the submission detail the on-call needs.
+    assert "alice" in body  # HF username
+    assert "A seed agent" in body
+    assert "Open Source" in body
+    assert "huggingface.co/datasets" in body  # link to the submission folder
+    # Points the on-call to where the (omitted) email lives.
+    assert "asta-bench-internal-contact-info" in body
 
 
-def test_email_handles_missing_submitter_email():
+def test_issue_is_pii_free():
     coords = sn.parse_commit_message(SUBMISSIONS_COMMIT)
-    subject, body = sn.build_email(coords, META, None)
-    assert "(not found)" in body
+    # build_issue never even receives the submitter email; the org-visible
+    # ticket must not contain an email address.
+    title, body = sn.build_issue(coords, META)
+    assert "@" not in body
+    assert "@" not in title
+
+
+def test_issue_falls_back_to_coords_without_metadata():
+    coords = sn.parse_commit_message(SUBMISSIONS_COMMIT)
+    title, _body = sn.build_issue(coords, {})
+    # Folder name is used as the agent-name fallback.
+    assert "alice_RoboPhD" in title
 
 
 def test_submission_folder_url():
