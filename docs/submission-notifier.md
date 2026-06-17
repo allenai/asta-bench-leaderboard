@@ -65,7 +65,7 @@ Set these on the **public leaderboard Space** (Settings → Variables and secret
 |---|---|---|
 | `NOTIFIER_WEBHOOK_SECRET` | yes | Random string. Also registered as the HF webhook secret (step 4). Enables the endpoint. |
 | `NOTIFIER_HF_TOKEN` | recommended | Read-only HF token scoped to the three datasets (minted 2026-05-19, see #119). Falls back to the Space's `HF_TOKEN`. |
-| `NOTIFIER_GITHUB_TOKEN` | yes (ticket) | GitHub token with **`repo`** + **`project`** scope (classic PAT), or a fine-grained token with **Issues: Read/Write** on `allenai/scholar` and **Projects: Read/Write** on `allenai`. Used to open the issue and add it to the board. Falls back to `GITHUB_TOKEN`. |
+| `NOTIFIER_GITHUB_TOKEN` | yes (ticket) | GitHub token with **`repo`** + **`project`** scope (classic PAT), or a fine-grained token with **Issues: Read/Write** on `allenai/scholar` and **Projects: Read/Write** on `allenai`. Used to open the issue and add it to the board. **Recommended: reuse the existing `allenai-dev-role` PAT** that `s2-ticket-factory` already uses to file on-call cards — see step 3. Falls back to `GITHUB_TOKEN`. |
 | `SLACK_BOT_TOKEN` | one of these | Bot token with `chat:write`; bot must be invited to `#asta-bench`. |
 | `SLACK_WEBHOOK_URL` | one of these | Incoming-webhook URL for `#asta-bench` (less metadata flexibility). |
 | `NOTIFIER_SLACK_CHANNEL` | no | Defaults to `#asta-bench`. |
@@ -75,7 +75,9 @@ Set these on the **public leaderboard Space** (Settings → Variables and secret
 | `NOTIFIER_PROJECT_STATUS` | no | Status option to set. Defaults to `Triage Needed`. |
 
 The GitHub token's owner becomes the issue author, so use a service/bot account
-if you don't want a person's name on every ticket.
+if you don't want a person's name on every ticket. The recommended source is the
+existing `allenai-dev-role` PAT (see step 3), which already authors the on-call
+cards filed by `s2-ticket-factory`.
 
 ### 2. Slack
 
@@ -87,6 +89,20 @@ Prefer an existing AstaBench Slack app; otherwise create one with the
 
 Provision a token (`NOTIFIER_GITHUB_TOKEN`) that can open issues on
 `allenai/scholar` and edit [Project #64](https://github.com/orgs/allenai/projects/64).
+
+**Recommended: reuse the existing `allenai-dev-role` PAT.** The
+[`allenai/s2-ticket-factory`](https://github.com/allenai/s2-ticket-factory)
+Lambda already files on-call cards on `allenai/scholar` + Project #64 using a
+classic PAT owned by the `allenai-dev-role` bot account — so its scopes (issues
+write + projectV2 mutation) are exactly what this notifier needs, and reusing it
+keeps every auto-filed on-call card under one consistent author. The PAT lives in
+1Password under the entry **"Github AllenAI Dev Role"**. Copy that token into the
+Space's `NOTIFIER_GITHUB_TOKEN` secret.
+
+If you'd rather isolate blast radius (so revoking one automation's token doesn't
+affect the other), mint a dedicated token for the notifier instead — same scopes,
+ideally still owned by a bot account rather than a person.
+
 No board configuration is needed — the **Triage Needed** column already exists
 and the IDs are resolved at runtime. To file tickets on a different board or
 column, set `NOTIFIER_PROJECT_NUMBER` / `NOTIFIER_PROJECT_STATUS` (and
