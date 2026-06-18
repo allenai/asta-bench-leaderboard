@@ -15,23 +15,22 @@ webhook -- the form is the precise signal, and the submitter metadata is
 first-class in-process data rather than something reconstructed from a commit
 message after the fact.
 
-On each web-form submission it opens a triage ticket on the **S2 Forever /
-On-call board** (GitHub Project #64): a GitHub issue opened on ``allenai/scholar``
-(by S2 convention, tickets are filed on ``scholar`` even when they reference code
-elsewhere), added to the project and set to the ``Triage Needed`` status so it
-lands in front of whoever is on-call.
+On each web-form submission it opens a GitHub issue on a configured repo and,
+optionally, attaches it to a GitHub Project board under a chosen status column,
+so it lands in front of whoever is on call. Where the ticket goes is set entirely
+through environment / Space secrets (see Configuration below) -- the module
+carries no deployment-specific values.
 
-The ticket is the on-call's actionable channel and the only notification this
-module sends. The GitHub API is reachable from the HF Space (an internal Ai2
-SMTP relay is not), and a card on the board has a lifecycle (assignable,
-closeable) a fire-and-forget email did not. Submission volume is low (roughly one
-per month or fewer), so one ticket per submission is intentional and manageable;
-revisit if volume grows.
+The ticket is the actionable channel and the only notification this module sends.
+A board card has a lifecycle (assignable, closeable) that a fire-and-forget email
+did not, and the GitHub API is reachable from anywhere a HF Space runs. Submission
+volume is low (roughly one per month or fewer), so one ticket per submission is
+intentional and manageable; revisit if volume grows.
 
 **Best-effort.** ``notify_submission`` never raises: any GitHub failure is logged
-but does not fail or block the user's submission. With no GitHub token configured
-it is a silent no-op -- which is how the notifier is kept *off* on the internal
-Space and in CI (only the public Space gets the secret).
+but does not fail or block the user's submission. With no token / repo configured
+it is a silent no-op -- which is how the notifier is kept *off* where it should be
+(e.g. an internal-only Space, or CI): only deployments that set the secrets fire.
 
 Privacy: the submitter's email is **never** put in the (org-visible) ticket. It
 remains only in the private contact-info dataset, which the ticket points the
@@ -48,22 +47,32 @@ import requests
 logger = logging.getLogger(__name__)
 
 # --- Configuration (all via env / HF Space secrets) ------------------------
-
-# GitHub triage ticket. By S2 convention tickets are filed on allenai/scholar
-# even when the code lives elsewhere; the issue is then added to the S2 Forever /
-# On-call board (Project #64) under the "Triage Needed" status. All overridable
-# via env so the target can move without a code change. The board IDs are
-# resolved at runtime from the org + project number (see _resolve_project), so
-# they never go stale.
-ISSUE_REPO = os.getenv("NOTIFIER_GITHUB_REPO", "allenai/scholar")
-PROJECT_ORG = os.getenv("NOTIFIER_PROJECT_ORG", "allenai")
-PROJECT_NUMBER = int(os.getenv("NOTIFIER_PROJECT_NUMBER", "64"))
-PROJECT_STATUS = os.getenv("NOTIFIER_PROJECT_STATUS", "Triage Needed")
-
-# Token for opening the issue and editing the project. Needs repo + project
-# scope (a classic PAT with repo+project, or a fine-grained token with Issues:RW
-# and Projects:RW on allenai). Falls back to a generic GITHUB_TOKEN if present.
+#
+# The notifier carries *no* deployment-specific values in code: where tickets go
+# is set entirely through Space secrets, so a fork can point it at its own repo
+# and board without editing this file.
+#
+#   NOTIFIER_GITHUB_TOKEN   token to open the issue (and edit the board, if set).
+#                           Falls back to GITHUB_TOKEN. Without it, no-op.
+#   NOTIFIER_GITHUB_REPO    "owner/repo" to open the issue on. Without it, no-op.
+#   NOTIFIER_PROJECT_NUMBER optional org/user Project to attach the issue to;
+#                           omit to just open a plain issue (no board).
+#   NOTIFIER_PROJECT_ORG    org that owns the Project; defaults to the repo owner.
+#   NOTIFIER_PROJECT_STATUS status column to set once attached; defaults to
+#                           "Triage Needed". Set empty to add the card without
+#                           touching its status. Ignored when no Project is set.
+#
+# When a Project is configured its node IDs are resolved at runtime from the org
+# + number (see _resolve_project), so they never go stale if the board changes.
 GITHUB_TOKEN = os.getenv("NOTIFIER_GITHUB_TOKEN") or os.getenv("GITHUB_TOKEN")
+ISSUE_REPO = os.getenv("NOTIFIER_GITHUB_REPO", "")
+
+_project_number = os.getenv("NOTIFIER_PROJECT_NUMBER")
+PROJECT_NUMBER = int(_project_number) if _project_number else None
+PROJECT_ORG = os.getenv("NOTIFIER_PROJECT_ORG") or (
+    ISSUE_REPO.split("/", 1)[0] if "/" in ISSUE_REPO else ""
+)
+PROJECT_STATUS = os.getenv("NOTIFIER_PROJECT_STATUS", "Triage Needed")
 
 
 def submission_folder_url(coords):
@@ -88,7 +97,7 @@ def _field(meta, *keys, default="(not provided)"):
 def build_issue(coords, meta):
     """(title, body) for the on-call triage ticket.
 
-    PII-free: the submitter email is deliberately omitted because Project #64 is
+    PII-free: the submitter email is deliberately omitted because the ticket is
     org-visible. The on-call looks it up in the private contact-info dataset,
     which the body points to.
     """
@@ -159,7 +168,9 @@ def _resolve_project():
     """Resolve (project_id, status_field_id, option_id) for the configured board.
 
     Done at runtime from PROJECT_ORG / PROJECT_NUMBER / PROJECT_STATUS so the
-    node IDs can never go stale if the board is rebuilt.
+    node IDs can never go stale if the board is rebuilt. When PROJECT_STATUS is
+    empty, the status field/option are returned as None (card added, status
+    untouched).
     """
     data = _graphql(
         """
@@ -182,6 +193,8 @@ def _resolve_project():
     project = (data.get("organization") or {}).get("projectV2")
     if not project:
         raise RuntimeError(f"project #{PROJECT_NUMBER} not found in org {PROJECT_ORG}")
+    if not PROJECT_STATUS:
+        return project["id"], None, None
     field = project.get("field")
     if not field:
         raise RuntimeError(
@@ -207,6 +220,10 @@ def create_triage_ticket(title, body):
     resp.raise_for_status()
     issue = resp.json()
 
+    # No Project configured -> a plain issue is the whole notification.
+    if PROJECT_NUMBER is None:
+        return issue["html_url"]
+
     project_id, status_field_id, option_id = _resolve_project()
     added = _graphql(
         """
@@ -219,22 +236,23 @@ def create_triage_ticket(title, body):
         {"project": project_id, "content": issue["node_id"]},
     )
     item_id = added["addProjectV2ItemById"]["item"]["id"]
-    _graphql(
-        """
-        mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
-          updateProjectV2ItemFieldValue(input: {
-            projectId: $project, itemId: $item, fieldId: $field,
-            value: {singleSelectOptionId: $option}
-          }) { projectV2Item { id } }
-        }
-        """,
-        {
-            "project": project_id,
-            "item": item_id,
-            "field": status_field_id,
-            "option": option_id,
-        },
-    )
+    if option_id is not None:
+        _graphql(
+            """
+            mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $project, itemId: $item, fieldId: $field,
+                value: {singleSelectOptionId: $option}
+              }) { projectV2Item { id } }
+            }
+            """,
+            {
+                "project": project_id,
+                "item": item_id,
+                "field": status_field_id,
+                "option": option_id,
+            },
+        )
     return issue["html_url"]
 
 
@@ -282,9 +300,11 @@ def notify_submission(
         "submit_time": str(submit_time) if submit_time is not None else None,
     }
 
-    if not GITHUB_TOKEN:
+    if not GITHUB_TOKEN or not ISSUE_REPO:
         logger.info(
-            "notifier: no GitHub token; skipping triage ticket for %s", submission_name
+            "notifier: not configured (need NOTIFIER_GITHUB_TOKEN + "
+            "NOTIFIER_GITHUB_REPO); skipping ticket for %s",
+            submission_name,
         )
         return None
 
@@ -303,21 +323,19 @@ def notify_submission(
 
 
 if __name__ == "__main__":
-    # Local smoke test: fire a real triage ticket to verify token + board wiring
-    # end-to-end without going through the Space. Requires NOTIFIER_GITHUB_TOKEN
-    # (or GITHUB_TOKEN) in the environment.
-    #
-    # This opens a REAL issue and a REAL card. To avoid posting to the live
-    # on-call board, point it at a throwaway repo/board via env, e.g.:
+    # Local smoke test: fire a real ticket to verify the token + board wiring
+    # end-to-end without going through the Space. Requires at least a token and a
+    # repo in the environment; add a Project to also exercise the board path. It
+    # opens a REAL issue (and a REAL card if a Project is set), so point it at a
+    # throwaway repo/board you own and close the test ticket afterwards:
     #
     #   NOTIFIER_GITHUB_TOKEN=... \
     #   NOTIFIER_GITHUB_REPO=<you>/<sandbox-repo> \
-    #   NOTIFIER_PROJECT_ORG=<you> NOTIFIER_PROJECT_NUMBER=<n> \
+    #   NOTIFIER_PROJECT_NUMBER=<n> \
     #   NOTIFIER_PROJECT_STATUS="<a status option on that board>" \
     #   python submission_notifier.py
     #
-    # With the defaults it files against allenai/scholar + Project #64 -- only do
-    # that as a deliberate production check, and close the test card afterwards.
+    # Omit NOTIFIER_PROJECT_NUMBER to test the plain-issue path only.
     logging.basicConfig(level=logging.INFO)
     url = notify_submission(
         submission_dataset="allenai/asta-bench-submissions",
