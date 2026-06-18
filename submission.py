@@ -23,6 +23,7 @@ from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
 import aliases
+import submission_notifier
 from config import (
     CONFIG_NAME,
     CONTACT_DATASET,
@@ -281,6 +282,30 @@ def add_new_eval(
         )
 
     logger.info(f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split.")
+
+    # Notify the on-call of a new web-form submission (Slack + a triage ticket on
+    # the S2 Forever / On-call board). add_new_eval runs only when the web form
+    # is used, so reaching here is exactly the on-call-actionable event --
+    # rescoring and programmatic dataset writes never call this function.
+    # notify_submission is best-effort and never raises, but we still guard so a
+    # notifier problem can never fail or block the user's submission.
+    try:
+        submission_notifier.notify_submission(
+            submission_dataset=SUBMISSION_DATASET,
+            config_name=CONFIG_NAME,
+            split=val_or_test,
+            submission_name=submission_name,
+            agent_name=agent_name,
+            agent_description=agent_description,
+            agent_url=agent_url,
+            openness=openness,
+            tool_usage=degree_of_control,
+            username=profile.username,
+            submit_time=submission_time,
+        )
+    except Exception as e:  # pragma: no cover - defensive; notify is best-effort
+        logger.warning(f"agent {agent_name}: submission notification failed: {e}")
+
     return (
         "",                                                 # message
         gr.update(visible=False),                           # error_modal
