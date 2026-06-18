@@ -11,7 +11,7 @@ allenai/asta-bench-leaderboard#119.
 The notifier fires **in-process from the leaderboard app**, not from a webhook.
 `submission.add_new_eval` — the function the web form runs — calls
 `submission_notifier.notify_submission(...)` right after a submission's files are
-uploaded, passing the agent metadata it already has in hand.
+uploaded, passing the submission coordinates it already has in hand.
 
 `add_new_eval` runs **only when the web form is used**, which is what makes it the
 right trigger: rescoring writes the *results* datasets, programmatic/API writes
@@ -20,17 +20,18 @@ don't go through the form, and users who self-publish results never call it. So
 OAuth-verified username rather than something parsed from a commit message.
 
 For each submission it opens an issue on the configured repo and, if a Project is
-configured, attaches the issue to that board and sets a status column. The
-Project's node IDs are resolved **at runtime** from the org + number, so they
-don't go stale if the board is rebuilt.
+configured, attaches the issue to that board and sets a status column. The issue
+is intentionally minimal — the submitter's HF username and the submission's
+dataset path (the same line that appears on the HF dataset commit), plus a link
+to the submission folder. The Project's node IDs are resolved **at runtime** from
+the org + number, so they don't go stale if the board is rebuilt.
 
 `notify_submission` is **best-effort**: any failure is logged (`notifier: ...` in
 the Space logs) but never raised, so a notifier problem can never block or fail a
 user's submission.
 
 **Privacy:** the submitter's email is **never** placed in the (org-visible)
-ticket. It stays only in the private contact-info dataset, which the ticket body
-points to.
+ticket. It stays only in the private contact-info dataset.
 
 ## Configuration
 

@@ -296,13 +296,7 @@ def add_new_eval(
             config_name=CONFIG_NAME,
             split=val_or_test,
             submission_name=submission_name,
-            agent_name=agent_name,
-            agent_description=agent_description,
-            agent_url=agent_url,
-            openness=openness,
-            tool_usage=degree_of_control,
             username=profile.username,
-            submit_time=submission_time,
         )
     except Exception as e:  # pragma: no cover - defensive; notify is best-effort
         logger.warning(f"agent {agent_name}: submission notification failed: {e}")
