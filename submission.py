@@ -23,6 +23,7 @@ from datasets.data_files import EmptyDatasetError
 from huggingface_hub import HfApi
 
 import aliases
+import submission_notifier
 from config import (
     CONFIG_NAME,
     CONTACT_DATASET,
@@ -281,6 +282,20 @@ def add_new_eval(
         )
 
     logger.info(f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split.")
+
+    # Notify reviewers of a new web-form submission by opening a GitHub ticket
+    # if submission notifier is configured; otherwise a no-op.
+    try:
+        submission_notifier.notify_submission(
+            submission_dataset=SUBMISSION_DATASET,
+            config_name=CONFIG_NAME,
+            split=val_or_test,
+            submission_name=submission_name,
+            username=profile.username,
+        )
+    except Exception as e:  # pragma: no cover - defensive; notify is best-effort
+        logger.warning(f"agent {agent_name}: submission notification failed: {e}")
+
     return (
         "",                                                 # message
         gr.update(visible=False),                           # error_modal
