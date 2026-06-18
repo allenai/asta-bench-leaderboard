@@ -5,27 +5,23 @@ leaderboard web form, so external submissions — which require on-call action t
 score and publish — no longer sit unnoticed. Implements
 allenai/asta-bench-leaderboard#119 (parent: allenai/gas2own#86).
 
-When a logged-in user submits through the form, the submission handler fans out
-to:
+When a logged-in user submits through the form, the submission handler opens **a
+triage ticket on the S2 Forever / On-call board**
+([Project #64](https://github.com/orgs/allenai/projects/64)) — the on-call's
+actionable channel and the only notification this sends. A GitHub issue is opened
+on **`allenai/scholar`** (by S2 convention tickets are filed there even when they
+reference code elsewhere), added to the project, and set to the **Triage Needed**
+status so it surfaces to whoever is on-call. A card has a lifecycle (assignable,
+closeable) that a fire-and-forget email did not, and the GitHub API is reachable
+from the Space where an internal Ai2 SMTP relay is not.
 
-- **Slack `#asta-bench`** — ambient awareness: submitter HF username, agent
-  name/description/URL, track/split, openness, tool-usage, timestamp, and a link
-  to the submission folder.
-- **A triage ticket on the S2 Forever / On-call board** ([Project #64](https://github.com/orgs/allenai/projects/64)) —
-  the actionable channel. A GitHub issue is opened on **`allenai/scholar`** (by
-  S2 convention tickets are filed there even when they reference code elsewhere),
-  added to the project, and set to the **Triage Needed** status so it surfaces
-  to whoever is on-call. A card has a lifecycle (assignable, closeable) that a
-  fire-and-forget email did not, and the GitHub API is reachable from the Space
-  where an internal Ai2 SMTP relay is not.
-
-**Privacy:** the submitter's email is **never** posted to Slack and **never**
-placed in the (org-visible) ticket. It remains only in the private contact-info
-dataset, which the ticket points the on-call to.
+**Privacy:** the submitter's email is **never** placed in the (org-visible)
+ticket. It remains only in the private contact-info dataset, which the ticket
+points the on-call to.
 
 **Volume:** web-form submissions land roughly once a month or less, so one
 ticket per submission is intentional and the board stays manageable. Revisit
-(e.g. Slack-only for routine submissions, ticket on a condition) if volume grows.
+(e.g. a ticket only on some condition) if volume grows.
 
 ## How it works
 
@@ -48,11 +44,10 @@ So "the form ran" is exactly the on-call-actionable event, and the submitter
 metadata is first-class in-process data (the OAuth-verified username, the agent
 fields the user typed) rather than something reconstructed from a commit message.
 
-`notify_submission` is **best-effort**: each channel is independent, every
-failure is logged (`notifier: ...` in the Space logs) but never raised, so a
-notifier problem can never fail or block the user's submission. A channel with
-no credentials configured is skipped, so with neither Slack nor GitHub
-configured the call is a silent no-op.
+`notify_submission` is **best-effort**: any failure is logged (`notifier: ...` in
+the Space logs) but never raised, so a notifier problem can never fail or block
+the user's submission. With no GitHub token configured the call is a silent
+no-op.
 
 The triage ticket is created with the REST API (open issue on `allenai/scholar`)
 followed by two GraphQL mutations (`addProjectV2ItemById` to attach it to the
@@ -69,16 +64,13 @@ lives inside the leaderboard app. Go-live is just setting Space secrets.
 ### 1. Space secrets
 
 Set these on the **public leaderboard Space** (Settings → Variables and secrets).
-Configure them on the public Space only: the notifier is a no-op without
-credentials, so the internal Space (which backs the internal-only leaderboard)
-stays silent by simply not having them set.
+Configure them on the public Space only: the notifier is a no-op without a GitHub
+token, so the internal Space (which backs the internal-only leaderboard) stays
+silent by simply not having it set.
 
 | Secret | Required | Notes |
 |---|---|---|
-| `NOTIFIER_GITHUB_TOKEN` | yes (ticket) | GitHub token with **`repo`** + **`project`** scope (classic PAT), or a fine-grained token with **Issues: Read/Write** on `allenai/scholar` and **Projects: Read/Write** on `allenai`. Used to open the issue and add it to the board. **Recommended: reuse the existing `allenai-dev-role` PAT** that `s2-ticket-factory` already uses to file on-call cards — see step 3. Falls back to `GITHUB_TOKEN`. |
-| `SLACK_BOT_TOKEN` | one of these | Bot token with `chat:write`; bot must be invited to `#asta-bench`. |
-| `SLACK_WEBHOOK_URL` | one of these | Incoming-webhook URL for `#asta-bench` (less metadata flexibility). |
-| `NOTIFIER_SLACK_CHANNEL` | no | Defaults to `#asta-bench`. |
+| `NOTIFIER_GITHUB_TOKEN` | yes | GitHub token with **`repo`** + **`project`** scope (classic PAT), or a fine-grained token with **Issues: Read/Write** on `allenai/scholar` and **Projects: Read/Write** on `allenai`. Used to open the issue and add it to the board. **Recommended: reuse the existing `allenai-dev-role` PAT** that `s2-ticket-factory` already uses to file on-call cards — see step 2. Falls back to `GITHUB_TOKEN`. |
 | `NOTIFIER_GITHUB_REPO` | no | Repo to open the issue on. Defaults to `allenai/scholar`. |
 | `NOTIFIER_PROJECT_ORG` | no | Org owning the board. Defaults to `allenai`. |
 | `NOTIFIER_PROJECT_NUMBER` | no | Project number. Defaults to `64` (S2 Forever / On-call). |
@@ -86,16 +78,10 @@ stays silent by simply not having them set.
 
 The GitHub token's owner becomes the issue author, so use a service/bot account
 if you don't want a person's name on every ticket. The recommended source is the
-existing `allenai-dev-role` PAT (see step 3), which already authors the on-call
+existing `allenai-dev-role` PAT (see step 2), which already authors the on-call
 cards filed by `s2-ticket-factory`.
 
-### 2. Slack
-
-Prefer an existing AstaBench Slack app; otherwise create one with the
-`chat:write` scope, install it to the workspace, invite the bot to
-`#asta-bench`, and set `SLACK_BOT_TOKEN`.
-
-### 3. GitHub
+### 2. GitHub
 
 Provision a token (`NOTIFIER_GITHUB_TOKEN`) that can open issues on
 `allenai/scholar` and edit [Project #64](https://github.com/orgs/allenai/projects/64).
@@ -120,12 +106,39 @@ column, set `NOTIFIER_PROJECT_NUMBER` / `NOTIFIER_PROJECT_STATUS` (and
 
 ## Verifying
 
+### Locally (without deploying)
+
+`submission_notifier.py` has a `__main__` smoke test that fires one real triage
+ticket end-to-end, so you can confirm the token + board wiring before go-live:
+
+```bash
+pip install requests
+NOTIFIER_GITHUB_TOKEN=<token> python submission_notifier.py
+```
+
+It opens a **real** issue and a **real** card. To avoid posting to the live
+on-call board while testing, point it at a throwaway repo/board you own:
+
+```bash
+NOTIFIER_GITHUB_TOKEN=<token> \
+NOTIFIER_GITHUB_REPO=<you>/<sandbox-repo> \
+NOTIFIER_PROJECT_ORG=<you> NOTIFIER_PROJECT_NUMBER=<n> \
+NOTIFIER_PROJECT_STATUS="<a status option on that board>" \
+python submission_notifier.py
+```
+
+It prints the created issue URL on success, or a hint to check the logs if no
+token is set. With the defaults it files against `allenai/scholar` + Project #64
+— only run that as a deliberate production check, and close the test card after.
+
+### Through the deployed Space
+
 1. Make a test submission through the public Space's submission form.
-2. Confirm a Slack message in `#asta-bench` and a new card in **Triage Needed**
-   on [Project #64](https://github.com/orgs/allenai/projects/64) (an issue on
+2. Confirm a new card in **Triage Needed** on
+   [Project #64](https://github.com/orgs/allenai/projects/64) (an issue on
    `allenai/scholar`).
-3. Any delivery error is logged to the Space logs (`notifier: ...`) without
-   affecting the submitter's experience.
+3. Any error is logged to the Space logs (`notifier: ...`) without affecting the
+   submitter's experience.
 
 ## Limitations / follow-ups
 

@@ -1,6 +1,6 @@
 """Unit tests for submission_notifier message construction and fan-out.
 
-These are pure-function tests (no real network / Slack / GitHub). The CI workflow
+These are pure-function tests (no real network / GitHub). The CI workflow
 only runs tests/integration, but these are runnable locally with:
 
     pytest tests/unit/ -v
@@ -36,24 +36,6 @@ def test_submission_folder_url():
     )
 
 
-def test_slack_payload_omits_email_and_targets_channel():
-    payload = sn.build_slack_payload(COORDS, META)
-    assert payload["channel"] == sn.SLACK_CHANNEL
-    text = payload["text"]
-    assert "RoboPhD" in text
-    assert "alice" in text
-    assert "test" in text
-    # Privacy: the submitter email must never appear in Slack.
-    assert "@" not in text or "asta" not in text  # no email address leaked
-    assert "alice@" not in text
-
-
-def test_slack_payload_falls_back_to_coords_without_metadata():
-    payload = sn.build_slack_payload(COORDS, {})
-    # Folder name is used as the agent-name fallback.
-    assert "alice_RoboPhD" in payload["text"]
-
-
 def test_issue_title_and_body_carry_metadata():
     title, body = sn.build_issue(COORDS, META)
     # Title carries agent name + split so the board card is self-describing.
@@ -83,12 +65,10 @@ def test_issue_falls_back_to_coords_without_metadata():
 
 
 def test_notify_submission_noop_when_unconfigured(monkeypatch):
-    # With neither Slack nor GitHub configured, notify is a silent no-op and
-    # delivers nothing -- and must not raise (it runs inside add_new_eval).
-    monkeypatch.delenv("SLACK_BOT_TOKEN", raising=False)
-    monkeypatch.delenv("SLACK_WEBHOOK_URL", raising=False)
+    # With no GitHub token configured, notify is a silent no-op: it returns None
+    # and must not raise (it runs inside add_new_eval).
     monkeypatch.setattr(sn, "GITHUB_TOKEN", None)
-    delivered = sn.notify_submission(
+    result = sn.notify_submission(
         submission_dataset="allenai/asta-bench-submissions",
         config_name="1.0.0-dev1",
         split="test",
@@ -97,27 +77,23 @@ def test_notify_submission_noop_when_unconfigured(monkeypatch):
         username="alice",
         submit_time="2026-05-14T09:30:00+00:00",
     )
-    assert delivered == []
+    assert result is None
 
 
-def test_notify_submission_swallows_channel_errors(monkeypatch):
-    # A failing channel is logged, not raised, and does not block the other.
-    monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
+def test_notify_submission_files_ticket_with_metadata(monkeypatch):
+    # When configured, notify opens a ticket and returns its URL.
     monkeypatch.setattr(sn, "GITHUB_TOKEN", "ghp_test")
-
-    def boom_slack(_payload):
-        raise RuntimeError("slack down")
 
     calls = {}
 
     def fake_ticket(title, body):
         calls["title"] = title
+        calls["body"] = body
         return "https://github.com/allenai/scholar/issues/1"
 
-    monkeypatch.setattr(sn, "send_slack", boom_slack)
     monkeypatch.setattr(sn, "create_triage_ticket", fake_ticket)
 
-    delivered = sn.notify_submission(
+    result = sn.notify_submission(
         submission_dataset="allenai/asta-bench-submissions",
         config_name="1.0.0-dev1",
         split="test",
@@ -126,6 +102,27 @@ def test_notify_submission_swallows_channel_errors(monkeypatch):
         username="alice",
         submit_time="2026-05-14T09:30:00+00:00",
     )
-    # Slack failed, ticket succeeded -> only the ticket is reported delivered.
-    assert delivered == ["ticket"]
+    assert result == "https://github.com/allenai/scholar/issues/1"
     assert "RoboPhD" in calls["title"]
+
+
+def test_notify_submission_swallows_ticket_errors(monkeypatch):
+    # A ticket failure is logged, not raised, and returns None so the submission
+    # is never blocked.
+    monkeypatch.setattr(sn, "GITHUB_TOKEN", "ghp_test")
+
+    def boom_ticket(_title, _body):
+        raise RuntimeError("github down")
+
+    monkeypatch.setattr(sn, "create_triage_ticket", boom_ticket)
+
+    result = sn.notify_submission(
+        submission_dataset="allenai/asta-bench-submissions",
+        config_name="1.0.0-dev1",
+        split="test",
+        submission_name="alice_RoboPhD_2026-05-14_09-30-00",
+        agent_name="RoboPhD",
+        username="alice",
+        submit_time="2026-05-14T09:30:00+00:00",
+    )
+    assert result is None

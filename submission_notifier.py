@@ -15,29 +15,27 @@ webhook -- the form is the precise signal, and the submitter metadata is
 first-class in-process data rather than something reconstructed from a commit
 message after the fact.
 
-On each web-form submission it fans out to:
+On each web-form submission it opens a triage ticket on the **S2 Forever /
+On-call board** (GitHub Project #64): a GitHub issue opened on ``allenai/scholar``
+(by S2 convention, tickets are filed on ``scholar`` even when they reference code
+elsewhere), added to the project and set to the ``Triage Needed`` status so it
+lands in front of whoever is on-call.
 
-  * Slack ``#asta-bench`` -- ambient awareness, and
-  * a triage ticket on the **S2 Forever / On-call board** (GitHub Project #64):
-    a GitHub issue opened on ``allenai/scholar`` (by S2 convention, tickets are
-    filed on ``scholar`` even when they reference code elsewhere), added to the
-    project and set to the ``Triage Needed`` status so it lands in front of
-    whoever is on-call.
+The ticket is the on-call's actionable channel and the only notification this
+module sends. The GitHub API is reachable from the HF Space (an internal Ai2
+SMTP relay is not), and a card on the board has a lifecycle (assignable,
+closeable) a fire-and-forget email did not. Submission volume is low (roughly one
+per month or fewer), so one ticket per submission is intentional and manageable;
+revisit if volume grows.
 
-The ticket is the actionable channel; the GitHub API is reachable from the HF
-Space (an internal Ai2 SMTP relay is not), and a card on the board has a
-lifecycle (assignable, closeable) a fire-and-forget email did not. Submission
-volume is low (roughly one per month or fewer), so one ticket per submission is
-intentional and manageable; revisit if volume grows.
+**Best-effort.** ``notify_submission`` never raises: any GitHub failure is logged
+but does not fail or block the user's submission. With no GitHub token configured
+it is a silent no-op -- which is how the notifier is kept *off* on the internal
+Space and in CI (only the public Space gets the secret).
 
-**Best-effort.** ``notify_submission`` never raises: any Slack/GitHub failure is
-logged but does not fail or block the user's submission. With no Slack or GitHub
-credentials configured it is a silent no-op -- which is how the notifier is kept
-*off* on the internal Space and in CI (only the public Space gets the secrets).
-
-Privacy: the submitter's email is **never** posted to Slack and **never** put in
-the (org-visible) ticket. It remains only in the private contact-info dataset,
-which the ticket points the on-call to.
+Privacy: the submitter's email is **never** put in the (org-visible) ticket. It
+remains only in the private contact-info dataset, which the ticket points the
+on-call to.
 
 Deployment / secret wiring is documented in ``docs/submission-notifier.md``.
 """
@@ -50,8 +48,6 @@ import requests
 logger = logging.getLogger(__name__)
 
 # --- Configuration (all via env / HF Space secrets) ------------------------
-
-SLACK_CHANNEL = os.getenv("NOTIFIER_SLACK_CHANNEL", "#asta-bench")
 
 # GitHub triage ticket. By S2 convention tickets are filed on allenai/scholar
 # even when the code lives elsewhere; the issue is then added to the S2 Forever /
@@ -87,23 +83,6 @@ def _field(meta, *keys, default="(not provided)"):
         if v not in (None, ""):
             return v
     return default
-
-
-def build_slack_payload(coords, meta):
-    """Slack ``chat.postMessage`` body. Never includes the submitter email."""
-    agent_name = _field(meta, "agent_name", default=coords["name"])
-    lines = [
-        f"*New AstaBench submission: {agent_name}*",
-        f"• *Submitter (HF):* `{_field(meta, 'username', default=coords['username'])}`",
-        f"• *Track / split:* {coords['split']} (config `{coords['config']}`)",
-        f"• *Description:* {_field(meta, 'agent_description')}",
-        f"• *Agent URL:* {_field(meta, 'agent_url')}",
-        f"• *Openness:* {_field(meta, 'openness')}",
-        f"• *Tool usage:* {_field(meta, 'tool_usage', 'degree_of_control')}",
-        f"• *Submitted:* {_field(meta, 'submit_time')}",
-        f"• *Submission folder:* {submission_folder_url(coords)}",
-    ]
-    return {"channel": SLACK_CHANNEL, "text": "\n".join(lines)}
 
 
 def build_issue(coords, meta):
@@ -144,31 +123,6 @@ def build_issue(coords, meta):
 
 
 # --- Delivery ---------------------------------------------------------------
-
-
-def _slack_configured():
-    return bool(os.getenv("SLACK_BOT_TOKEN") or os.getenv("SLACK_WEBHOOK_URL"))
-
-
-def send_slack(payload):
-    token = os.getenv("SLACK_BOT_TOKEN")
-    if token:
-        resp = requests.post(
-            "https://slack.com/api/chat.postMessage",
-            headers={"Authorization": f"Bearer {token}"},
-            json=payload,
-            timeout=15,
-        )
-        data = resp.json()
-        if not data.get("ok"):
-            raise RuntimeError(f"Slack API error: {data.get('error')}")
-        return
-    url = os.getenv("SLACK_WEBHOOK_URL")
-    if url:
-        resp = requests.post(url, json={"text": payload["text"]}, timeout=15)
-        resp.raise_for_status()
-        return
-    raise RuntimeError("No SLACK_BOT_TOKEN or SLACK_WEBHOOK_URL configured")
 
 
 _GITHUB_API = "https://api.github.com"
@@ -301,16 +255,15 @@ def notify_submission(
     username=None,
     submit_time=None,
 ):
-    """Fan out a new web-form submission to Slack + an on-call triage ticket.
+    """Open an on-call triage ticket for a new web-form submission.
 
     Called in-process from ``submission.add_new_eval`` after a successful upload,
-    with the submission metadata it already has in hand. Returns the list of
-    channels that delivered (e.g. ``["slack", "ticket"]``).
+    with the submission metadata it already has in hand. Returns the issue URL on
+    success, or ``None`` when unconfigured or on failure.
 
-    Best-effort: each channel is independent, every failure is logged but never
-    raised, so a notifier problem can never fail or block the user's submission.
-    A channel with no credentials configured is skipped, so with neither Slack
-    nor GitHub configured (the internal Space, CI) this is a silent no-op.
+    Best-effort: every failure is logged but never raised, so a notifier problem
+    can never fail or block the user's submission. With no GitHub token
+    configured (the internal Space, CI) this is a silent no-op.
     """
     coords = {
         "repo": submission_dataset,
@@ -329,35 +282,58 @@ def notify_submission(
         "submit_time": str(submit_time) if submit_time is not None else None,
     }
 
-    delivered = []
-    if _slack_configured():
-        try:
-            send_slack(build_slack_payload(coords, meta))
-            delivered.append("slack")
-        except Exception as e:
-            logger.error(
-                "notifier: Slack delivery failed for %s: %s", submission_name, e
-            )
-    else:
-        logger.info(
-            "notifier: no Slack credentials; skipping Slack for %s", submission_name
-        )
-
-    if GITHUB_TOKEN:
-        try:
-            title, body = build_issue(coords, meta)
-            issue_url = create_triage_ticket(title, body)
-            logger.info(
-                "notifier: opened triage ticket %s for %s", issue_url, submission_name
-            )
-            delivered.append("ticket")
-        except Exception as e:
-            logger.error(
-                "notifier: triage ticket creation failed for %s: %s", submission_name, e
-            )
-    else:
+    if not GITHUB_TOKEN:
         logger.info(
             "notifier: no GitHub token; skipping triage ticket for %s", submission_name
         )
+        return None
 
-    return delivered
+    try:
+        title, body = build_issue(coords, meta)
+        issue_url = create_triage_ticket(title, body)
+        logger.info(
+            "notifier: opened triage ticket %s for %s", issue_url, submission_name
+        )
+        return issue_url
+    except Exception as e:
+        logger.error(
+            "notifier: triage ticket creation failed for %s: %s", submission_name, e
+        )
+        return None
+
+
+if __name__ == "__main__":
+    # Local smoke test: fire a real triage ticket to verify token + board wiring
+    # end-to-end without going through the Space. Requires NOTIFIER_GITHUB_TOKEN
+    # (or GITHUB_TOKEN) in the environment.
+    #
+    # This opens a REAL issue and a REAL card. To avoid posting to the live
+    # on-call board, point it at a throwaway repo/board via env, e.g.:
+    #
+    #   NOTIFIER_GITHUB_TOKEN=... \
+    #   NOTIFIER_GITHUB_REPO=<you>/<sandbox-repo> \
+    #   NOTIFIER_PROJECT_ORG=<you> NOTIFIER_PROJECT_NUMBER=<n> \
+    #   NOTIFIER_PROJECT_STATUS="<a status option on that board>" \
+    #   python submission_notifier.py
+    #
+    # With the defaults it files against allenai/scholar + Project #64 -- only do
+    # that as a deliberate production check, and close the test card afterwards.
+    logging.basicConfig(level=logging.INFO)
+    url = notify_submission(
+        submission_dataset="allenai/asta-bench-submissions",
+        config_name="1.0.0-dev1",
+        split="test",
+        submission_name="smoketest_LocalAgent_2026-06-18_00-00-00",
+        agent_name="LocalAgent (notifier smoke test)",
+        agent_description="Local verification of the submission notifier -- safe to close.",
+        agent_url="https://example.com",
+        openness="Open Source",
+        tool_usage="Standard",
+        username="local-tester",
+        submit_time="2026-06-18T00:00:00+00:00",
+    )
+    print(
+        f"triage ticket: {url}"
+        if url
+        else "no ticket created -- set NOTIFIER_GITHUB_TOKEN and check the logs above"
+    )

@@ -283,8 +283,8 @@ def add_new_eval(
 
     logger.info(f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split.")
 
-    # Notify the on-call of a new web-form submission (Slack + a triage ticket on
-    # the S2 Forever / On-call board). add_new_eval runs only when the web form
+    # Notify the on-call of a new web-form submission by opening a triage ticket
+    # on the S2 Forever / On-call board. add_new_eval runs only when the web form
     # is used, so reaching here is exactly the on-call-actionable event --
     # rescoring and programmatic dataset writes never call this function.
     # notify_submission is best-effort and never raises, but we still guard so a
