@@ -4,7 +4,7 @@ Called in-process from ``submission.add_new_eval`` after a submission uploads. I
 opens an issue on a configured repo and optionally attaches it to a GitHub Project
 board. Where the ticket goes is set entirely via environment / Space secrets (see
 Configuration); with no token/repo set it is a silent no-op, and ``notify_submission``
-is best-effort and never raises. See ``docs/submission-notifier.md`` for deployment.
+is best-effort and never raises.
 """
 
 import logging
@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 #                            back to GITHUB_TOKEN. Without it (or the repo), no-op.
 #   NOTIFIER_GITHUB_REPO     "owner/repo" to open the issue on. Without it, no-op.
 #   NOTIFIER_PROJECT_NUMBER  optional Project to attach the issue to; omit for a
-#                            plain issue (no board).
-#   NOTIFIER_PROJECT_ORG     org that owns the Project; defaults to the repo owner.
+#                            plain issue (no board). The Project is assumed to be
+#                            owned by the same org as NOTIFIER_GITHUB_REPO.
 #   NOTIFIER_PROJECT_STATUS  status column to set; defaults to "Triage Needed".
 #                            Empty -> add the card without setting status.
 GITHUB_TOKEN = os.getenv("NOTIFIER_GITHUB_TOKEN") or os.getenv("GITHUB_TOKEN")
@@ -28,9 +28,6 @@ ISSUE_REPO = os.getenv("NOTIFIER_GITHUB_REPO", "")
 
 _project_number = os.getenv("NOTIFIER_PROJECT_NUMBER")
 PROJECT_NUMBER = int(_project_number) if _project_number else None
-PROJECT_ORG = os.getenv("NOTIFIER_PROJECT_ORG") or (
-    ISSUE_REPO.split("/", 1)[0] if "/" in ISSUE_REPO else ""
-)
 PROJECT_STATUS = os.getenv("NOTIFIER_PROJECT_STATUS", "Triage Needed")
 
 
@@ -51,15 +48,15 @@ def build_issue(coords):
         f"hf://datasets/{coords['repo']}/{coords['config']}/"
         f"{coords['split']}/{coords['name']}"
     )
-    title = f"AstaBench submission from {coords['username']} ({coords['split']})"
+    title = f"AstaBench submission from {coords['username']}"
     body = "\n".join(
         [
             f'Submission from hf user "{coords["username"]}" to "{dataset_url}"',
             "",
-            f"Folder: {submission_folder_url(coords)}",
-            "",
-            "Filed automatically by the leaderboard submission notifier; "
-            "needs on-call review.",
+            "Further instructions at "
+            "[Asta Bench Leaderboard Submissions Review]"
+            "(https://github.com/allenai/nora/wiki/"
+            "Asta-Bench-Leaderboard-Submissions-Review).",
         ]
     )
     return title, body
@@ -101,11 +98,12 @@ def _graphql(query, variables):
 def _resolve_project():
     """Resolve (project_id, status_field_id, option_id) for the configured board.
 
-    Done at runtime from PROJECT_ORG / PROJECT_NUMBER / PROJECT_STATUS so the
+    Done at runtime from the repo owner / PROJECT_NUMBER / PROJECT_STATUS so the
     node IDs can never go stale if the board is rebuilt. When PROJECT_STATUS is
     empty, the status field/option are returned as None (card added, status
     untouched).
     """
+    org = ISSUE_REPO.split("/", 1)[0]
     data = _graphql(
         """
         query($org: String!, $number: Int!) {
@@ -122,11 +120,11 @@ def _resolve_project():
           }
         }
         """,
-        {"org": PROJECT_ORG, "number": PROJECT_NUMBER},
+        {"org": org, "number": PROJECT_NUMBER},
     )
     project = (data.get("organization") or {}).get("projectV2")
     if not project:
-        raise RuntimeError(f"project #{PROJECT_NUMBER} not found in org {PROJECT_ORG}")
+        raise RuntimeError(f"project #{PROJECT_NUMBER} not found in org {org}")
     if not PROJECT_STATUS:
         return project["id"], None, None
     field = project.get("field")
@@ -238,32 +236,3 @@ def notify_submission(
             "notifier: triage ticket creation failed for %s: %s", submission_name, e
         )
         return None
-
-
-if __name__ == "__main__":
-    # Local smoke test: fire a real ticket to verify the token + board wiring
-    # end-to-end without going through the Space. Requires at least a token and a
-    # repo in the environment; add a Project to also exercise the board path. It
-    # opens a REAL issue (and a REAL card if a Project is set), so point it at a
-    # throwaway repo/board you own and close the test ticket afterwards:
-    #
-    #   NOTIFIER_GITHUB_TOKEN=... \
-    #   NOTIFIER_GITHUB_REPO=<you>/<sandbox-repo> \
-    #   NOTIFIER_PROJECT_NUMBER=<n> \
-    #   NOTIFIER_PROJECT_STATUS="<a status option on that board>" \
-    #   python submission_notifier.py
-    #
-    # Omit NOTIFIER_PROJECT_NUMBER to test the plain-issue path only.
-    logging.basicConfig(level=logging.INFO)
-    url = notify_submission(
-        submission_dataset="allenai/asta-bench-submissions",
-        config_name="1.0.0-dev1",
-        split="test",
-        submission_name="smoketest_LocalAgent_2026-06-18_00-00-00",
-        username="local-tester",
-    )
-    print(
-        f"triage ticket: {url}"
-        if url
-        else "no ticket created -- set NOTIFIER_GITHUB_TOKEN and check the logs above"
-    )
