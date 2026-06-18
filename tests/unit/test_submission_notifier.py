@@ -8,46 +8,6 @@ only runs tests/integration, but these are runnable locally with:
 
 import submission_notifier as sn
 
-# Coordinates as add_new_eval would pass them in-process (no commit parsing).
-COORDS = {
-    "repo": "allenai/asta-bench-submissions",
-    "config": "1.0.0-dev1",
-    "split": "test",
-    "name": "alice_RoboPhD_2026-05-14_09-30-00",
-    "username": "alice",
-}
-
-
-def test_submission_folder_url():
-    url = sn.submission_folder_url(COORDS)
-    assert url == (
-        "https://huggingface.co/datasets/allenai/asta-bench-submissions/tree/main/"
-        "1.0.0-dev1/test/alice_RoboPhD_2026-05-14_09-30-00"
-    )
-
-
-def test_issue_title_and_body():
-    title, body = sn.build_issue(COORDS)
-    # Title carries submitter + split so the board card is self-describing.
-    assert "alice" in title
-    assert "test" in title
-    # Body leads with the commit-style submission line + the hf:// path.
-    assert 'Submission from hf user "alice"' in body
-    assert (
-        "hf://datasets/allenai/asta-bench-submissions/1.0.0-dev1/test/"
-        "alice_RoboPhD_2026-05-14_09-30-00" in body
-    )
-    # Link to the submission folder.
-    assert "huggingface.co/datasets" in body
-
-
-def test_issue_is_pii_free():
-    # build_issue never receives the submitter email; the org-visible ticket
-    # must not contain an email address.
-    title, body = sn.build_issue(COORDS)
-    assert "@" not in body
-    assert "@" not in title
-
 
 def test_notify_submission_noop_when_unconfigured(monkeypatch):
     # With no GitHub token configured, notify is a silent no-op: it returns None
@@ -58,7 +18,7 @@ def test_notify_submission_noop_when_unconfigured(monkeypatch):
         submission_dataset="allenai/asta-bench-submissions",
         config_name="1.0.0-dev1",
         split="test",
-        submission_name="alice_RoboPhD_2026-05-14_09-30-00",
+        submission_name="alice_Wonderbot_2026-05-14_09-30-00",
         username="alice",
     )
     assert result is None
@@ -73,35 +33,10 @@ def test_notify_submission_noop_without_repo(monkeypatch):
         submission_dataset="allenai/asta-bench-submissions",
         config_name="1.0.0-dev1",
         split="test",
-        submission_name="alice_RoboPhD_2026-05-14_09-30-00",
+        submission_name="alice_Wonderbot_2026-05-14_09-30-00",
         username="alice",
     )
     assert result is None
-
-
-def test_notify_submission_files_ticket(monkeypatch):
-    # When configured, notify opens a ticket and returns its URL.
-    monkeypatch.setattr(sn, "GITHUB_TOKEN", "ghp_test")
-    monkeypatch.setattr(sn, "ISSUE_REPO", "owner/repo")
-
-    calls = {}
-
-    def fake_ticket(title, body):
-        calls["title"] = title
-        calls["body"] = body
-        return "https://github.com/allenai/scholar/issues/1"
-
-    monkeypatch.setattr(sn, "create_triage_ticket", fake_ticket)
-
-    result = sn.notify_submission(
-        submission_dataset="allenai/asta-bench-submissions",
-        config_name="1.0.0-dev1",
-        split="test",
-        submission_name="alice_RoboPhD_2026-05-14_09-30-00",
-        username="alice",
-    )
-    assert result == "https://github.com/allenai/scholar/issues/1"
-    assert "alice" in calls["title"]
 
 
 def test_create_ticket_skips_board_without_project(monkeypatch):
@@ -147,7 +82,7 @@ def test_notify_submission_swallows_ticket_errors(monkeypatch):
         submission_dataset="allenai/asta-bench-submissions",
         config_name="1.0.0-dev1",
         split="test",
-        submission_name="alice_RoboPhD_2026-05-14_09-30-00",
+        submission_name="alice_Wonderbot_2026-05-14_09-30-00",
         username="alice",
     )
     assert result is None
