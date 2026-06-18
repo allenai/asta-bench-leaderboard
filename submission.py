@@ -284,12 +284,7 @@ def add_new_eval(
     logger.info(f"Agent '{agent_name}' submitted successfully by '{username}' to '{val_or_test}' split.")
 
     # Notify reviewers of a new web-form submission by opening a GitHub ticket
-    # (see submission_notifier / docs/submission-notifier.md). add_new_eval runs
-    # only when the web form is used, so reaching here is exactly the actionable
-    # event -- rescoring and programmatic dataset writes never call this function.
-    # notify_submission is best-effort and never raises (and is a no-op unless the
-    # Space sets its secrets), but we still guard so a notifier problem can never
-    # fail or block the user's submission.
+    # if submission notifier is configured; otherwise a no-op.
     try:
         submission_notifier.notify_submission(
             submission_dataset=SUBMISSION_DATASET,
