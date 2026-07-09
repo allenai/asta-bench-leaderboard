@@ -797,7 +797,11 @@ def get_full_leaderboard_data(split: str) -> tuple[pd.DataFrame, dict]:
     """
     viewer_or_data, raw_tag_map = get_leaderboard_viewer_instance(split)
 
-    if isinstance(viewer_or_data, (LeaderboardViewer, DummyViewer)):
+    if isinstance(viewer_or_data, DummyViewer):
+        # DummyViewer indicates an error occurred - return empty data
+        return pd.DataFrame(), {}
+
+    if isinstance(viewer_or_data, LeaderboardViewer):
         raw_df, _ = viewer_or_data._load()
         if raw_df.empty:
             return pd.DataFrame(), {}
