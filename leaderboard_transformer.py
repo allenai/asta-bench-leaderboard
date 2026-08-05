@@ -87,11 +87,6 @@ ORDER_MAP = {
 }
 
 
-def _safe_round(value, digits=3):
-    """Rounds a number if it's a valid float/int, otherwise returns it as is."""
-    return round(value, digits) if isinstance(value, (float, int)) and pd.notna(value) else value
-
-
 def _pretty_column_name(raw_col: str) -> str:
     """
     Takes a raw column name from the DataFrame and returns a "pretty" version.
@@ -172,11 +167,12 @@ def create_pretty_tag_map(raw_tag_map: dict, name_map: dict) -> dict:
 
 def transform_raw_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Transforms a raw leaderboard DataFrame into a presentation-ready format.
+    Renames raw leaderboard columns without changing metric precision.
 
-    This function performs two main actions:
-    1. Rounds all numeric metric values (columns containing 'score' or 'cost').
-    2. Renames all columns to a "pretty", human-readable format.
+    Score and cost values must remain at full precision here because downstream
+    calculations (including Pareto-frontier membership) consume this DataFrame.
+    Display-only rounding happens later in ``format_score_column``,
+    ``format_cost_column``, and the plot hover formatter.
     Args:
         raw_df (pd.DataFrame): The DataFrame with raw data and column names
                                like 'agent_name', 'overall/score', 'tag/code/cost'.
@@ -190,16 +186,12 @@ def transform_raw_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     # Create the mapping for pretty column names
     pretty_cols_map = {col: _pretty_column_name(col) for col in df.columns}
 
-    # Rename the columns and return the new DataFrame
+    # Rename columns, but retain the raw metric values for all calculations.
     transformed_df = df.rename(columns=pretty_cols_map)
-    # Apply safe rounding to all metric columns
-    for col in transformed_df.columns:
-        if 'Score' in col or 'Cost' in col:
-            transformed_df[col] = transformed_df[col].apply(_safe_round)
 
     transformed_df = _disambiguate_duplicate_agents(transformed_df)
 
-    logger.info("Raw DataFrame transformed: numbers rounded and columns renamed.")
+    logger.info("Raw DataFrame transformed: columns renamed; metric precision retained.")
     return transformed_df
 
 
@@ -463,13 +455,21 @@ def _plot_scatter_plotly(
     if x_col_to_use and y_col_to_use:
         sorted_data = data_plot.sort_values(by=[x_col_to_use, y_col_to_use], ascending=[True, False])
         frontier_points = []
-        max_score_so_far = float('-inf')
+        # Best score reachable at a *strictly* lower cost than the current group.
+        best_below = float('-inf')
 
-        for _, row in sorted_data.iterrows():
-            score = row[y_col_to_use]
-            if score >= max_score_so_far:
-                frontier_points.append({'x': row[x_col_to_use], 'y': score})
-                max_score_so_far = score
+        # Group by cost so equal-cost points are compared as a set, not against
+        # each other. A point is on the frontier iff its score beats every
+        # strictly-cheaper point. Two points equal on *both* axes are mutually
+        # non-dominated, so both belong on the frontier; a point below its own
+        # cost group's max is dominated by a same-cost, higher-score point.
+        # (Testing score > running-max as we sweep individual points would wrongly
+        # drop one of two equal-cost / equal-score co-optimal points.)
+        for _, group in sorted_data.groupby(x_col_to_use, sort=True):
+            group_max = group[y_col_to_use].max()
+            if group_max > best_below:
+                frontier_points.append({'x': group[x_col_to_use].iloc[0], 'y': group_max})
+            best_below = max(best_below, group_max)
 
         if frontier_points:
             frontier_df = pd.DataFrame(frontier_points)
@@ -674,12 +674,22 @@ def get_pareto_df(data):
     frontier_data = frontier_data.sort_values(by=[x_col, y_col], ascending=[True, False])
 
     pareto_points = []
-    max_score_at_cost = -np.inf
+    # Best score reachable at a *strictly* lower cost than the current group.
+    best_below = -np.inf
 
-    for _, row in frontier_data.iterrows():
-        if row[y_col] >= max_score_at_cost:
-            pareto_points.append(row)
-            max_score_at_cost = row[y_col]
+    # Group by cost so equal-cost rows are judged as a set. A row is on the
+    # frontier (gets a trophy) iff its score beats every strictly-cheaper row.
+    # Rows tied at their cost group's max score are equal on both axes, hence
+    # mutually non-dominated -> all get a trophy; rows below the group max are
+    # dominated by a same-cost, higher-score row and get none. Sweeping row by
+    # row with score > running-max would instead drop one of two equal-cost /
+    # equal-score co-optimal rows, which is why we compare against best_below.
+    for _, group in frontier_data.groupby(x_col, sort=True):
+        group_max = group[y_col].max()
+        if group_max > best_below:
+            for _, row in group[group[y_col] == group_max].iterrows():
+                pareto_points.append(row)
+        best_below = max(best_below, group_max)
 
     return pd.DataFrame(pareto_points)
 
