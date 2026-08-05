@@ -463,17 +463,21 @@ def _plot_scatter_plotly(
     if x_col_to_use and y_col_to_use:
         sorted_data = data_plot.sort_values(by=[x_col_to_use, y_col_to_use], ascending=[True, False])
         frontier_points = []
-        max_score_so_far = float('-inf')
+        # Best score reachable at a *strictly* lower cost than the current group.
+        best_below = float('-inf')
 
-        for _, row in sorted_data.iterrows():
-            score = row[y_col_to_use]
-            # Strict '>': points are visited in ascending-cost order, so a later
-            # point that only *ties* the running-max score is strictly dominated
-            # (same score, higher cost) and must be excluded from the frontier.
-            # Using '>=' here wrongly kept those dominated ties on the frontier.
-            if score > max_score_so_far:
-                frontier_points.append({'x': row[x_col_to_use], 'y': score})
-                max_score_so_far = score
+        # Group by cost so equal-cost points are compared as a set, not against
+        # each other. A point is on the frontier iff its score beats every
+        # strictly-cheaper point. Two points equal on *both* axes are mutually
+        # non-dominated, so both belong on the frontier; a point below its own
+        # cost group's max is dominated by a same-cost, higher-score point.
+        # (Testing score > running-max as we sweep individual points would wrongly
+        # drop one of two equal-cost / equal-score co-optimal points.)
+        for _, group in sorted_data.groupby(x_col_to_use, sort=True):
+            group_max = group[y_col_to_use].max()
+            if group_max > best_below:
+                frontier_points.append({'x': group[x_col_to_use].iloc[0], 'y': group_max})
+            best_below = max(best_below, group_max)
 
         if frontier_points:
             frontier_df = pd.DataFrame(frontier_points)
@@ -678,15 +682,22 @@ def get_pareto_df(data):
     frontier_data = frontier_data.sort_values(by=[x_col, y_col], ascending=[True, False])
 
     pareto_points = []
-    max_score_at_cost = -np.inf
+    # Best score reachable at a *strictly* lower cost than the current group.
+    best_below = -np.inf
 
-    for _, row in frontier_data.iterrows():
-        # Strict '>': rows are visited in ascending-cost order, so a later row
-        # that only ties the running-max score is strictly dominated (same
-        # score, higher cost) and must not be marked as a frontier/trophy row.
-        if row[y_col] > max_score_at_cost:
-            pareto_points.append(row)
-            max_score_at_cost = row[y_col]
+    # Group by cost so equal-cost rows are judged as a set. A row is on the
+    # frontier (gets a trophy) iff its score beats every strictly-cheaper row.
+    # Rows tied at their cost group's max score are equal on both axes, hence
+    # mutually non-dominated -> all get a trophy; rows below the group max are
+    # dominated by a same-cost, higher-score row and get none. Sweeping row by
+    # row with score > running-max would instead drop one of two equal-cost /
+    # equal-score co-optimal rows, which is why we compare against best_below.
+    for _, group in frontier_data.groupby(x_col, sort=True):
+        group_max = group[y_col].max()
+        if group_max > best_below:
+            for _, row in group[group[y_col] == group_max].iterrows():
+                pareto_points.append(row)
+        best_below = max(best_below, group_max)
 
     return pd.DataFrame(pareto_points)
 
