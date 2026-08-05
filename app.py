@@ -9,7 +9,7 @@ import urllib.parse
 from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi
 
-from config import LEADERBOARD_PATH, LOCAL_DEBUG
+from config import APP_VERSION, LEADERBOARD_PATH, LOCAL_DEBUG
 from content import css
 from main_page import build_page as build_main_page
 from literature_understanding import build_page as build_lit_page
@@ -271,6 +271,7 @@ def restart_space_job():
 
 # Launch the Gradio app
 if __name__ == "__main__":
+    print(f"AstaBench leaderboard app version {APP_VERSION}")
     if LOCAL_DEBUG:
         print("Launching in LOCAL_DEBUG mode.")
         demo.launch(debug=True, allowed_paths=["assets"], favicon_path="assets/favicon/favicon.ico")
