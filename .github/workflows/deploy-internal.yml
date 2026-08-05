@@ -1,0 +1,41 @@
+name: Deploy internal leaderboard
+
+# The internal Space tracks main continuously: every push to main is mirrored to
+# the internal HF Space, which auto-rebuilds. This is the always-current staging
+# environment. Public releases are cut separately and deliberately via tags
+# (see release-public.yml).
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Never let two deploys race; queue them so main is mirrored in order.
+concurrency:
+  group: deploy-internal
+  cancel-in-progress: false
+
+jobs:
+  deploy-internal:
+    runs-on: ubuntu-latest
+    # Uses the "internal" GitHub Environment so the HF token is scoped and,
+    # optionally, protection rules can gate the deploy.
+    environment: internal
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Mirror main to the internal HF Space
+        env:
+          # HF_TOKEN must have write access to
+          # spaces/allenai/asta-bench-internal-leaderboard.
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$HF_TOKEN" || { echo "::error::HF_TOKEN secret is not set"; exit 1; }
+          git push --force \
+            "https://hf:${HF_TOKEN}@huggingface.co/spaces/allenai/asta-bench-internal-leaderboard" \
+            HEAD:main
+          echo "Mirrored $(git rev-parse --short HEAD) to the internal Space."
