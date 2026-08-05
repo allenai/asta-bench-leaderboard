@@ -11,7 +11,11 @@ inspect_ai==0.3.203
 litellm==1.88.1
 
 # --- Gradio app + UI/data stack (kept at current pins to minimize churn) ---
-gradio==5.30.0
+# [oauth] pulls Authlib + itsdangerous, required because the Space enables
+# hf_oauth (README) and app.py builds an OAuth-protected /submit route. Without
+# the extra, uv drops those deps and the app crashes at startup with
+# "ModuleNotFoundError: No module named 'itsdangerous'".
+gradio[oauth]==5.30.0
 gradio_modal==0.0.4
 APScheduler==3.11.0
 datasets==4.0.0
