@@ -467,7 +467,11 @@ def _plot_scatter_plotly(
 
         for _, row in sorted_data.iterrows():
             score = row[y_col_to_use]
-            if score >= max_score_so_far:
+            # Strict '>': points are visited in ascending-cost order, so a later
+            # point that only *ties* the running-max score is strictly dominated
+            # (same score, higher cost) and must be excluded from the frontier.
+            # Using '>=' here wrongly kept those dominated ties on the frontier.
+            if score > max_score_so_far:
                 frontier_points.append({'x': row[x_col_to_use], 'y': score})
                 max_score_so_far = score
 
@@ -677,7 +681,10 @@ def get_pareto_df(data):
     max_score_at_cost = -np.inf
 
     for _, row in frontier_data.iterrows():
-        if row[y_col] >= max_score_at_cost:
+        # Strict '>': rows are visited in ascending-cost order, so a later row
+        # that only ties the running-max score is strictly dominated (same
+        # score, higher cost) and must not be marked as a frontier/trophy row.
+        if row[y_col] > max_score_at_cost:
             pareto_points.append(row)
             max_score_at_cost = row[y_col]
 
