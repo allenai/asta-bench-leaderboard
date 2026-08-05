@@ -87,11 +87,6 @@ ORDER_MAP = {
 }
 
 
-def _safe_round(value, digits=3):
-    """Rounds a number if it's a valid float/int, otherwise returns it as is."""
-    return round(value, digits) if isinstance(value, (float, int)) and pd.notna(value) else value
-
-
 def _pretty_column_name(raw_col: str) -> str:
     """
     Takes a raw column name from the DataFrame and returns a "pretty" version.
@@ -172,11 +167,12 @@ def create_pretty_tag_map(raw_tag_map: dict, name_map: dict) -> dict:
 
 def transform_raw_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Transforms a raw leaderboard DataFrame into a presentation-ready format.
+    Renames raw leaderboard columns without changing metric precision.
 
-    This function performs two main actions:
-    1. Rounds all numeric metric values (columns containing 'score' or 'cost').
-    2. Renames all columns to a "pretty", human-readable format.
+    Score and cost values must remain at full precision here because downstream
+    calculations (including Pareto-frontier membership) consume this DataFrame.
+    Display-only rounding happens later in ``format_score_column``,
+    ``format_cost_column``, and the plot hover formatter.
     Args:
         raw_df (pd.DataFrame): The DataFrame with raw data and column names
                                like 'agent_name', 'overall/score', 'tag/code/cost'.
@@ -190,16 +186,12 @@ def transform_raw_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     # Create the mapping for pretty column names
     pretty_cols_map = {col: _pretty_column_name(col) for col in df.columns}
 
-    # Rename the columns and return the new DataFrame
+    # Rename columns, but retain the raw metric values for all calculations.
     transformed_df = df.rename(columns=pretty_cols_map)
-    # Apply safe rounding to all metric columns
-    for col in transformed_df.columns:
-        if 'Score' in col or 'Cost' in col:
-            transformed_df[col] = transformed_df[col].apply(_safe_round)
 
     transformed_df = _disambiguate_duplicate_agents(transformed_df)
 
-    logger.info("Raw DataFrame transformed: numbers rounded and columns renamed.")
+    logger.info("Raw DataFrame transformed: columns renamed; metric precision retained.")
     return transformed_df
 
 

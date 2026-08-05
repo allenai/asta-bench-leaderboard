@@ -8,7 +8,11 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import aliases
-from leaderboard_transformer import _plot_scatter_plotly, get_pareto_df
+from leaderboard_transformer import (
+    _plot_scatter_plotly,
+    get_pareto_df,
+    transform_raw_dataframe,
+)
 
 
 def _tied_score_rows():
@@ -105,3 +109,32 @@ def test_equal_cost_lower_score_is_dropped_on_frontier_line():
     frontier = next(trace for trace in figure.data if trace.name == "Efficiency Frontier")
     assert list(frontier.x) == [0.0368, 0.13]
     assert list(frontier.y) == [0.8533, 0.862]
+
+
+def test_display_rounding_does_not_change_frontier_membership():
+    """Values that look tied at 3 decimals are compared at full precision."""
+    raw = pd.DataFrame(
+        [
+            {
+                "Agent": "raw-dominator",
+                "User/organization": "submitter-a",
+                "Models Used": ["model-a"],
+                "ds1000_test score": 0.85331,
+                "ds1000_test cost": 0.03681,
+            },
+            {
+                "Agent": "rounded-lookalike",
+                "User/organization": "submitter-b",
+                "Models Used": ["model-b"],
+                "ds1000_test score": 0.85330,
+                "ds1000_test cost": 0.03684,
+            },
+        ]
+    )
+
+    transformed = transform_raw_dataframe(raw)
+    pareto = get_pareto_df(transformed[["Agent", "DS-1000 Score", "DS-1000 Cost"]])
+
+    assert transformed["DS-1000 Score"].tolist() == [0.85331, 0.85330]
+    assert transformed["DS-1000 Cost"].tolist() == [0.03681, 0.03684]
+    assert pareto["Agent"].tolist() == ["raw-dominator"]
