@@ -570,9 +570,9 @@ def create_leaderboard_display(
     df_headers = df_view.columns.tolist()
     df_datatypes = []
     for col in df_headers:
-        if col == "Logs" or "Cost" in col or "Score" in col:
+        if col == "Logs":
             df_datatypes.append("markdown")
-        elif col in ["Agent","Icon","Models Used", "Pareto"]:
+        elif "Cost" in col or "Score" in col or col in ["Agent","Icon","Models Used", "Pareto"]:
             df_datatypes.append("html")
         else:
             df_datatypes.append("str")
@@ -662,9 +662,16 @@ def create_benchmark_details_display(
         # 3. Prepare the data for this specific benchmark's table and plot
         benchmark_score_col = f"{benchmark_name} Score"
         benchmark_cost_col = f"{benchmark_name} Cost"
+        benchmark_score_ci_col = f"{benchmark_name} 95% ci"
+        benchmark_cost_ci_col = f"{benchmark_name} Cost 95% ci"
 
         # Define the columns needed for the detailed table
-        table_cols = ['Agent','Source','Openness','Agent Tooling', 'Submitter', 'Date', benchmark_score_col, benchmark_cost_col,'Logs','id', 'Models Used']
+        table_cols = [
+            'Agent', 'Source', 'Openness', 'Agent Tooling', 'Submitter', 'Date',
+            benchmark_score_col, benchmark_score_ci_col,
+            benchmark_cost_col, benchmark_cost_ci_col,
+            'Logs', 'id', 'Models Used'
+        ]
 
         # Filter to only columns that actually exist in the full dataframe
         existing_table_cols = [col for col in table_cols if col in full_df.columns]
@@ -721,8 +728,16 @@ def create_benchmark_details_display(
                 by=benchmark_score_col, ascending=False, na_position='last'
             )
         # 1. Format the cost and score columns
-        benchmark_table_df = format_cost_column(benchmark_table_df, benchmark_cost_col)
-        benchmark_table_df = format_score_column(benchmark_table_df, benchmark_score_col)
+        benchmark_table_df = format_cost_column(
+            benchmark_table_df,
+            benchmark_cost_col,
+            benchmark_cost_ci_col if benchmark_cost_ci_col in benchmark_table_df else None,
+        )
+        benchmark_table_df = format_score_column(
+            benchmark_table_df,
+            benchmark_score_col,
+            benchmark_score_ci_col if benchmark_score_ci_col in benchmark_table_df else None,
+        )
         desired_cols_in_order = [
             'Pareto',
             'Icon',
@@ -748,9 +763,9 @@ def create_benchmark_details_display(
         df_headers = benchmark_table_df.columns.tolist()
         df_datatypes = []
         for col in df_headers:
-            if "Logs" in col or "Cost" in col or "Score" in col:
+            if "Logs" in col:
                 df_datatypes.append("markdown")
-            elif col in ["Agent", "Icon", "Models Used", "Pareto"]:
+            elif "Cost" in col or "Score" in col or col in ["Agent", "Icon", "Models Used", "Pareto"]:
                 df_datatypes.append("html")
             else:
                 df_datatypes.append("str")
@@ -766,7 +781,9 @@ def create_benchmark_details_display(
             x=benchmark_cost_col,
             y=benchmark_score_col,
             agent_col="Agent",
-            name=benchmark_name
+            name=benchmark_name,
+            x_ci=benchmark_cost_ci_col,
+            y_ci=benchmark_score_ci_col,
         )
         with gr.Row():
             with gr.Column(scale=3):
