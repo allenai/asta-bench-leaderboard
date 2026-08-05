@@ -1,4 +1,11 @@
+import sys
+from pathlib import Path
+
 import pandas as pd
+
+# The application uses a flat module layout rather than an installed package.
+# Ensure those modules are importable under CI's `pytest tests/integration/` invocation.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import aliases
 from leaderboard_transformer import _plot_scatter_plotly, get_pareto_df
