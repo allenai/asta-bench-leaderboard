@@ -1,0 +1,28 @@
+# Direct dependencies for the AstaBench leaderboard Gradio app.
+# The pinned lockfile requirements.txt is generated from this file:
+#   uv pip compile requirements.in --python-version 3.10 -o requirements.txt
+#
+# agent-eval is kept on its base install (not the [scoring] extra) so inspect_ai
+# can be pinned independently to match the current scorer alignment.
+
+# --- Scorer alignment (the point of this bump) ---
+agent-eval==0.1.53
+inspect_ai==0.3.203
+litellm==1.88.1
+
+# --- Gradio app + UI/data stack (kept at current pins to minimize churn) ---
+gradio==5.30.0
+gradio_modal==0.0.4
+APScheduler==3.11.0
+datasets==4.0.0
+huggingface_hub==0.30.2
+matplotlib==3.10.3
+numpy==2.2.5
+pandas==2.2.3
+plotly==6.0.1
+requests==2.32.3
+
+# --- Lint/format tooling (kept at current pins) ---
+black==25.1.0
+isort==6.0.1
+ruff==0.11.8
