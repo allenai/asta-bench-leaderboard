@@ -359,7 +359,9 @@ def _plot_scatter_plotly(
         x: Optional[str],
         y: str,
         agent_col: str = 'Agent',
-        name: Optional[str] = None
+        name: Optional[str] = None,
+        x_ci: Optional[str] = None,
+        y_ci: Optional[str] = None,
 ) -> go.Figure:
 
     # --- Section 1: Define Mappings ---
@@ -404,6 +406,10 @@ def _plot_scatter_plotly(
 
     data_plot = data.copy()
     data_plot[y_col_to_use] = pd.to_numeric(data_plot[y_col_to_use], errors='coerce')
+    if y_ci and y_ci in data_plot.columns:
+        data_plot[y_ci] = pd.to_numeric(data_plot[y_ci], errors='coerce')
+    else:
+        y_ci = None
 
     x_axis_label = f"Average (mean) cost per problem (USD)" if x else "Cost (Data N/A)"
     max_reported_cost = 0
@@ -411,6 +417,10 @@ def _plot_scatter_plotly(
 
     if x and x in data_plot.columns:
         data_plot[x_col_to_use] = pd.to_numeric(data_plot[x_col_to_use], errors='coerce')
+        if x_ci and x_ci in data_plot.columns:
+            data_plot[x_ci] = pd.to_numeric(data_plot[x_ci], errors='coerce')
+        else:
+            x_ci = None
 
         # --- Separate data into two groups ---
         valid_cost_data = data_plot[data_plot[x_col_to_use].notna()].copy()
@@ -492,12 +502,16 @@ def _plot_scatter_plotly(
         h_pad = "   "
         parts = ["<br>"]
         parts.append(f"{h_pad}<b>{row[agent_col]}</b>{h_pad}<br>")
-        parts.append(f"{h_pad}Score: <b>{row[y_col]:.3f}</b>{h_pad}<br>")
+        parts.append(f"{h_pad}Score: <b>{row[y_col]:.12g}</b>{h_pad}<br>")
+        if y_ci and pd.notna(row[y_ci]):
+            parts.append(f"{h_pad}Score 95% CI: <b>±{row[y_ci]:.12g}</b>{h_pad}<br>")
         if divider_line_x > 0 and row[x_col] >= divider_line_x:
             # If no cost, display "Missing" for the cost.
             parts.append(f"{h_pad}{x_axis_label}: <b>Missing</b>{h_pad}<br>")
         else:
-            parts.append(f"{h_pad}{x_axis_label}: <b>${row[x_col]:.2f}</b>{h_pad}<br>")
+            parts.append(f"{h_pad}{x_axis_label}: <b>${row[x_col]:.12g}</b>{h_pad}<br>")
+            if x_ci and pd.notna(row[x_ci]):
+                parts.append(f"{h_pad}Cost 95% CI: <b>±${row[x_ci]:.12g}</b>{h_pad}<br>")
         parts.append(f"{h_pad}Openness: <b>{row['Openness']}</b>{h_pad}<br>")
         parts.append(f"{h_pad}Tooling: <b>{row['Agent Tooling']}</b>{h_pad}")
 
@@ -547,6 +561,20 @@ def _plot_scatter_plotly(
             showlegend=False,
             text=group['hover_text'],
             hoverinfo='text',
+            error_x=dict(
+                type='data',
+                array=group[x_ci] if x_ci else None,
+                visible=bool(x_ci),
+                color='#105257',
+                thickness=1,
+            ),
+            error_y=dict(
+                type='data',
+                array=group[y_ci] if y_ci else None,
+                visible=bool(y_ci),
+                color='#105257',
+                thickness=1,
+            ),
             marker=dict(
                 color=color_map.get(category, 'black'),
                 symbol=group['shape_symbol'],
@@ -592,7 +620,22 @@ def _plot_scatter_plotly(
     return fig
 
 
-def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
+def _metric_tooltip(display_value: str, metric_name: str, raw_value, ci_value=None) -> str:
+    """Render a compact table value with full precision available on hover."""
+    details = f"{metric_name}: {raw_value:.12g}"
+    if ci_value is not None and pd.notna(ci_value):
+        details += f"; 95% CI: ±{ci_value:.12g}"
+    return (
+        '<span class="tooltip-icon cell-tooltip-icon native-tooltip-icon" '
+        f'data-tooltip="{html.escape(details, quote=True)}">{display_value}</span>'
+    )
+
+
+def format_cost_column(
+    df: pd.DataFrame,
+    cost_col_name: str,
+    ci_col_name: Optional[str] = None,
+) -> pd.DataFrame:
     """
     Applies custom formatting to a cost column based on its corresponding score column.
     - If cost is not null, it remains unchanged.
@@ -617,7 +660,8 @@ def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
         status_color = "#ec4899"
 
         if pd.notna(cost_value) and isinstance(cost_value, (int, float)):
-            return f"${cost_value:.2f}"
+            ci_value = row.get(ci_col_name) if ci_col_name else None
+            return _metric_tooltip(f"${cost_value:.3f}", "Cost (USD)", cost_value, ci_value)
         elif pd.notna(score_value):
             return f'<span style="color: {status_color};">Missing</span>'  # Score exists, but cost is missing
         else:
@@ -628,7 +672,11 @@ def format_cost_column(df: pd.DataFrame, cost_col_name: str) -> pd.DataFrame:
 
     return df
 
-def format_score_column(df: pd.DataFrame, score_col_name: str) -> pd.DataFrame:
+def format_score_column(
+    df: pd.DataFrame,
+    score_col_name: str,
+    ci_col_name: Optional[str] = None,
+) -> pd.DataFrame:
     """
     Applies custom formatting to a score column for display.
     - If a score is 0 or NaN, it's displayed as a colored "0".
@@ -640,20 +688,22 @@ def format_score_column(df: pd.DataFrame, score_col_name: str) -> pd.DataFrame:
     # We must use reassignment to avoid the SettingWithCopyWarning.
     df[score_col_name] = df[score_col_name].fillna(0)
 
-    def apply_formatting(score_value):
+    def apply_formatting(row):
+        score_value = row[score_col_name]
         # Now, we just check if the value is 0.
         if score_value == 0:
             return f'<span style="color: {status_color};">0.0</span>'
 
         # For all other numbers, format them for consistency.
         if isinstance(score_value, (int, float)):
-            return f"{score_value:.3f}"
+            ci_value = row.get(ci_col_name) if ci_col_name else None
+            return _metric_tooltip(f"{score_value:.3f}", "Score", score_value, ci_value)
 
         # Fallback for any unexpected non-numeric data
         return score_value
 
     # Apply the formatting and return the updated DataFrame
-    return df.assign(**{score_col_name: df[score_col_name].apply(apply_formatting)})
+    return df.assign(**{score_col_name: df.apply(apply_formatting, axis=1)})
 
 
 def get_pareto_df(data):
