@@ -34,6 +34,22 @@ def test_table_metrics_show_three_decimals_and_full_precision_on_hover():
     assert "Score: 0.853333333333" in rendered.loc[0, "Score"]
 
 
+def test_zero_score_keeps_tooltip_but_missing_score_does_not():
+    frame = pd.DataFrame(
+        {
+            "Score": [0.0, None],
+            "Score CI": [0.0125, None],
+        }
+    )
+
+    rendered = format_score_column(frame, "Score", "Score CI")
+
+    assert 'data-tooltip="Score: 0; 95% CI: ±0.0125"' in rendered.loc[0, "Score"]
+    assert ">0.0</span>" in rendered.loc[0, "Score"]
+    assert "data-tooltip" not in rendered.loc[1, "Score"]
+    assert rendered.loc[1, "Score"] == '<span style="color: #ec4899;">0.0</span>'
+
+
 def test_benchmark_plot_exposes_precision_and_confidence_intervals():
     frame = pd.DataFrame(
         {
@@ -80,3 +96,22 @@ def test_plot_without_confidence_intervals_keeps_error_bars_hidden():
 
     assert marker_trace.error_x.visible is False
     assert marker_trace.error_y.visible is False
+
+
+def test_plot_without_x_axis_ignores_cost_confidence_interval():
+    frame = pd.DataFrame(
+        {
+            "Agent": ["agent"],
+            "Openness": [aliases.CANONICAL_OPENNESS_OPEN_SOURCE_OPEN_WEIGHTS],
+            "Agent Tooling": [aliases.CANONICAL_TOOL_USAGE_STANDARD],
+            "Models Used": [["model"]],
+            "Score": [0.5],
+            "Cost CI": [0.125],
+        }
+    )
+
+    figure = _plot_scatter_plotly(frame, x=None, y="Score", x_ci="Cost CI")
+    marker_trace = next(trace for trace in figure.data if trace.mode == "markers")
+
+    assert marker_trace.error_x.visible is False
+    assert marker_trace.error_x.array is None

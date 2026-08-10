@@ -450,6 +450,7 @@ def _plot_scatter_plotly(
                 data_plot = pd.DataFrame()
     else:
         # Handle case where x column is not provided at all
+        x_ci = None
         data_plot[x_col_to_use] = 0
 
     # Clean data based on all necessary columns
@@ -679,25 +680,25 @@ def format_score_column(
 ) -> pd.DataFrame:
     """
     Applies custom formatting to a score column for display.
-    - If a score is 0 or NaN, it's displayed as a colored "0".
+    - If a score is NaN, it's displayed as a colored "0".
+    - Genuine zero scores retain their full-precision tooltip and confidence interval.
     - Other scores are formatted to two decimal places.
     """
     status_color = "#ec4899"  # The same color as your other status text
 
-    # First, fill any NaN values with 0 so we only have one case to handle.
-    # We must use reassignment to avoid the SettingWithCopyWarning.
-    df[score_col_name] = df[score_col_name].fillna(0)
-
     def apply_formatting(row):
         score_value = row[score_col_name]
-        # Now, we just check if the value is 0.
-        if score_value == 0:
+        if pd.isna(score_value):
             return f'<span style="color: {status_color};">0.0</span>'
 
-        # For all other numbers, format them for consistency.
         if isinstance(score_value, (int, float)):
             ci_value = row.get(ci_col_name) if ci_col_name else None
-            return _metric_tooltip(f"{score_value:.3f}", "Score", score_value, ci_value)
+            display_value = (
+                f'<span style="color: {status_color};">0.0</span>'
+                if score_value == 0
+                else f"{score_value:.3f}"
+            )
+            return _metric_tooltip(display_value, "Score", score_value, ci_value)
 
         # Fallback for any unexpected non-numeric data
         return score_value
