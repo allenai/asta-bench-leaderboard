@@ -35,22 +35,58 @@ The repo backs two Hugging Face leaderboard spaces:
 
 Please follow the steps below to push changes to the leaderboards on Hugging Face.
 
-Before pushing, make sure to merge your changes to the `main` branch of this repository. (following the standard GitHub workflow of creating a branch, making changes, and then merging it back to `main`).
+Deployment is automated via GitHub Actions and follows a two-track model,
+inspired by [`allenai/asta-plugins`](https://github.com/allenai/asta-plugins):
+the **internal** Space tracks `main` continuously, and the **public** Space is
+promoted deliberately on a version tag.
 
-Before pushing for the first time, you'll need to add the Hugging Face remote repositories if you haven't done so already. You can do this by running the following commands:
+### Internal Space — tracks `main` (automatic)
+
+Every push to `main` triggers [`.github/workflows/deploy-internal.yml`](.github/workflows/deploy-internal.yml),
+which mirrors the commit to the internal Space (`allenai/asta-bench-internal-leaderboard`),
+which then auto-rebuilds. So merging a PR to `main` is all it takes to update
+internal — it's the always-current staging environment. No manual push needed.
+
+### Public Space — promoted on a version tag (deliberate)
+
+The public Space (`allenai/asta-bench-leaderboard`) only updates when you cut a
+release, so it never receives anything that hasn't already soaked on internal:
+
+```bash
+# 1. Bump the version on a branch, open a PR, merge it to main.
+make set-version VERSION=0.2.0
+#    ... commit, PR, review, merge ...
+
+# 2. From an up-to-date main, tag the merged commit and push the tag.
+git checkout main && git pull
+make push-version-tag           # tags v0.2.0 and pushes it
+```
+
+Pushing the `v0.2.0` tag triggers [`.github/workflows/release-public.yml`](.github/workflows/release-public.yml),
+which verifies the tag matches the `VERSION` file and mirrors *that exact tagged
+commit* to the public Space. The tag is the source of truth for what's public.
+
+`VERSION` is the leaderboard **app** version (semver `x.y.z`); it is distinct
+from `HF_CONFIG` (e.g. `1.0.0`), which versions the results dataset. The running
+app prints its version at launch (visible in the Space logs) so you can confirm
+which release is live.
+
+### Credentials and gating
+
+The two deploy jobs run under the `internal` and `public`
+[GitHub Environments](https://docs.github.com/en/actions/deployment/targeting-different-environments)
+and use separate secrets — `HF_TOKEN` (write to the internal Space) and
+`HF_PUBLIC_TOKEN` (write to the public Space) — so public-write scope is granted
+only to the tag-gated release job. Add required reviewers to the `public`
+environment to make promotion a human-approved step.
+
+### Manual fallback
+
+If you ever need to push by hand (CI outage, first-time setup), add the remotes:
 
 ```bash
 git remote add huggingface https://huggingface.co/spaces/allenai/asta-bench-internal-leaderboard
 git remote add huggingface-public https://huggingface.co/spaces/allenai/asta-bench-leaderboard
-```
-You can verify that the remotes have been added by running:
-
-```bash
-git remote -v
-```
-Then, to push the changes to the Hugging Face leaderboards, you can use the following commands:
-
-```bash
-git push huggingface main:main   
-git push huggingface-public main:main
+git push huggingface main:main          # internal
+git push huggingface-public main:main   # public
 ```

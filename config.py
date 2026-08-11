@@ -2,6 +2,19 @@ import os
 
 LOCAL_DEBUG = not (os.environ.get("system") == "spaces")
 CONFIG_NAME = os.getenv("HF_CONFIG", "1.0.0-dev1") # This corresponds to 'config' in LeaderboardViewer
+
+
+def _read_app_version() -> str:
+    """Leaderboard app release version (VERSION file). Distinct from CONFIG_NAME,
+    which versions the results dataset. Used to identify which release is live."""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "VERSION")) as f:
+            return f.read().strip()
+    except OSError:
+        return "unknown"
+
+
+APP_VERSION = _read_app_version()
 IS_INTERNAL = os.environ.get("IS_INTERNAL", "false").lower() == "true"
 
 # Put all contact info in the same dataset so there's only one place to search. This is private to Ai2.

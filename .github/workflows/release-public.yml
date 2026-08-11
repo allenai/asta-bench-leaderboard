@@ -1,0 +1,56 @@
+name: Release public leaderboard
+
+# The public Space is NOT continuously updated. A release is an explicit, versioned
+# promotion of a known-good commit that has already been running on the internal
+# Space. Cutting a release = push a semver tag `vX.Y.Z` (see `make push-version-tag`);
+# this workflow then mirrors *the tagged commit* (not whatever main points at) to
+# the public HF Space.
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Tag or commit SHA to release to public"
+        required: true
+
+# Serialize public releases.
+concurrency:
+  group: release-public
+  cancel-in-progress: false
+
+jobs:
+  release-public:
+    runs-on: ubuntu-latest
+    # Uses the "public" GitHub Environment. Add required reviewers to this
+    # environment to make promotion to the public Space a human-gated step.
+    environment: public
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+          # On a tag push, github.ref is refs/tags/vX.Y.Z; for manual runs, use
+          # the ref the operator supplied.
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Verify the tag matches the VERSION file
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -euo pipefail
+          python scripts/manage-version.py check-tag "${GITHUB_REF_NAME}"
+
+      - name: Mirror the release commit to the public HF Space
+        env:
+          # HF_PUBLIC_TOKEN must have write access to
+          # spaces/allenai/asta-bench-leaderboard. Kept as a distinct secret from
+          # HF_TOKEN so public-write scope is granted only to this gated job.
+          HF_PUBLIC_TOKEN: ${{ secrets.HF_PUBLIC_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$HF_PUBLIC_TOKEN" || { echo "::error::HF_PUBLIC_TOKEN secret is not set"; exit 1; }
+          git push --force \
+            "https://hf:${HF_PUBLIC_TOKEN}@huggingface.co/spaces/allenai/asta-bench-leaderboard" \
+            HEAD:main
+          echo "Released $(git rev-parse --short HEAD) ($(python scripts/manage-version.py show)) to the public Space."
