@@ -34,7 +34,7 @@ INTRO_PARAGRAPH = """
 </p>
 """
 SCATTER_DISCLAIMER = """
-**Note:** Agents without cost data are displayed to the right of the vertical divider line.
+**Note:** Hover over score and cost values for greater precision. Benchmark plots show 95% confidence intervals when available. Agents without cost data are displayed to the right of the vertical divider line.
 """
 PARETO_DISCLAIMER = """
 Agents names that are green are Pareto optimal, meaning they achieve the best performance for their cost. 
