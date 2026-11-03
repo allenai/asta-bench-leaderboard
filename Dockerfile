@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # The two following lines are requirements for the Dev Mode to be functional
 # Learn more about the Dev Mode at https://huggingface.co/dev-mode-explorers
